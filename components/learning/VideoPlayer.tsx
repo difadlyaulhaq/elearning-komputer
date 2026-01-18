@@ -16,6 +16,7 @@ import {
 import toast from "react-hot-toast";
 import { MarkdownRenderer } from "@/components/shared/MarkdownRenderer";
 import { ScreenProtection } from "@/components/shared/ScreenProtection";
+import BunnyPlayer from "./BunnyPlayer";
 
 interface VideoPlayerProps {
   courseId: string;
@@ -37,20 +38,25 @@ export function VideoPlayer({
   
   const [isVideoCompleted, setIsVideoCompleted] = useState(initialCompleted);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [player, setPlayer] = useState<YT.Player | null>(null);
+  const [ytPlayer, setYtPlayer] = useState<YT.Player | null>(null);
   const [progressInterval, setProgressInterval] = useState<NodeJS.Timeout | null>(null);
   
-  // Ref for the video container (YouTube iframe parent)
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const videoElementRef = useRef<HTMLVideoElement>(null as any);
 
   useEffect(() => {
+    // Reset completion status when lesson changes
     if (lesson.contentType === 'text') {
       setIsVideoCompleted(true);
     } else {
       setIsVideoCompleted(initialCompleted);
     }
-  }, [lesson.id, initialCompleted, lesson.contentType]);
+    // Destroy YouTube player if it exists and the next lesson is not YouTube
+    if (ytPlayer && lesson.contentType !== 'youtube') {
+      ytPlayer.destroy();
+      setYtPlayer(null);
+    }
+  }, [lesson.id, initialCompleted, lesson.contentType, ytPlayer]);
 
   useEffect(() => {
     return () => {
@@ -67,24 +73,35 @@ export function VideoPlayer({
     return match && match[2].length === 11 ? match[2] : null;
   };
 
-  const videoId = useMemo(() => {
+  const youtubeVideoId = useMemo(() => {
     if (lesson.contentType === "youtube") {
       return getYouTubeId(lesson.url);
     }
     return null;
   }, [lesson.url, lesson.contentType]);
+  
+  // --- Generic Handlers ---
+  const handleLessonEnd = () => {
+    setIsVideoCompleted(true);
+  };
 
+  const handleTimeUpdate = (currentTime: number, duration: number) => {
+    if (duration > 0 && (currentTime / duration) >= 0.9) {
+      if (!isVideoCompleted) {
+        setIsVideoCompleted(true);
+      }
+    }
+  };
+
+  // --- YouTube Specific ---
   const onPlayerStateChange = (event: YT.OnStateChangeEvent) => {
     if (event.data === YT.PlayerState.PLAYING) {
       if (progressInterval) clearInterval(progressInterval);
       const interval = setInterval(() => {
-        if (player) {
-          const currentTime = player.getCurrentTime();
-          const duration = player.getDuration();
-          if (duration > 0 && (currentTime / duration) >= 0.9) {
-            setIsVideoCompleted(true);
-            if(interval) clearInterval(interval);
-          }
+        if (ytPlayer) {
+          const currentTime = ytPlayer.getCurrentTime();
+          const duration = ytPlayer.getDuration();
+          handleTimeUpdate(currentTime, duration);
         }
       }, 1000);
       setProgressInterval(interval);
@@ -92,64 +109,57 @@ export function VideoPlayer({
       if (progressInterval) clearInterval(progressInterval);
     }
     if (event.data === YT.PlayerState.ENDED) {
-      setIsVideoCompleted(true);
+      handleLessonEnd();
     }
   };
 
   useEffect(() => {
-    if (!videoId) return;
+    if (lesson.contentType !== 'youtube' || !youtubeVideoId) {
+      return;
+    }
 
     let playerInstance: YT.Player | null = null;
     let checkInterval: NodeJS.Timeout | null = null;
 
     const initPlayer = () => {
-      // Pastikan container ada dan YT API sudah load
       if (!window.YT || !window.YT.Player || !document.getElementById(`youtube-player-${lesson.id}`)) {
         return false;
       }
 
       try {
-        if (player) {
-           player.destroy(); // Hancurkan player lama jika ada sisa
+        if (ytPlayer) {
+           ytPlayer.destroy();
         }
         
         playerInstance = new window.YT.Player(`youtube-player-${lesson.id}`, {
           height: '100%',
           width: '100%',
-          videoId: videoId,
+          videoId: youtubeVideoId,
           playerVars: { 
-            'playsinline': 1, 
-            'controls': 1, 
-            'rel': 0, 
-            'modestbranding': 1,
-            'disablekb': 1, 
-            'origin': window.location.origin // Penting untuk security
+            'playsinline': 1, 'controls': 1, 'rel': 0, 
+            'modestbranding': 1, 'disablekb': 1, 'origin': window.location.origin
           },
           events: { 
             'onStateChange': onPlayerStateChange,
             'onReady': (event) => {
               const iframe = event.target.getIframe();
-              if (iframe) {
-                videoElementRef.current = iframe as any;
-              }
+              if (iframe) videoElementRef.current = iframe as any;
             },
             'onError': (e) => {
               console.error("YouTube Player Error:", e);
-              toast.error("Gagal memuat video. Coba refresh halaman.");
+              toast.error("Gagal memuat video YouTube. Coba refresh halaman.");
             }
           }
         });
-        setPlayer(playerInstance);
-        return true; // Sukses init
+        setYtPlayer(playerInstance);
+        return true;
       } catch (error) {
-        console.error("Error init player:", error);
+        console.error("Error init YouTube player:", error);
         return false;
       }
     };
 
-    // Cek apakah script API sudah ada
     if (!window.YT) {
-      // Jika belum ada tag script, inject
       if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
         const tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";
@@ -157,8 +167,6 @@ export function VideoPlayer({
       }
     }
 
-    // Gunakan interval untuk cek kesiapan YT API
-    // Ini lebih reliable daripada callback onYouTubeIframeAPIReady yang kadang terlewat
     checkInterval = setInterval(() => {
       const success = initPlayer();
       if (success && checkInterval) {
@@ -169,14 +177,12 @@ export function VideoPlayer({
     return () => {
       if (checkInterval) clearInterval(checkInterval);
       if (progressInterval) clearInterval(progressInterval);
-      // Jangan destroy player di sini agar transisi antar lesson lebih mulus, 
-      // atau destroy jika memory leak isu.
-      // Aman-nya destroy:
-      // if (playerInstance) playerInstance.destroy(); 
+      playerInstance?.destroy();
     };
-  }, [videoId, lesson.id]);
+  }, [youtubeVideoId, lesson.id, lesson.contentType]);
 
   const handleMarkComplete = async () => {
+    // ... (logic is unchanged)
     if (!user || !isVideoCompleted) return;
     setIsUpdating(true);
     toast.loading('Menyimpan progress...');
@@ -223,6 +229,46 @@ export function VideoPlayer({
     );
   }
 
+  const renderPlayer = () => {
+    switch (lesson.contentType) {
+      case 'text':
+        return (
+          <div className="bg-white p-6 md:p-8 rounded-lg border">
+            <MarkdownRenderer content={lesson.textContent || ''} />
+          </div>
+        );
+      case 'youtube':
+        return (
+          <div 
+            ref={videoContainerRef}
+            className="relative w-full bg-black rounded-lg overflow-hidden" 
+            style={{ paddingTop: "56.25%" }}
+            data-protected="true"
+          >
+            <div 
+              id={`youtube-player-${lesson.id}`} 
+              className="absolute top-0 left-0 w-full h-full" 
+            />
+          </div>
+        );
+      case 'bunny':
+        return (
+          <div 
+            className="relative w-full bg-black rounded-lg overflow-hidden" 
+            data-protected="true"
+          >
+            <BunnyPlayer 
+              videoId={lesson.url}
+              onEnded={handleLessonEnd}
+              onTimeUpdate={handleTimeUpdate}
+            />
+          </div>
+        );
+      default:
+        return <p>Tipe konten tidak didukung.</p>
+    }
+  };
+
   return (
     <ScreenProtection userEmail={user?.email ?? ""} videoElementRef={videoElementRef}>
       <div className="flex-1 flex flex-col bg-[#F8F9FA]">
@@ -241,23 +287,7 @@ export function VideoPlayer({
         </header>
 
         <div className="p-4 md:p-8 flex-1">
-          {lesson.contentType === "text" ? (
-            <div className="bg-white p-6 md:p-8 rounded-lg border">
-              <MarkdownRenderer content={lesson.textContent || ''} />
-            </div>
-          ) : (
-            <div 
-              ref={videoContainerRef}
-              className="relative w-full bg-black rounded-lg overflow-hidden" 
-              style={{ paddingTop: "56.25%" }}
-              data-protected="true"
-            >
-              <div 
-                id={`youtube-player-${lesson.id}`} 
-                className="absolute top-0 left-0 w-full h-full" 
-              />
-            </div>
-          )}
+          {renderPlayer()}
 
           {/* Attachments Section */}
           {lesson.attachmentUrl && lesson.attachmentName && (
