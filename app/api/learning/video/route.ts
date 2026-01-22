@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/session'; // Asumsi: Anda punya cara validasi sesi
+import { getCurrentUser } from '@/lib/session';
 import { generateSignedVideoUrl } from '@/lib/bunny';
 
 export async function POST(request: Request) {
   try {
     // 1. Validasi Sesi Pengguna
-    const session = await getSession();
-    if (!session?.user) {
+    const user = await getCurrentUser();
+    if (!user) {
       return new NextResponse(JSON.stringify({ message: 'Unauthorized' }), { status: 401 });
     }
 

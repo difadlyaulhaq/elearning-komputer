@@ -38,6 +38,8 @@ export default function BunnyPlayer({ videoId, onEnded, onTimeUpdate }: BunnyPla
         const data = await response.json();
         const signedUrl = data.signedUrl;
 
+        console.log('Received Signed URL:', signedUrl);
+
         if (!signedUrl) {
           throw new Error('No signed URL received from server.');
         }
@@ -59,19 +61,21 @@ export default function BunnyPlayer({ videoId, onEnded, onTimeUpdate }: BunnyPla
              setIsLoading(false);
              videoElement.play().catch(e => console.error("Autoplay was prevented:", e));
           });
-           hls.on(Hls.Events.ERROR, (event, data) => {
-            console.error('HLS.js error:', event, data);
+hls.on(Hls.Events.ERROR, (event, data) => {
+            console.error('HLS.js error:', data); // Keep detailed log for developers
+
+            const userFriendlyMessage = 'Video tidak dapat dimuat. Mohon laporkan pesan teknis berikut ke admin:';
+
             if (data.fatal) {
               switch (data.type) {
                 case Hls.ErrorTypes.NETWORK_ERROR:
-                  setError('Kesalahan jaringan saat memuat video.');
+                  setError(`${userFriendlyMessage} Network Error (${data.details})`);
                   break;
                 case Hls.ErrorTypes.MEDIA_ERROR:
-                  setError('Gagal mendekode video.');
-                  hls?.recoverMediaError();
+                  setError(`${userFriendlyMessage} Media Error (${data.details})`);
                   break;
                 default:
-                  setError('Gagal memuat video. Coba lagi nanti.');
+                  setError(`${userFriendlyMessage} Unrecoverable Error (${data.details})`);
                   break;
               }
             }
