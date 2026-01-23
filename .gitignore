@@ -40,6 +40,7 @@ yarn-error.log*
 android/.gradle
 android/build
 android/capacitor-cordova-android-plugins/build
+android/.idea
 
 # typescript
 *.tsbuildinfo

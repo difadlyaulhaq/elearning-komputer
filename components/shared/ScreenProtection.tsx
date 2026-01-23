@@ -47,21 +47,21 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
 
   // Detect Mobile Web (Not Native App) - CLIENT SIDE BACKUP PROTECTION
   // Primary protection is in Middleware (proxy.ts). This is just a fallback.
-  useEffect(() => {
-    const checkMobileWeb = () => {
-      // Logic: Mobile Device + NOT Native App + NOT Download Page
-      if (
-        isMobileDevice() && 
-        !Capacitor.isNativePlatform() && 
-        window.location.pathname !== '/download-app'
-      ) {
-        // Redirect to download page instead of showing overlay
-        window.location.href = '/download-app';
-      }
-    };
+  // useEffect(() => {
+  //   const checkMobileWeb = () => {
+  //     // Logic: Mobile Device + NOT Native App + NOT Download Page
+  //     if (
+  //       isMobileDevice() && 
+  //       !Capacitor.isNativePlatform() && 
+  //       window.location.pathname !== '/download-app'
+  //     ) {
+  //       // Redirect to download page instead of showing overlay
+  //       window.location.href = '/download-app';
+  //     }
+  //   };
 
-    checkMobileWeb();
-  }, []);
+  //   checkMobileWeb();
+  // }, []);
 
   const { isBlurred, isRecording, isDevToolsOpen, isViolation, isCoolDownActive, countdown, violationType } = useScreenProtection({
     // ... config
