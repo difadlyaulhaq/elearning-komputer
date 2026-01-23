@@ -47,23 +47,23 @@ export function proxy(request: NextRequest) {
   // ============================================
   // MOBILE BROWSER GUARD (Added from middleware)
   // ============================================
-  const userAgent = request.headers.get('user-agent') || '';
+  // const userAgent = request.headers.get('user-agent') || '';
   
-  // 1. Deteksi apakah user menggunakan HP (Android/iOS)
-  const isMobile = /Android|iPhone|iPad|iPod/i.test(userAgent);
+  // // 1. Deteksi apakah user menggunakan HP (Android/iOS)
+  // const isMobile = /Android|iPhone|iPad|iPod/i.test(userAgent);
   
-  // 2. Deteksi apakah request datang dari Aplikasi kita
-  // Relaxed check: Look for 'AlfajrApp' (case insensitive) instead of strict version
-  const isApp = /AlfajrApp/i.test(userAgent);
+  // // 2. Deteksi apakah request datang dari Aplikasi kita
+  // // Relaxed check: Look for 'AlfajrApp' (case insensitive) instead of strict version
+  // const isApp = /AlfajrApp/i.test(userAgent);
 
-  // 3. Cek apakah sedang di halaman download (sudah dihandle bypass/public routes, tapi kita cek explicit utk redirect)
-  const isDownloadPage = pathname.startsWith('/download-app');
+  // // 3. Cek apakah sedang di halaman download (sudah dihandle bypass/public routes, tapi kita cek explicit utk redirect)
+  // const isDownloadPage = pathname.startsWith('/download-app');
 
-  // LOGIKA: Jika Mobile + Bukan App + Bukan Halaman Download -> Redirect
-  // Note: Static files/API sudah di-return di atas, jadi aman.
-  if (isMobile && !isApp && !isDownloadPage) {
-    return NextResponse.redirect(new URL('/download-app', request.url));
-  }
+  // // LOGIKA: Jika Mobile + Bukan App + Bukan Halaman Download -> Redirect
+  // // Note: Static files/API sudah di-return di atas, jadi aman.
+  // if (isMobile && !isApp && !isDownloadPage) {
+  //   return NextResponse.redirect(new URL('/download-app', request.url));
+  // }
 
   // Get authentication cookies
   const authToken = request.cookies.get('auth_token')?.value;
