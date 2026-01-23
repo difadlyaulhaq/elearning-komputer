@@ -48,9 +48,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-          <PWAEnforcer>
+          {/* <PWAEnforcer> */}
             {children}
-          </PWAEnforcer>
+          {/* </PWAEnforcer> */}
         </AuthProvider>
       </body>
     </html>

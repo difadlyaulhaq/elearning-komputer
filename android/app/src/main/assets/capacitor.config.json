@@ -3,13 +3,13 @@
 	"appName": "Alfajr E-Learning",
 	"webDir": "public",
 	"server": {
-		"url": "https://alfajr-elearning.vercel.app/",
+		"url": "http://10.107.217.17:3000",
 		"cleartext": true,
-		"androidScheme": "https"
+		"androidScheme": "http"
 	},
 	"plugins": {
 		"PrivacyScreen": {
-			"enable": true,
+			"enable": false,
 			"imageName": "Splash"
 		},
 		"SplashScreen": {

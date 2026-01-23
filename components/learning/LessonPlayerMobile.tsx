@@ -537,7 +537,7 @@ export function LessonPlayerMobile({
           </div>
         )}
       </div>
-    {/* </ScreenProtection> */}
+    // </ScreenProtection>
   );
 }
 
