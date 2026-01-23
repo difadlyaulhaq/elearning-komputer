@@ -233,7 +233,7 @@ export function LessonPlayerMobile({
   }
 
   return (
-    // <ScreenProtection userEmail={user?.email ?? ""} videoElementRef={videoElementRef}>
+    <ScreenProtection userEmail={user?.email ?? ""} videoElementRef={videoElementRef}>
       <div className="min-h-screen bg-[#F8F9FA] flex flex-col">
         {/* Mobile Header */}
         <header className="bg-white border-b border-gray-200 p-4 sticky top-0 z-20">
@@ -537,7 +537,7 @@ export function LessonPlayerMobile({
           </div>
         )}
       </div>
-    // </ScreenProtection>
+    </ScreenProtection>
   );
 }
 
