@@ -12,3 +12,16 @@ declare module '*.sass' {
   const content: { [className: string]: string };
   export default content;
 }
+
+interface Window {
+  VdoPlayer: any; // Or a more specific type if known
+}
+
+declare namespace JSX {
+  interface IntrinsicElements {
+    'vdocipher-player': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
+      playbackinfo?: string;
+      otp?: string;
+    };
+  }
+}

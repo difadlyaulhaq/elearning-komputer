@@ -52,9 +52,9 @@ export default function RootLayout({
         <AuthProvider>
           <ScreenProtection>
             <Suspense fallback={null}>
-              <PWAEnforcer>
+              {/* <PWAEnforcer> */}
                 {children}
-              </PWAEnforcer>
+              {/* </PWAEnforcer> */}
             </Suspense>
           </ScreenProtection>
         </AuthProvider>

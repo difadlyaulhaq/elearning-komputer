@@ -3,18 +3,16 @@ import { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'com.alfajr.elearning',
   appName: 'Alfajr E-Learning',
-  webDir: 'out',
+  webDir: 'public', // Set to public due to PWA build config
   server: {
-    // ⚠️ PRODUCTION MODE: Menggunakan domain Vercel
-    url: 'https://alfajr-elearning.vercel.app', 
-    // url: 'http://192.168.1.7:3000',
+    // PRODUCTION MODE: Menggunakan domain Vercel
+    url: 'https://alfajr-elearning.vercel.app',
     allowNavigation: [
       "alfajr-elearning.vercel.app",
       "*.alfajr-elearning.vercel.app",
       "alfajr-elearning-*.vercel.app"
     ],
-    cleartext: true,
-    androidScheme: 'https'
+    // cleartext and androidScheme are not needed for production Vercel deployment
   },
   android: {
     appendUserAgent: " AlfajrApp/1.0"
@@ -28,7 +26,7 @@ const config: CapacitorConfig = {
       serverClientId: "342608432294-6okq9uilstspcmrs7av1obn5859ktr32.apps.googleusercontent.com", 
     },
     PrivacyScreen: {
-      enable: true,
+      enable: false, // User requested to disable this for production test
       imageName: 'Splash',
     },
     SplashScreen: {

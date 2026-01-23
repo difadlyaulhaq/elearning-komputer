@@ -17,6 +17,7 @@ import {
 import toast from "react-hot-toast";
 import { MarkdownRenderer } from "@/components/shared/MarkdownRenderer";
 import { ScreenProtection } from "@/components/shared/ScreenProtection";
+import VdoCipherPlayer from "./VdoCipherPlayer";
 
 interface LessonPlayerDesktopProps {
   courseId: string;
@@ -74,6 +75,14 @@ export function LessonPlayerDesktop({
   const videoId = useMemo(() => {
     if (lesson.contentType === "youtube") {
       return getYouTubeId(lesson.url);
+    }
+    return null;
+  }, [lesson.url, lesson.contentType]);
+
+  const vdoCipherVideoId = useMemo(() => {
+    if (lesson.contentType === "vdocipher") {
+      // Assuming the VdoCipher ID is stored in the lesson.url field
+      return lesson.url;
     }
     return null;
   }, [lesson.url, lesson.contentType]);
@@ -238,10 +247,17 @@ export function LessonPlayerDesktop({
                 style={{ paddingTop: "56.25%" }}
                 data-protected="true"
               >
-                <div 
-                  id={`youtube-player-${lesson.id}`} 
-                  className="absolute top-0 left-0 w-full h-full" 
-                />
+                {lesson.contentType === 'youtube' && videoId && (
+                  <div 
+                    id={`youtube-player-${lesson.id}`} 
+                    className="absolute top-0 left-0 w-full h-full" 
+                  />
+                )}
+                {lesson.contentType === 'vdocipher' && vdoCipherVideoId && (
+                  <div className="absolute top-0 left-0 w-full h-full">
+                    <VdoCipherPlayer videoId={vdoCipherVideoId} />
+                  </div>
+                )}
               </div>
             </div>
           )}
