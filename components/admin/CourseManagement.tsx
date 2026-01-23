@@ -7,6 +7,7 @@ import { MarkdownRenderer } from '@/components/shared/MarkdownRenderer';
 import RichTextEditor from '@/components/admin/RichTextEditor';
 import { Course, Section, Lesson, Category, User, Division } from '@/types';
 import BunnyPlayer from '../learning/BunnyPlayer';
+import VdoCipherPlayer from '../learning/VdoCipherPlayer';
 
 // Helper for YouTube ID
 const getYouTubeId = (url: string) => {
@@ -112,6 +113,12 @@ export const CoursePreviewModal: React.FC<{
                   onEnded={() => {}}
                   onTimeUpdate={() => {}}
                 />
+            </div>
+         )}
+
+         {activeLesson.contentType === 'vdocipher' && activeLesson.url && (
+            <div className="aspect-video bg-black rounded-xl overflow-hidden shadow-xl ring-1 ring-gray-900/10">
+                <VdoCipherPlayer videoId={activeLesson.url} />
             </div>
          )}
 
@@ -1199,11 +1206,12 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                                                           >
                                                             <option value="youtube">Link Youtube</option>
                                                             <option value="bunny">Link Bunny</option>
+                                                            <option value="vdocipher">VdoCipher</option>
                                                             <option value="text">Artikel Teks</option>
                                                           </select>
                                                         </div>
                                                         
-                                                        {(tempLesson.contentType === 'youtube' || tempLesson.contentType === 'bunny') && (
+                                                        {(tempLesson.contentType === 'youtube' || tempLesson.contentType === 'bunny' || tempLesson.contentType === 'vdocipher') && (
                                                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 mb-2 md:mb-3">
                                                             <input 
                                                               type="text" 
@@ -1215,7 +1223,11 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                                                             />
                                                             <input 
                                                               type="text" 
-                                                              placeholder={tempLesson.contentType === 'youtube' ? "URL Youtube" : "Bunny Video ID"}
+                                                              placeholder={
+                                                                tempLesson.contentType === 'youtube' ? "URL Youtube" :
+                                                                tempLesson.contentType === 'bunny' ? "Bunny Video ID" :
+                                                                "VdoCipher Video ID"
+                                                              }
                                                               className="px-3 md:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#C5A059] outline-none text-black placeholder:text-gray-400 text-sm"
                                                               value={tempLesson.url} 
                                                               onChange={e => setTempLesson({...tempLesson, url: e.target.value})}

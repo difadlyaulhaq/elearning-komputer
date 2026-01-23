@@ -5,17 +5,16 @@ const config: CapacitorConfig = {
   appName: 'Alfajr E-Learning',
   webDir: 'public',
   server: {
-    // ⚠️ PENTING: Ganti URL di bawah ini dengan domain Vercel/Web Anda yang sudah deploy!
-    // Contoh: 'https://alfajr-elearning.vercel.app'
-    // Jangan gunakan 192.168.x.x untuk production APK.
-    url: 'https://alfajr-elearning.vercel.app/', 
-    
+    // 🔴 UNTUK DEVELOPMENT: Ganti URL dengan IP lokal Anda.
+    // Jalankan `ipconfig` (Windows) atau `ifconfig` (Mac/Linux) untuk menemukan IP Anda.
+    // Contoh: 'http://192.168.1.10:3000'
+    url: 'http://10.107.217.17:3000',
     cleartext: true,
-    androidScheme: 'https'
+    androidScheme: 'http'
   },
   plugins: {
     PrivacyScreen: {
-      enable: true,
+      enable: false,
       imageName: 'Splash',
     },
     SplashScreen: {

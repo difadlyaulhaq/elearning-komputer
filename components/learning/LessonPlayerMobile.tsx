@@ -27,6 +27,7 @@ import {
 import toast from "react-hot-toast";
 import { MarkdownRenderer } from "@/components/shared/MarkdownRenderer";
 import { ScreenProtection } from "@/components/shared/ScreenProtection";
+import VdoCipherPlayer from "./VdoCipherPlayer";
 
 interface LessonPlayerMobileProps {
   courseId: string;
@@ -232,7 +233,7 @@ export function LessonPlayerMobile({
   }
 
   return (
-    <ScreenProtection userEmail={user?.email ?? ""} videoElementRef={videoElementRef}>
+    // <ScreenProtection userEmail={user?.email ?? ""} videoElementRef={videoElementRef}>
       <div className="min-h-screen bg-[#F8F9FA] flex flex-col">
         {/* Mobile Header */}
         <header className="bg-white border-b border-gray-200 p-4 sticky top-0 z-20">
@@ -285,50 +286,53 @@ export function LessonPlayerMobile({
               className="relative w-full bg-black"
               onClick={() => setShowMobileControls(!showMobileControls)}
             >
-              <div 
-                ref={videoContainerRef}
-                className="relative w-full"
-                style={{ paddingTop: '56.25%' }}
-                data-protected="true"
-              >
+              {lesson.contentType === 'vdocipher' && lesson.url ? (
+                <VdoCipherPlayer videoId={lesson.url} />
+              ) : (
                 <div 
-                  id={`youtube-player-mobile-${lesson.id}`} 
-                  className="absolute top-0 left-0 w-full h-full" 
-                />
-                
-                {/* Custom Video Controls */}
-                {showMobileControls && (
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 z-10">
-                    <div className="flex items-center justify-between mb-4">
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); togglePlayPause(); }}
-                        className="p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
-                      >
-                        {isPlaying ? (
-                          <Pause size={24} className="text-white" />
-                        ) : (
-                          <Play size={24} className="text-white" />
-                        )}
-                      </button>
-                      
-                      <div className="flex items-center gap-2">
+                  ref={videoContainerRef}
+                  className="relative w-full"
+                  style={{ paddingTop: '56.25%' }}
+                >
+                  <div 
+                    id={`youtube-player-mobile-${lesson.id}`} 
+                    className="absolute top-0 left-0 w-full h-full" 
+                  />
+                  
+                  {/* Custom Video Controls */}
+                  {showMobileControls && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 z-10">
+                      <div className="flex items-center justify-between mb-4">
                         <button 
-                          onClick={(e) => { e.stopPropagation(); player?.mute(); }}
-                          className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                          onClick={(e) => { e.stopPropagation(); togglePlayPause(); }}
+                          className="p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
                         >
-                          <Volume2 size={20} className="text-white" />
+                          {isPlaying ? (
+                            <Pause size={24} className="text-white" />
+                          ) : (
+                            <Play size={24} className="text-white" />
+                          )}
                         </button>
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
-                          className="p-2 hover:bg-white/10 rounded-full transition-colors"
-                        >
-                          <Maximize size={20} className="text-white" />
-                        </button>
+                        
+                        <div className="flex items-center gap-2">
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); player?.mute(); }}
+                            className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                          >
+                            <Volume2 size={20} className="text-white" />
+                          </button>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
+                            className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                          >
+                            <Maximize size={20} className="text-white" />
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
               
               {/* Video Info Overlay */}
                {/* <div className="absolute top-4 left-4 right-4 pointer-events-none z-10">
@@ -533,6 +537,7 @@ export function LessonPlayerMobile({
           </div>
         )}
       </div>
-    </ScreenProtection>
+    {/* </ScreenProtection> */}
   );
 }
+
