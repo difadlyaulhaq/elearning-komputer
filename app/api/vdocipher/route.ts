@@ -11,8 +11,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const vdoApiUrl = `https://dev.vdocipher.com/api/videos/${videoId}/otp`;
+    console.log('Calling VdoCipher API at:', vdoApiUrl); // Added for debugging
+
     const response = await fetch(
-      `https://dev.vdocipher.com/api/videos/${videoId}/otp`,
+      vdoApiUrl,
       {
         method: 'POST',
         headers: {
