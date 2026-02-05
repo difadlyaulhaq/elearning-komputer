@@ -2,10 +2,42 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation'; // Keep useRouter as it might be used in Link or other sub-components implicitly
 import { useAuth } from '@/context/AuthContext';
-import { BookOpen, Compass, CheckCircle, Loader2, Award, Target, Sparkles } from 'lucide-react';
+import { BookOpen, Compass, CheckCircle, Loader2, Award, Target, Sparkles, Shield, Users } from 'lucide-react';
 import { Course, Progress } from '@/types';
 import { CourseCard } from '@/components/learning/CourseCard';
+
+// --- Warning Popup Component ---
+const SecurityWarningPopup = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm text-center p-8 animate-slideUp">
+        <div className="mb-6">
+          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
+            <Shield className="text-red-500" size={24} />
+          </div>
+          <h2 className="text-lg md:text-2xl font-bold text-black mb-2">
+            Peringatan Keamanan
+          </h2>
+          <p className="text-gray-700 text-sm">
+            Dokumen ini memiliki hak cipta dan dilindungi. Dilarang screenshot maupun rekam. Semua kegiatan di awasi, terdata dan ada riwayat.
+          </p>
+        </div>
+        
+        <button
+          onClick={onClose}
+          className="w-full flex items-center justify-center gap-3 py-3 bg-red-500 text-white font-bold rounded-lg hover:bg-red-600 transition-colors shadow-lg touch-button"
+        >
+          Saya Mengerti
+        </button>
+      </div>
+    </div>
+  );
+};
+
 
 // --- Main Component ---
 const EmployeeDashboardPage = () => {
@@ -14,7 +46,48 @@ const EmployeeDashboardPage = () => {
   const [progress, setProgress] = useState<Record<string, Progress>>({});
   const [ongoingCourses, setOngoingCourses] = useState<(Omit<Course, 'status'> & Progress)[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
+  const [showWarning, setShowWarning] = useState(false);
+  const [showRoleChoice, setShowRoleChoice] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const router = useRouter(); // Keep this as it's used in handleChooseRole
 
+  useEffect(() => {
+    const checkMobile = () => {
+      return window.innerWidth < 768; 
+    };
+    setIsMobile(checkMobile());
+    window.addEventListener('resize', () => setIsMobile(checkMobile()));
+    return () => window.removeEventListener('resize', () => setIsMobile(checkMobile()));
+  }, []);
+
+  const handleWarningDismiss = () => {
+    setShowWarning(false);
+    if (user?.role?.trim().toLowerCase() === 'admin') {
+      setShowRoleChoice(true);
+    }
+  };
+
+  const handleChooseRole = (role: 'admin' | 'employee') => {
+    setShowRoleChoice(false);
+    // Add a small delay for smoother UI transition
+    setTimeout(() => {
+      if (role === 'admin') {
+        router.push('/admin/dashboard');
+      } else {
+        router.push('/learning/dashboard');
+      }
+    }, 500); // 500ms delay
+  };
+
+  useEffect(() => {
+    const shouldShowWarning = sessionStorage.getItem('showLoginWarning');
+    if (shouldShowWarning) {
+      setShowWarning(true);
+      sessionStorage.removeItem('showLoginWarning');
+    }
+  }, [user]); // Added user to dependency array to ensure role check is up-to-date
+
+  // This useEffect was part of the original component, responsible for fetching data
   useEffect(() => {
     const fetchData = async () => {
       if (!user) return;
@@ -72,6 +145,8 @@ const EmployeeDashboardPage = () => {
 
   return (
     <div className="min-h-screen bg-brand-gray">
+      <SecurityWarningPopup isOpen={showWarning} onClose={handleWarningDismiss} />
+
       {/* Hero Header */}
       <div className="relative bg-brand-black overflow-hidden">
         <div className="absolute inset-0 opacity-10">
@@ -146,6 +221,46 @@ const EmployeeDashboardPage = () => {
             </div>
         </div>
       </div>
+
+      {/* Modal Pilihan Role */}
+      {showRoleChoice && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className={`
+            ${isMobile ? 'p-6' : 'p-8'}
+            bg-white rounded-2xl shadow-2xl w-full max-w-sm text-center animate-slideUp
+          `}>
+            <div className="mb-6">
+              <div className="w-12 h-12 bg-[#C5A059]/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Shield className="text-[#C5A059]" size={24} />
+              </div>
+              <h2 className={`${isMobile ? 'text-lg' : 'text-2xl'} font-bold text-black mb-2`}>
+                Login sebagai Admin
+              </h2>
+              <p className="text-gray-600 text-sm">
+                Anda memiliki akses admin. Pilih tampilan dasbor yang ingin Anda buka.
+              </p>
+            </div>
+            
+            <div className="space-y-3 sm:space-y-4">
+              <button
+                onClick={() => handleChooseRole('admin')}
+                className="w-full flex items-center justify-center gap-3 py-3 bg-[#C5A059] text-black font-bold rounded-lg hover:bg-[#B08F4A] transition-colors shadow-lg touch-button"
+              >
+                <Shield className="text-black" size={20} />
+                Buka Dasbor Admin
+              </button>
+              
+              <button
+                onClick={() => handleChooseRole('employee')}
+                className="w-full flex items-center justify-center gap-3 py-3 bg-gray-100 text-gray-800 font-semibold rounded-lg hover:bg-gray-200 transition-colors border border-gray-300 touch-button"
+              >
+                <Users size={20} />
+                Buka sebagai Pegawai
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

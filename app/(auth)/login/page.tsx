@@ -83,6 +83,7 @@ const LoginForm = () => {
       const result = await response.json();
 
       if (response.ok && result.success) {
+        sessionStorage.setItem('showLoginWarning', 'true'); // Re-add this line
         const userRole = result.user?.role?.trim().toLowerCase();
         handleRedirect(userRole, token);
       } else {
@@ -117,7 +118,10 @@ const LoginForm = () => {
           });
 
           if (res.ok) {
-            window.location.href = '/learning/dashboard';
+            sessionStorage.setItem('showLoginWarning', 'true'); // Re-add this line
+            // Native platform might not use handleRedirect directly; it uses window.location.href
+            // For consistency with web, we'll ensure showLoginWarning is set
+            window.location.href = '/learning/dashboard'; // Assuming native directly redirects here
             return;
           }
         }
@@ -143,6 +147,7 @@ const LoginForm = () => {
       const result = await response.json();
 
       if (response.ok && result.success) {
+        sessionStorage.setItem('showLoginWarning', 'true'); // Re-add this line
         const userRole = result.user?.role?.trim().toLowerCase();
         handleRedirect(userRole, token);
       } else {
@@ -399,6 +404,7 @@ const LoginForm = () => {
           </div>
         </div>
       )}
+
     </>
   );
 };
