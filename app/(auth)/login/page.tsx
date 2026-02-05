@@ -17,49 +17,23 @@ const LoginForm = () => {
   const [error, setError] = useState('');
   const [showRoleChoice, setShowRoleChoice] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [isNative, setIsNative] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768); // Adjust breakpoint as needed
+    };
+
+    handleResize(); // Set initial value
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
   
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnTo = searchParams.get('return_to');
-  
-  const { isAuthenticated, isLoading: isAuthLoading, user } = useAuth();
-
-  // Auto Redirect if already logged in
-  useEffect(() => {
-    // Jika ada returnTo, kita tidak auto-redirect di sini karena kita butuh token.
-    // User harus login ulang atau kita perlu ambil token dari session (agak tricky).
-    // Untuk keamanan, biarkan user login ulang jika flow deep link.
-    if (!returnTo && !isAuthLoading && isAuthenticated && user) {
-       router.replace('/learning/dashboard');
-    }
-  }, [isAuthLoading, isAuthenticated, user, router, returnTo]);
-
-  // Deteksi ukuran layar & platform
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    setIsNative(Capacitor.isNativePlatform());
-
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  const handleRedirect = (role: string, token?: string) => {
-    if (returnTo && token) {
-      window.location.href = `${returnTo}?token=${token}`;
-      return;
-    }
-
-    if (role === 'admin') {
-      setShowRoleChoice(true);
-    } else {
-      router.push('/learning/dashboard');
-    }
-  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,9 +57,10 @@ const LoginForm = () => {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        sessionStorage.setItem('showLoginWarning', 'true'); // Re-add this line
+        sessionStorage.setItem('showLoginWarning', 'true'); // Flag to show warning on dashboard
         const userRole = result.user?.role?.trim().toLowerCase();
-        handleRedirect(userRole, token);
+        sessionStorage.setItem('loggedInUserRole', userRole); // Store user role for dashboard logic
+        router.replace('/learning/dashboard'); // Always redirect to learning dashboard first
       } else {
         setError(result.error || 'Login gagal. Silakan coba lagi.');
         setIsLoading(false);
@@ -118,10 +93,11 @@ const LoginForm = () => {
           });
 
           if (res.ok) {
-            sessionStorage.setItem('showLoginWarning', 'true'); // Re-add this line
-            // Native platform might not use handleRedirect directly; it uses window.location.href
-            // For consistency with web, we'll ensure showLoginWarning is set
-            window.location.href = '/learning/dashboard'; // Assuming native directly redirects here
+            sessionStorage.setItem('showLoginWarning', 'true'); // Flag to show warning on dashboard
+            const resData = await res.json(); // Assuming res.json() will contain user data
+            const userRole = resData.user?.role?.trim().toLowerCase();
+            sessionStorage.setItem('loggedInUserRole', userRole); // Store user role for dashboard logic
+            window.location.href = '/learning/dashboard'; // Native directly redirects here
             return;
           }
         }
@@ -147,9 +123,10 @@ const LoginForm = () => {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        sessionStorage.setItem('showLoginWarning', 'true'); // Re-add this line
+        sessionStorage.setItem('showLoginWarning', 'true'); // Flag to show warning on dashboard
         const userRole = result.user?.role?.trim().toLowerCase();
-        handleRedirect(userRole, token);
+        sessionStorage.setItem('loggedInUserRole', userRole); // Store user role for dashboard logic
+        router.replace('/learning/dashboard'); // Always redirect to learning dashboard first
       } else {
         setError(result.error || 'SSO login gagal.');
         setIsLoading(false);

@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Home, Users, FolderTree, BookOpen, BarChart3, LogOut, ChevronDown, ChevronRight, Loader, MonitorPlay, Sparkles } from 'lucide-react';
+import { Home, Users, FolderTree, BookOpen, BarChart3, LogOut, ChevronDown, ChevronRight, Loader, MonitorPlay, Sparkles, Shield } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 
@@ -90,6 +90,12 @@ const AdminSidebar = ({ isOpen, onClose }: AdminSidebarProps) => {
       label: 'Laporan',
       icon: BarChart3,
       path: '/admin/reports'
+    },
+    {
+      key: 'security-log',
+      label: 'Log Keamanan',
+      icon: Shield,
+      path: '/admin/security-log'
     },
     {
       key: 'learning-panel',

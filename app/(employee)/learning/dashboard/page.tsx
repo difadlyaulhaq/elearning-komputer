@@ -62,8 +62,11 @@ const EmployeeDashboardPage = () => {
 
   const handleWarningDismiss = () => {
     setShowWarning(false);
-    if (user?.role?.trim().toLowerCase() === 'admin') {
-      setShowRoleChoice(true);
+    const role = sessionStorage.getItem('loggedInUserRole'); // Get role from sessionStorage
+    if (role === 'admin') {
+      setShowRoleChoice(true); // Show role choice for admins
+    } else {
+      sessionStorage.removeItem('showLoginWarning'); // Remove flag only for non-admins here
     }
   };
 
@@ -71,6 +74,7 @@ const EmployeeDashboardPage = () => {
     setShowRoleChoice(false);
     // Add a small delay for smoother UI transition
     setTimeout(() => {
+      sessionStorage.removeItem('showLoginWarning'); // Remove flag once role is chosen and redirecting
       if (role === 'admin') {
         router.push('/admin/dashboard');
       } else {
@@ -83,7 +87,7 @@ const EmployeeDashboardPage = () => {
     const shouldShowWarning = sessionStorage.getItem('showLoginWarning');
     if (shouldShowWarning) {
       setShowWarning(true);
-      sessionStorage.removeItem('showLoginWarning');
+      // sessionStorage.removeItem('showLoginWarning'); // Removed: will be removed after role choice or warning dismissal for non-admins
     }
   }, [user]); // Added user to dependency array to ensure role check is up-to-date
 
