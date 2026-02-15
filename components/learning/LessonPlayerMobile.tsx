@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
@@ -15,10 +15,6 @@ import {
   ChevronRight,
   Menu,
   X,
-  Play,
-  Pause,
-  Maximize,
-  Volume2,
   FileText,
   Youtube,
   Clock,
@@ -26,7 +22,6 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { MarkdownRenderer } from "@/components/shared/MarkdownRenderer";
-import { ScreenProtection } from "@/components/shared/ScreenProtection";
 import VdoCipherPlayer from "./VdoCipherPlayer";
 
 interface LessonPlayerMobileProps {
@@ -50,19 +45,32 @@ export function LessonPlayerMobile({
 }: LessonPlayerMobileProps) {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
-  
+
+  const getYouTubeId = (url: string) => {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return match && match[2].length === 11 ? match[2] : null;
+  };
+
+  const videoId = useMemo(() => {
+    if (lesson.contentType === "youtube") {
+      return getYouTubeId(lesson.url);
+    }
+    return null;
+  }, [lesson.url, lesson.contentType]);
+
+  const [player, setPlayer] = useState<YT.Player | null>(null);
+  const [progressInterval, setProgressInterval] = useState<NodeJS.Timeout | null>(null);
+
   const [isVideoCompleted, setIsVideoCompleted] = useState(initialCompleted);
   const [isUpdating, setIsUpdating] = useState(false);
   const [showLessonMenu, setShowLessonMenu] = useState(false);
-  const [showMobileControls, setShowMobileControls] = useState(true);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [player, setPlayer] = useState<YT.Player | null>(null);
   
   const videoContainerRef = useRef<HTMLDivElement>(null);
-  const videoElementRef = useRef<HTMLVideoElement>(null as any);
-  const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const videoElementRef = useRef<HTMLVideoElement>(null as any); // For Plyr
 
-  // Initialize completion state
+  // Initialize completion state for text content
   useEffect(() => {
     if (lesson.contentType === 'text') {
       setIsVideoCompleted(true);
@@ -71,58 +79,71 @@ export function LessonPlayerMobile({
     }
   }, [lesson.id, initialCompleted, lesson.contentType]);
 
-  // YouTube Player initialization
   useEffect(() => {
-    if (lesson.contentType !== "youtube" || !lesson.url) return;
-
-    const getYouTubeId = (url: string) => {
-      if (!url) return null;
-      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-      const match = url.match(regExp);
-      return (match && match[2].length === 11) ? match[2] : null;
+    return () => {
+      if (progressInterval) {
+        clearInterval(progressInterval);
+      }
     };
+  }, [progressInterval]);
 
-    const videoId = getYouTubeId(lesson.url);
+  const onPlayerStateChange = (event: YT.OnStateChangeEvent) => {
+    if (event.data === YT.PlayerState.PLAYING) {
+      if (progressInterval) clearInterval(progressInterval);
+      const interval = setInterval(() => {
+        if (player) {
+          const currentTime = player.getCurrentTime();
+          const duration = player.getDuration();
+          if (duration > 0 && (currentTime / duration) >= 0.9) {
+            setIsVideoCompleted(true);
+            if(interval) clearInterval(interval);
+          }
+        }
+      }, 1000);
+      setProgressInterval(interval);
+    } else {
+      if (progressInterval) clearInterval(progressInterval);
+    }
+    if (event.data === YT.PlayerState.ENDED) {
+      setIsVideoCompleted(true);
+    }
+  };
+
+  useEffect(() => {
     if (!videoId) return;
-
+    
     const onYouTubeIframeAPIReady = () => {
       if (player) {
-        try { player.destroy(); } catch(e) {}
+         try { player.destroy(); } catch(e) {} 
       }
-
+      if (progressInterval) clearInterval(progressInterval);
+      
       const newPlayer = new YT.Player(`youtube-player-mobile-${lesson.id}`, {
         height: '100%',
         width: '100%',
         videoId: videoId,
-        playerVars: {
-          'playsinline': 1,
-          'controls': 0,
-          'rel': 0,
+        host: 'https://www.youtube-nocookie.com', // Moved host out of playerVars
+        playerVars: { 
+          'playsinline': 1, 
+          'controls': 0, // IMPORTANT: No native controls
+          'rel': 0, 
           'modestbranding': 1,
           'disablekb': 1,
+          'iv_load_policy': 3,
         },
-        events: {
-          'onStateChange': (event) => {
-            if (event.data === YT.PlayerState.PLAYING) {
-              setIsPlaying(true);
-            } else if (event.data === YT.PlayerState.PAUSED) {
-              setIsPlaying(false);
-            } else if (event.data === YT.PlayerState.ENDED) {
-              setIsPlaying(false);
-              setIsVideoCompleted(true);
-            }
-          },
+        events: { 
+          'onStateChange': onPlayerStateChange,
           'onReady': (event) => {
             const iframe = event.target.getIframe();
             if (iframe) {
               videoElementRef.current = iframe as any;
             }
-          },
-        },
+          }
+        }
       });
       setPlayer(newPlayer);
     };
-
+    
     if (window.YT && window.YT.Player) {
       onYouTubeIframeAPIReady();
     } else {
@@ -134,32 +155,11 @@ export function LessonPlayerMobile({
         firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
       }
     }
-
+    
     return () => {
-      if (player) {
-        try { player.destroy(); } catch(e) {}
-      }
+       if (progressInterval) clearInterval(progressInterval);
     };
-  }, [lesson.id, lesson.url, lesson.contentType]);
-
-  // Handle controls auto-hide
-  useEffect(() => {
-    if (showMobileControls) {
-      if (controlsTimeoutRef.current) {
-        clearTimeout(controlsTimeoutRef.current);
-      }
-      
-      controlsTimeoutRef.current = setTimeout(() => {
-        setShowMobileControls(false);
-      }, 3000);
-    }
-
-    return () => {
-      if (controlsTimeoutRef.current) {
-        clearTimeout(controlsTimeoutRef.current);
-      }
-    };
-  }, [showMobileControls]);
+  }, [videoId, lesson.id]);
 
   const handleMarkComplete = async () => {
     if (!user || !isVideoCompleted) return;
@@ -200,30 +200,6 @@ export function LessonPlayerMobile({
     }
   };
 
-  const togglePlayPause = () => {
-    if (!player) return;
-    
-    if (isPlaying) {
-      player.pauseVideo();
-    } else {
-      player.playVideo();
-    }
-    setShowMobileControls(true);
-  };
-
-  const toggleFullscreen = () => {
-    if (!videoContainerRef.current) return;
-    
-    if (!document.fullscreenElement) {
-      videoContainerRef.current.requestFullscreen().catch(err => {
-        console.log(`Error attempting to enable fullscreen: ${err.message}`);
-      });
-    } else {
-      document.exitFullscreen();
-    }
-    setShowMobileControls(true);
-  };
-
   if (authLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -233,7 +209,6 @@ export function LessonPlayerMobile({
   }
 
   return (
-    <ScreenProtection userEmail={user?.email ?? ""} videoElementRef={videoElementRef}>
       <div className="min-h-screen bg-[#F8F9FA] flex flex-col">
         {/* Mobile Header */}
         <header className="bg-white border-b border-gray-200 p-4 sticky top-0 z-20">
@@ -282,70 +257,32 @@ export function LessonPlayerMobile({
               </div>
             </div>
           ) : (
-            <div 
-              className="relative w-full bg-black"
-              onClick={() => setShowMobileControls(!showMobileControls)}
+            <div
+              className="relative w-full bg-black rounded-lg overflow-hidden"
+              data-protected="true"
             >
-              {lesson.contentType === 'vdocipher' && lesson.url ? (
-                <VdoCipherPlayer videoId={lesson.url} />
-              ) : (
-                <div 
+              {lesson.contentType === 'youtube' && videoId ? (
+                <div
                   ref={videoContainerRef}
                   className="relative w-full"
-                  style={{ paddingTop: '56.25%' }}
+                  style={{ paddingTop: "56.25%" }} // Maintain aspect ratio
+                  data-protected="true"
                 >
-                  <div 
-                    id={`youtube-player-mobile-${lesson.id}`} 
-                    className="absolute top-0 left-0 w-full h-full" 
+                  <div
+                    id={`youtube-player-mobile-${lesson.id}`}
+                    className="absolute top-0 left-0 w-full h-full"
                   />
-                  
-                  {/* Custom Video Controls */}
-                  {showMobileControls && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 z-10">
-                      <div className="flex items-center justify-between mb-4">
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); togglePlayPause(); }}
-                          className="p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
-                        >
-                          {isPlaying ? (
-                            <Pause size={24} className="text-white" />
-                          ) : (
-                            <Play size={24} className="text-white" />
-                          )}
-                        </button>
-                        
-                        <div className="flex items-center gap-2">
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); player?.mute(); }}
-                            className="p-2 hover:bg-white/10 rounded-full transition-colors"
-                          >
-                            <Volume2 size={20} className="text-white" />
-                          </button>
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
-                            className="p-2 hover:bg-white/10 rounded-full transition-colors"
-                          >
-                            <Maximize size={20} className="text-white" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  {/* Minimal overlay to prevent accidental interaction with hidden YouTube elements if any */}
+                  <div
+                    className="absolute bottom-0 left-0 w-full"
+                    style={{ height: '100px', zIndex: 10, cursor: 'not-allowed' }}
+                  />
                 </div>
+              ) : lesson.contentType === 'vdocipher' && lesson.url ? (
+                <VdoCipherPlayer videoId={lesson.url} />
+              ) : (
+                <p className="text-white p-4">Tipe konten tidak didukung.</p>
               )}
-              
-              {/* Video Info Overlay */}
-               {/* <div className="absolute top-4 left-4 right-4 pointer-events-none z-10">
-                <div className="bg-black/50 backdrop-blur-sm rounded-lg p-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Youtube size={16} className="text-white" />
-                    <span className="text-white text-sm font-medium">Video Pembelajaran</span>
-                  </div>
-                  <h2 className="text-white text-base font-bold line-clamp-2">
-                    {lesson.title}
-                  </h2>
-                </div>
-              </div>  */}
             </div>
           )}
         </div>
@@ -366,7 +303,7 @@ export function LessonPlayerMobile({
                 ? "✓ Materi ini sudah selesai dipelajari" 
                 : lesson.contentType === 'text' 
                   ? "✓ Baca artikel untuk menyelesaikan materi" 
-                  : "✓ Tonton video hingga selesai untuk melanjutkan"}
+                  : "✓ Tonton video hingga selesai untuk melanjutkan."}
             </p>
           </div>
 
@@ -537,7 +474,5 @@ export function LessonPlayerMobile({
           </div>
         )}
       </div>
-    </ScreenProtection>
   );
 }
-

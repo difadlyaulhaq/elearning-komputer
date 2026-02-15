@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { MarkdownRenderer } from "@/components/shared/MarkdownRenderer";
-import { ScreenProtection } from "@/components/shared/ScreenProtection";
+// import { ScreenProtection } from "@/components/shared/ScreenProtection";
 import VdoCipherPlayer from "./VdoCipherPlayer";
 
 interface LessonPlayerDesktopProps {
@@ -122,12 +122,14 @@ export function LessonPlayerDesktop({
         height: '100%',
         width: '100%',
         videoId: videoId,
+        host: 'https://www.youtube-nocookie.com', // Use privacy-enhanced mode
         playerVars: { 
           'playsinline': 1, 
-          'controls': 1, 
+          'controls': 0, // IMPORTANT: No native controls
           'rel': 0, 
           'modestbranding': 1,
           'disablekb': 1,
+          'iv_load_policy': 3,
         },
         events: { 
           'onStateChange': onPlayerStateChange,
@@ -207,7 +209,7 @@ export function LessonPlayerDesktop({
   }
 
   return (
-    <ScreenProtection userEmail={user?.email ?? ""} videoElementRef={videoElementRef}>
+
       <div className="flex-1 flex flex-col bg-[#F8F9FA] min-h-screen">
         {/* Desktop Header */}
         <header className="bg-white p-4 border-b flex items-center justify-between sticky top-0 z-10">
@@ -248,10 +250,17 @@ export function LessonPlayerDesktop({
                 data-protected="true"
               >
                 {lesson.contentType === 'youtube' && videoId && (
-                  <div 
-                    id={`youtube-player-${lesson.id}`} 
-                    className="absolute top-0 left-0 w-full h-full" 
-                  />
+                  <>
+                                    <div
+                                      id={`youtube-player-${lesson.id}`}
+                                      className="absolute top-0 left-0 w-full h-full"
+                                    />
+                                    {/* Overlay to block share button and related videos */}
+                                    <div
+                                      className="absolute bottom-0 left-0 w-full"
+                                      style={{ height: '100px', zIndex: 10, cursor: 'not-allowed' }}
+                                    />
+                  </>
                 )}
                 {lesson.contentType === 'vdocipher' && vdoCipherVideoId && (
                   <div className="absolute top-0 left-0 w-full h-full">
@@ -349,6 +358,6 @@ export function LessonPlayerDesktop({
           </div>
         </div>
       </div>
-    </ScreenProtection>
+
   );
 }
