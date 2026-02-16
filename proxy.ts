@@ -45,25 +45,24 @@ export function proxy(request: NextRequest) {
   }
   
   // ============================================
-  // MOBILE BROWSER GUARD (Added from middleware)
+  // MOBILE BROWSER GUARD (Server-side)
   // ============================================
-  // const userAgent = request.headers.get('user-agent') || '';
-  
-  // // 1. Deteksi apakah user menggunakan HP (Android/iOS)
-  // const isMobile = /Android|iPhone|iPad|iPod/i.test(userAgent);
-  
-  // // 2. Deteksi apakah request datang dari Aplikasi kita
-  // // Relaxed check: Look for 'AlfajrApp' (case insensitive) instead of strict version
-  // const isApp = /AlfajrApp/i.test(userAgent);
+  const userAgent = request.headers.get('user-agent');
+  const url = request.nextUrl.clone();
 
-  // // 3. Cek apakah sedang di halaman download (sudah dihandle bypass/public routes, tapi kita cek explicit utk redirect)
-  // const isDownloadPage = pathname.startsWith('/download-app');
+  // List of keywords to detect mobile devices
+  const mobileKeywords = [
+    'Android', 'iPhone', 'iPod', 'BlackBerry', 'Windows Phone', 'Mobile',
+    // Add more specific keywords if necessary, but avoid 'iPad' here as it's often desktop-like
+  ];
 
-  // // LOGIKA: Jika Mobile + Bukan App + Bukan Halaman Download -> Redirect
-  // // Note: Static files/API sudah di-return di atas, jadi aman.
-  // if (isMobile && !isApp && !isDownloadPage) {
-  //   return NextResponse.redirect(new URL('/download-app', request.url));
-  // }
+  const isMobile = userAgent && mobileKeywords.some(keyword => userAgent.includes(keyword));
+
+  // If mobile and not already on the blocked page, redirect to blocked
+  if (isMobile && url.pathname !== '/blocked' && url.pathname !== '/download-app') {
+    url.pathname = '/blocked';
+    return NextResponse.redirect(url);
+  }
 
   // Get authentication cookies
   const authToken = request.cookies.get('auth_token')?.value;
