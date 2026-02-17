@@ -8,10 +8,7 @@ import MobileHeader from '@/components/admin/MobileHeader'; // Import MobileHead
 import dynamic from 'next/dynamic';
 import { Toaster } from 'react-hot-toast';
 
-const ScreenProtection = dynamic(
-  () => import('@/components/shared/ScreenProtection').then(mod => mod.ScreenProtection),
-  { ssr: false }
-);
+
 
 export default function AdminLayout({
   children,
@@ -22,14 +19,6 @@ export default function AdminLayout({
 
   return (
     <AuthProvider>
-      <ScreenProtection
-        enableWatermark={true}
-        enableBlurOnFocusLoss={true}
-        enableKeyboardBlock={true}
-        enableContextMenuBlock={true}
-        enableDevToolsDetection={true}
-        showWarningOnAttempt={true}
-      >
         <Toaster position="top-center" reverseOrder={false} />
         <div className="flex min-h-screen bg-brand-gray">
           <AdminSidebar isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
@@ -41,7 +30,6 @@ export default function AdminLayout({
             </main>
           </div>
         </div>
-      </ScreenProtection>
     </AuthProvider>
   );
 }

@@ -6,8 +6,7 @@ import toast from 'react-hot-toast';
 import { MarkdownRenderer } from '@/components/shared/MarkdownRenderer';
 import RichTextEditor from '@/components/admin/RichTextEditor';
 import { Course, Section, Lesson, Category, User, Division } from '@/types';
-import BunnyPlayer from '../learning/BunnyPlayer';
-import VdoCipherPlayer from '../learning/VdoCipherPlayer';
+
 
 // Helper for YouTube ID
 const getYouTubeId = (url: string) => {
@@ -40,7 +39,7 @@ export const CoursePreviewModal: React.FC<{
 
   const getYouTubeEmbedUrl = (url: string) => {
     const id = getYouTubeId(url);
-    return id ? `https://www.youtube.com/embed/${id}` : null;
+    return id ? `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&showinfo=0&fs=0` : null;
   };
 
   const renderContent = () => {
@@ -90,7 +89,7 @@ export const CoursePreviewModal: React.FC<{
       );
     }
 
-    const isVideo = activeLesson.contentType === 'youtube' || activeLesson.contentType === 'bunny';
+    const isVideo = activeLesson.contentType === 'youtube'; // Only YouTube is a video now
 
     return (
       <div className="space-y-6 animate-fadeIn">
@@ -105,22 +104,7 @@ export const CoursePreviewModal: React.FC<{
                />
             </div>
          )}
-         
-         {activeLesson.contentType === 'bunny' && activeLesson.url && (
-            <div className="aspect-video bg-black rounded-xl overflow-hidden shadow-xl ring-1 ring-gray-900/10">
-                <BunnyPlayer 
-                  videoId={activeLesson.url}
-                  onEnded={() => {}}
-                  onTimeUpdate={() => {}}
-                />
-            </div>
-         )}
 
-         {activeLesson.contentType === 'vdocipher' && activeLesson.url && (
-            <div className="aspect-video bg-black rounded-xl overflow-hidden shadow-xl ring-1 ring-gray-900/10">
-                <VdoCipherPlayer videoId={activeLesson.url} />
-            </div>
-         )}
 
          {/* Header */}
          <div className="border-b pb-4">
@@ -237,7 +221,7 @@ export const CoursePreviewModal: React.FC<{
                                   }`}
                                 >
                                    <div className={`mt-0.5 shrink-0 ${activeLesson?.id === lesson.id ? 'text-white' : 'text-yellow-600'}`}>
-                                      {(lesson.contentType === 'youtube' || lesson.contentType === 'bunny') ? <PlayCircle size={16} /> : <FileText size={16} />}
+                                      {(lesson.contentType === 'youtube') ? <PlayCircle size={16} /> : <FileText size={16} />}
                                    </div>
                                    <span className={`line-clamp-2 text-xs md:text-sm ${activeLesson?.id === lesson.id ? 'font-semibold' : ''}`}>
                                       {lesson.title}
@@ -278,7 +262,7 @@ export const CoursePreviewModal: React.FC<{
                           }`}
                         >
                            <div className={activeLesson?.id === lesson.id ? 'text-white' : 'text-gray-400'}>
-                             {(lesson.contentType === 'youtube' || lesson.contentType === 'bunny') ? <PlayCircle size={16} /> : <FileText size={16} />}
+                             {(lesson.contentType === 'youtube') ? <PlayCircle size={16} /> : <FileText size={16} />}
                            </div>
                            <span className="truncate text-xs">{lesson.title}</span>
                         </button>
@@ -357,7 +341,6 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
   const [tempLesson, setTempLesson] = useState<Partial<Lesson>>({
     title: '',
     contentType: 'youtube',
-    sourceType: 'embed',
     url: '',
     textContent: '',
     duration: '',
@@ -438,7 +421,6 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
     setTempLesson({ 
       title: '', 
       contentType: 'youtube', 
-      sourceType: 'embed', 
       url: '', 
       textContent: '', 
       duration: '', 
@@ -1153,7 +1135,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                         {section.lessons.map((lesson) => (
                           <div key={lesson.id} className="flex items-center p-2 md:p-3 bg-gray-100 rounded border group">
                                                           <div className="w-8 h-8 md:w-10 md:h-10 bg-[#C5A059]/10 text-[#C5A059] flex items-center justify-center rounded mr-2 md:mr-3 shrink-0">
-                                                          {(lesson.contentType === 'youtube' || lesson.contentType === 'bunny') ? <Youtube size={16} /> : <BookText size={16} />}
+                                                          {lesson.contentType === 'youtube' ? <Youtube size={16} /> : <BookText size={16} />}
                                                         </div>
                                                         <div className="flex-1">
                                                           <h4 className="font-bold text-black text-xs md:text-sm">
@@ -1205,13 +1187,11 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                                                             disabled={isLoading}
                                                           >
                                                             <option value="youtube">Link Youtube</option>
-                                                            <option value="bunny">Link Bunny</option>
-                                                            <option value="vdocipher">VdoCipher</option>
                                                             <option value="text">Artikel Teks</option>
                                                           </select>
                                                         </div>
                                                         
-                                                        {(tempLesson.contentType === 'youtube' || tempLesson.contentType === 'bunny' || tempLesson.contentType === 'vdocipher') && (
+                                                        {tempLesson.contentType === 'youtube' && (
                                                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 mb-2 md:mb-3">
                                                             <input 
                                                               type="text" 
@@ -1223,11 +1203,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                                                             />
                                                             <input 
                                                               type="text" 
-                                                              placeholder={
-                                                                tempLesson.contentType === 'youtube' ? "URL Youtube" :
-                                                                tempLesson.contentType === 'bunny' ? "Bunny Video ID" :
-                                                                "VdoCipher Video ID"
-                                                              }
+                                                              placeholder="URL Youtube"
                                                               className="px-3 md:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#C5A059] outline-none text-black placeholder:text-gray-400 text-sm"
                                                               value={tempLesson.url} 
                                                               onChange={e => setTempLesson({...tempLesson, url: e.target.value})}
