@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
     const newCourse: Omit<Course, 'id'> = {
       ...body,
       categoryName: categoryName,
-      thumbnail: courseThumbnail || body.coverImage || body.thumbnail, // Prioritas: video > coverImage > existing thumbnail
+      thumbnail: body.thumbnail || courseThumbnail || body.coverImage, // Prioritas: manual > video > coverImage
       totalVideos: body.sections?.reduce((acc: number, section: any) => acc + (section.lessons?.length || 0), 0) || 0,
       totalStudents: 0, 
       createdAt: new Date(),

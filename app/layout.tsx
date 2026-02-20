@@ -5,7 +5,7 @@ import "./globals.css";
 import 'highlight.js/styles/github-dark.css';
 import PWAEnforcer from "@/components/shared/PWAEnforcer";
 import { AuthProvider } from "@/context/AuthContext";
-
+import { ScreenProtection } from "@/components/shared/ScreenProtection";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -75,10 +75,11 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-          
-          <Suspense fallback={null}>
-            {children}
-          </Suspense>
+          <ScreenProtection>
+            <Suspense fallback={null}>
+              {children}
+            </Suspense>
+          </ScreenProtection>
         </AuthProvider>
       </body>
     </html>

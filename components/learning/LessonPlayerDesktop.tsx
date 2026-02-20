@@ -16,7 +16,8 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { MarkdownRenderer } from "@/components/shared/MarkdownRenderer";
-import YoutubePlayer from "./YoutubePlayer";
+// import { ScreenProtection } from "@/components/shared/ScreenProtection";
+import VdoCipherPlayer from "./VdoCipherPlayer";
 
 interface LessonPlayerDesktopProps {
   courseId: string;
@@ -42,7 +43,28 @@ export function LessonPlayerDesktop({
   
   const [isVideoCompleted, setIsVideoCompleted] = useState(initialCompleted);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [player, setPlayer] = useState<YT.Player | null>(null);
+  const [progressInterval, setProgressInterval] = useState<NodeJS.Timeout | null>(null);
   
+  const videoContainerRef = useRef<HTMLDivElement>(null);
+  const videoElementRef = useRef<HTMLVideoElement>(null as any);
+
+  useEffect(() => {
+    if (['text', 'image-upload', 'file-upload'].includes(lesson.contentType)) {
+      setIsVideoCompleted(true);
+    } else {
+      setIsVideoCompleted(initialCompleted);
+    }
+  }, [lesson.id, initialCompleted, lesson.contentType]);
+
+  useEffect(() => {
+    return () => {
+      if (progressInterval) {
+        clearInterval(progressInterval);
+      }
+    };
+  }, [progressInterval]);
+
   const getYouTubeId = (url: string) => {
     if (!url) return null;
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
@@ -50,20 +72,94 @@ export function LessonPlayerDesktop({
     return match && match[2].length === 11 ? match[2] : null;
   };
 
-  const videoId = useMemo(() => {
-    if (lesson.contentType === "youtube") {
-      return getYouTubeId(lesson.url);
+  const vdoCipherVideoId = useMemo(() => {
+    if (lesson.contentType === "vdocipher") {
+      return lesson.url;
     }
     return null;
   }, [lesson.url, lesson.contentType]);
 
   useEffect(() => {
-    if (lesson.contentType === 'text') {
+    if (['text', 'image-upload', 'file-upload'].includes(lesson.contentType)) {
       setIsVideoCompleted(true);
     } else {
       setIsVideoCompleted(initialCompleted);
     }
   }, [lesson.id, initialCompleted, lesson.contentType]);
+
+  const onPlayerStateChange = (event: YT.OnStateChangeEvent) => {
+    if (event.data === YT.PlayerState.PLAYING) {
+      if (progressInterval) clearInterval(progressInterval);
+      const interval = setInterval(() => {
+        if (player) {
+          const currentTime = player.getCurrentTime();
+          const duration = player.getDuration();
+          if (duration > 0 && (currentTime / duration) >= 0.9) {
+            setIsVideoCompleted(true);
+            if(interval) clearInterval(interval);
+          }
+        }
+      }, 1000);
+      setProgressInterval(interval);
+    } else {
+      if (progressInterval) clearInterval(progressInterval);
+    }
+    if (event.data === YT.PlayerState.ENDED) {
+      setIsVideoCompleted(true);
+    }
+  };
+
+  useEffect(() => {
+    if (!videoId) return;
+    
+    const onYouTubeIframeAPIReady = () => {
+      if (player) {
+         try { player.destroy(); } catch(e) {} 
+      }
+      if (progressInterval) clearInterval(progressInterval);
+      
+      const newPlayer = new YT.Player(`youtube-player-${lesson.id}`, {
+        height: '100%',
+        width: '100%',
+        videoId: videoId,
+        host: 'https://www.youtube-nocookie.com', // Use privacy-enhanced mode
+        playerVars: { 
+          'playsinline': 1, 
+          'controls': 0, // IMPORTANT: No native controls
+          'rel': 0, 
+          'modestbranding': 1,
+          'disablekb': 1,
+          'iv_load_policy': 3,
+        },
+        events: { 
+          'onStateChange': onPlayerStateChange,
+          'onReady': (event) => {
+            const iframe = event.target.getIframe();
+            if (iframe) {
+              videoElementRef.current = iframe as any;
+            }
+          }
+        }
+      });
+      setPlayer(newPlayer);
+    };
+    
+    if (window.YT && window.YT.Player) {
+      onYouTubeIframeAPIReady();
+    } else {
+      (window as any).onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
+      if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+      }
+    }
+    
+    return () => {
+       if (progressInterval) clearInterval(progressInterval);
+    };
+  }, [videoId, lesson.id]);
 
   const handleMarkComplete = async () => {
     if (!user || !isVideoCompleted) return;
@@ -145,15 +241,64 @@ export function LessonPlayerDesktop({
               </div>
               <MarkdownRenderer content={lesson.textContent || ''} />
             </div>
+          ) : lesson.contentType === "image-upload" ? (
+            <div className="bg-white p-6 md:p-8 rounded-lg border max-w-4xl mx-auto">
+              <img 
+                src={lesson.url} 
+                alt={lesson.title} 
+                className="w-full h-auto rounded-lg shadow-md"
+              />
+            </div>
+          ) : lesson.contentType === "file-upload" ? (
+            <div className="bg-white p-6 md:p-8 rounded-lg border max-w-4xl mx-auto text-center">
+              <div className="w-20 h-20 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Download size={40} />
+              </div>
+              <h2 className="text-xl font-bold text-black mb-2">File Materi</h2>
+              <p className="text-gray-500 mb-6">Silakan unduh atau buka file materi melalui tombol di bawah.</p>
+              <a 
+                href={lesson.url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-[#C5A059] text-black font-bold rounded-lg hover:bg-[#B08F4A] transition-colors"
+              >
+                <Download size={20} /> Buka / Unduh File
+              </a>
+            </div>
           ) : (
             <div className="max-w-4xl mx-auto">
               <div 
+                ref={videoContainerRef}
                 className="relative w-full bg-black rounded-lg overflow-hidden" 
                 style={{ paddingTop: "56.25%" }}
                 data-protected="true"
               >
                 {lesson.contentType === 'youtube' && videoId && (
-                  <YoutubePlayer videoId={videoId as string} />
+                  <>
+                                    <div
+                                      id={`youtube-player-${lesson.id}`}
+                                      className="absolute top-0 left-0 w-full h-full"
+                                    />
+                                    {/* Overlay to block share button and related videos */}
+                                    <div
+                                      className="absolute bottom-0 left-0 w-full"
+                                      style={{ height: '100px', zIndex: 10, cursor: 'not-allowed' }}
+                                    />
+                  </>
+                )}
+                {lesson.contentType === 'vdocipher' && vdoCipherVideoId && (
+                  <div className="absolute top-0 left-0 w-full h-full">
+                    <VdoCipherPlayer videoId={vdoCipherVideoId} />
+                  </div>
+                )}
+                {lesson.contentType === 'video-upload' && lesson.url && (
+                  <video 
+                    src={lesson.url} 
+                    className="absolute inset-0 w-full h-full" 
+                    controls 
+                    controlsList="nodownload"
+                    onEnded={() => setIsVideoCompleted(true)}
+                  />
                 )}
               </div>
             </div>

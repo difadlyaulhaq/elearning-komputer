@@ -2,25 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-
+import { isMobileDevice } from '@/lib/security/mobileProtection';
 import { Capacitor } from '@capacitor/core';
 import DownloadAppButton from './DownloadAppButton';
 import Image from 'next/image';
-
-const isMobileDevice = () => {
-  if (typeof window === 'undefined') return false; // Server-side rendering check
-  const isSmallScreen = window.innerWidth < 768; // Adjust threshold as needed
-  const hasTouchScreen = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-  const ua = navigator.userAgent.toLowerCase();
-  const isMobileUa = /mobile|android|iphone|ipad|phone/i.test(ua);
-
-  let score = 0;
-  if (isSmallScreen) score++;
-  if (hasTouchScreen) score++;
-  if (isMobileUa) score++;
-
-  return score >= 2;
-};
 
 export default function PWAEnforcer({ children }: { children: React.ReactNode }) {
   const [isMobile, setIsMobile] = useState(false);

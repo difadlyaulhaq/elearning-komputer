@@ -26,7 +26,7 @@ const config: CapacitorConfig = {
       serverClientId: "342608432294-6okq9uilstspcmrs7av1obn5859ktr32.apps.googleusercontent.com", 
     },
     PrivacyScreen: {
-      enable: false, // User requested to disable this for production test
+      enable: true,
       imageName: 'Splash',
     },
     SplashScreen: {

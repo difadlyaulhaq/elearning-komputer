@@ -53,7 +53,7 @@ export interface Progress {
 export interface Lesson {
   id: string;
   title: string;
-  contentType: 'youtube' | 'text';
+  contentType: 'youtube' | 'text' | 'bunny' | 'vdocipher' | 'video-upload' | 'image-upload' | 'file-upload';
   sourceType: 'embed' | 'drive';
   url: string;
   textContent: string; // Untuk tipe 'text'
@@ -62,6 +62,7 @@ export interface Lesson {
   forceComplete: boolean;
   attachmentName?: string;
   attachmentUrl?: string;
+  thumbnail?: string; // Add optional thumbnail field
 }
 
 export interface Division {

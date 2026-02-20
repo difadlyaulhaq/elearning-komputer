@@ -1,12 +1,15 @@
 'use client';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Edit, Trash2, Eye, Users, Video, X, Save, BookText, Youtube, Loader2, Link as LinkIcon, ChevronDown, Search, Menu, Grid, Filter, PlayCircle, FileText, ChevronLeft } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Users, Video, X, Save, BookText, Youtube, Loader2, Link as LinkIcon, ChevronDown, Search, Menu, Grid, Filter, PlayCircle, FileText, ChevronLeft, Image as ImageIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { MarkdownRenderer } from '@/components/shared/MarkdownRenderer';
 import RichTextEditor from '@/components/admin/RichTextEditor';
 import { Course, Section, Lesson, Category, User, Division } from '@/types';
+import BunnyPlayer from '../learning/BunnyPlayer';
+import VdoCipherPlayer from '../learning/VdoCipherPlayer';
 
+import { FileUploader } from '@/components/admin/FileUploader';
 
 // Helper for YouTube ID
 const getYouTubeId = (url: string) => {
@@ -39,7 +42,7 @@ export const CoursePreviewModal: React.FC<{
 
   const getYouTubeEmbedUrl = (url: string) => {
     const id = getYouTubeId(url);
-    return id ? `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&showinfo=0&fs=0` : null;
+    return id ? `https://www.youtube.com/embed/${id}` : null;
   };
 
   const renderContent = () => {
@@ -89,11 +92,11 @@ export const CoursePreviewModal: React.FC<{
       );
     }
 
-    const isVideo = activeLesson.contentType === 'youtube'; // Only YouTube is a video now
+    const isVideo = ['youtube', 'bunny', 'vdocipher', 'video-upload'].includes(activeLesson.contentType);
 
     return (
       <div className="space-y-6 animate-fadeIn">
-         {/* Video Player */}
+         {/* Media Player/Display */}
          {activeLesson.contentType === 'youtube' && activeLesson.url && (
             <div className="aspect-video bg-black rounded-xl overflow-hidden shadow-xl ring-1 ring-gray-900/10">
                <iframe
@@ -104,7 +107,60 @@ export const CoursePreviewModal: React.FC<{
                />
             </div>
          )}
+         
+         {activeLesson.contentType === 'bunny' && activeLesson.url && (
+            <div className="aspect-video bg-black rounded-xl overflow-hidden shadow-xl ring-1 ring-gray-900/10">
+                <BunnyPlayer 
+                  videoId={activeLesson.url}
+                  onEnded={() => {}}
+                  onTimeUpdate={() => {}}
+                />
+            </div>
+         )}
 
+         {activeLesson.contentType === 'video-upload' && activeLesson.url && (
+            <div className="aspect-video bg-black rounded-xl overflow-hidden shadow-xl ring-1 ring-gray-900/10">
+               <video 
+                 src={activeLesson.url} 
+                 className="w-full h-full" 
+                 controls 
+               />
+            </div>
+         )}
+
+         {activeLesson.contentType === 'image-upload' && activeLesson.url && (
+            <div className="bg-white rounded-xl overflow-hidden shadow-lg border border-gray-200">
+               <img 
+                 src={activeLesson.url} 
+                 alt={activeLesson.title} 
+                 className="w-full h-auto"
+               />
+            </div>
+         )}
+
+         {activeLesson.contentType === 'file-upload' && activeLesson.url && (
+            <div className="p-8 bg-blue-50 border border-blue-200 rounded-xl text-center">
+               <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                 <FileText size={32} />
+               </div>
+               <h3 className="text-xl font-bold text-gray-900 mb-2">File Materi</h3>
+               <p className="text-gray-600 mb-6">Materi ini berupa file yang dapat diunduh atau dibuka.</p>
+               <a 
+                 href={activeLesson.url} 
+                 target="_blank" 
+                 rel="noopener noreferrer"
+                 className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors"
+               >
+                 Buka File
+               </a>
+            </div>
+         )}
+
+         {activeLesson.contentType === 'vdocipher' && activeLesson.url && (
+            <div className="aspect-video bg-black rounded-xl overflow-hidden shadow-xl ring-1 ring-gray-900/10">
+                <VdoCipherPlayer videoId={activeLesson.url} />
+            </div>
+         )}
 
          {/* Header */}
          <div className="border-b pb-4">
@@ -221,7 +277,7 @@ export const CoursePreviewModal: React.FC<{
                                   }`}
                                 >
                                    <div className={`mt-0.5 shrink-0 ${activeLesson?.id === lesson.id ? 'text-white' : 'text-yellow-600'}`}>
-                                      {(lesson.contentType === 'youtube') ? <PlayCircle size={16} /> : <FileText size={16} />}
+                                      {['youtube', 'bunny', 'vdocipher', 'video-upload'].includes(lesson.contentType) ? <PlayCircle size={16} /> : lesson.contentType === 'image-upload' ? <ImageIcon size={16} /> : <FileText size={16} />}
                                    </div>
                                    <span className={`line-clamp-2 text-xs md:text-sm ${activeLesson?.id === lesson.id ? 'font-semibold' : ''}`}>
                                       {lesson.title}
@@ -262,7 +318,7 @@ export const CoursePreviewModal: React.FC<{
                           }`}
                         >
                            <div className={activeLesson?.id === lesson.id ? 'text-white' : 'text-gray-400'}>
-                             {(lesson.contentType === 'youtube') ? <PlayCircle size={16} /> : <FileText size={16} />}
+                             {['youtube', 'bunny', 'vdocipher', 'video-upload'].includes(lesson.contentType) ? <PlayCircle size={16} /> : lesson.contentType === 'image-upload' ? <ImageIcon size={16} /> : <FileText size={16} />}
                            </div>
                            <span className="truncate text-xs">{lesson.title}</span>
                         </button>
@@ -340,7 +396,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
   const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
   const [tempLesson, setTempLesson] = useState<Partial<Lesson>>({
     title: '',
-    contentType: 'youtube',
+    contentType: 'video-upload',
     url: '',
     textContent: '',
     duration: '',
@@ -420,7 +476,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
     setInitialFormData(initialCourseState);
     setTempLesson({ 
       title: '', 
-      contentType: 'youtube', 
+      contentType: 'video-upload', 
       url: '', 
       textContent: '', 
       duration: '', 
@@ -514,7 +570,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
     }
     
     setIsLoading(true);
-    toast.loading('Menyimpan perubahan...');
+    const loadingToast = toast.loading('Menyimpan perubahan...');
     
     const url = isEditing ? `/api/admin/courses/${editId}` : '/api/admin/courses';
     const method = isEditing ? 'PATCH' : 'POST';
@@ -545,6 +601,8 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
       const refetchRes = await fetch(`/api/admin/courses/${courseId}`);
       const updatedCourseResult = await refetchRes.json();
 
+      toast.dismiss(loadingToast);
+
       if (updatedCourseResult.success) {
         setFormData(updatedCourseResult.data);
         setInitialFormData(updatedCourseResult.data);
@@ -555,6 +613,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
         throw new Error('Gagal mengambil data terbaru setelah menyimpan.');
       }
     } catch (error: any) {
+      toast.dismiss(loadingToast);
       toast.error(`Gagal: ${error.message}`, { duration: 3000 });
     } finally {
       setIsLoading(false);
@@ -568,7 +627,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
       setIsLoading(false);
       return;
     }
-    toast.loading('Menyimpan kursus...');
+    const loadingToast = toast.loading('Menyimpan kursus...');
     
     try {
       const url = isEditing ? `/api/admin/courses/${editId}` : '/api/admin/courses';
@@ -580,7 +639,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
       });
       const result = await res.json();
       
-      toast.dismiss();
+      toast.dismiss(loadingToast);
       if (result.success) {
         toast.success(`Kursus berhasil ${isEditing ? 'diperbarui' : 'dibuat'}!`, { duration: 3000 });
         setShowModal(false);
@@ -590,6 +649,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
       }
     } catch (error) {
       console.error('Save error:', error);
+      toast.dismiss(loadingToast);
       toast.error('Terjadi kesalahan sistem', { duration: 3000 });
     } finally {
       setIsLoading(false);
@@ -629,7 +689,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
     setEditingLessonId(null); 
     setTempLesson({ 
       title: '', 
-      contentType: 'youtube', 
+      contentType: 'video-upload', 
       url: '', 
       textContent: '', 
       duration: '', 
@@ -1049,28 +1109,73 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                   
                   <div className="md:col-span-2">
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Cover Image (URL)
+                      Cover Image & Thumbnail
                     </label>
-                    <input 
-                      type="text" 
-                      value={formData.coverImage} 
-                      onChange={e => setFormData({...formData, coverImage: e.target.value})}
-                      className="w-full px-3 md:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#C5A059] outline-none text-black placeholder:text-gray-400 text-sm md:text-base"
-                      placeholder="https://..."
-                      disabled={isLoading}
-                    />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <span className="text-xs font-medium text-gray-500">Cover Image</span>
+                        <FileUploader 
+                          folder="course-covers" 
+                          accept="image/*" 
+                          label="Upload Cover" 
+                          onUploadSuccess={(url) => setFormData({...formData, coverImage: url, thumbnail: formData.thumbnail || url})} 
+                        />
+                        <input 
+                          type="text" 
+                          value={formData.coverImage} 
+                          onChange={e => setFormData({...formData, coverImage: e.target.value})}
+                          className="w-full px-3 py-2 border rounded-lg text-xs outline-none text-black"
+                          placeholder="Atau masukkan URL Cover..."
+                          disabled={isLoading}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <span className="text-xs font-medium text-gray-500">Thumbnail</span>
+                        <FileUploader 
+                          folder="course-thumbnails" 
+                          accept="image/*" 
+                          label="Upload Thumbnail" 
+                          onUploadSuccess={(url) => setFormData({...formData, thumbnail: url})} 
+                        />
+                        <input 
+                          type="text" 
+                          value={formData.thumbnail} 
+                          onChange={e => setFormData({...formData, thumbnail: e.target.value})}
+                          className="w-full px-3 py-2 border rounded-lg text-xs outline-none text-black"
+                          placeholder="Atau masukkan URL Thumbnail..."
+                          disabled={isLoading}
+                        />
+                      </div>
+                    </div>
                   </div>
                   
                   {(formData.thumbnail || formData.coverImage) && (
                     <div className="md:col-span-2">
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Preview Thumbnail
+                        Preview Visual
                       </label>
-                      <img 
-                        src={formData.thumbnail || formData.coverImage} 
-                        alt="Preview" 
-                        className="w-full h-auto rounded-lg border" 
-                      />
+                      <div className="grid grid-cols-2 gap-4">
+                        {formData.coverImage && (
+                          <div>
+                            <p className="text-[10px] text-gray-500 mb-1">Cover</p>
+                            <img 
+                              src={formData.coverImage} 
+                              alt="Cover Preview" 
+                              className="w-full h-32 object-cover rounded-lg border" 
+                            />
+                          </div>
+                        )}
+                        {formData.thumbnail && (
+                          <div>
+                            <p className="text-[10px] text-gray-500 mb-1">Thumbnail</p>
+                            <img 
+                              src={formData.thumbnail} 
+                              alt="Thumbnail Preview" 
+                              className="w-1/2 h-32 object-cover rounded-lg border mx-auto" 
+                            />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                   
@@ -1135,7 +1240,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                         {section.lessons.map((lesson) => (
                           <div key={lesson.id} className="flex items-center p-2 md:p-3 bg-gray-100 rounded border group">
                                                           <div className="w-8 h-8 md:w-10 md:h-10 bg-[#C5A059]/10 text-[#C5A059] flex items-center justify-center rounded mr-2 md:mr-3 shrink-0">
-                                                          {lesson.contentType === 'youtube' ? <Youtube size={16} /> : <BookText size={16} />}
+                                                          {['youtube', 'bunny', 'vdocipher', 'video-upload'].includes(lesson.contentType) ? <Youtube size={16} /> : lesson.contentType === 'image-upload' ? <ImageIcon size={16} /> : <BookText size={16} />}
                                                         </div>
                                                         <div className="flex-1">
                                                           <h4 className="font-bold text-black text-xs md:text-sm">
@@ -1186,12 +1291,42 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                                                             onChange={e => setTempLesson({...tempLesson, contentType: e.target.value as any, url: '', textContent: ''})}
                                                             disabled={isLoading}
                                                           >
+                                                            <option value="video-upload">Upload Video</option>
                                                             <option value="youtube">Link Youtube</option>
+                                                            <option value="bunny">Link Bunny</option>
+                                                            <option value="vdocipher">VdoCipher</option>
                                                             <option value="text">Artikel Teks</option>
+                                                            <option value="image-upload">Upload Gambar</option>
+                                                            <option value="file-upload">Upload File (PDF/Word/Lainnya)</option>
                                                           </select>
-                                                        </div>
+                                                                                                                  </div>
+                                                                                                                
+                                                                                                                {(tempLesson.contentType === 'video-upload' || tempLesson.contentType === 'image-upload' || tempLesson.contentType === 'file-upload') && (
+                                                                                                                  <div className="mb-2 md:mb-3 space-y-3">
+                                                                                                                    <input 
+                                                                                                                      type="text" 
+                                                                                                                      placeholder="Durasi (menit) - Opsional" 
+                                                                                                                      className="px-3 md:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#C5A059] outline-none text-black placeholder:text-gray-400 text-sm"
+                                                                                                                      value={tempLesson.duration} 
+                                                                                                                      onChange={e => setTempLesson({...tempLesson, duration: e.target.value})}
+                                                                                                                      disabled={isLoading}
+                                                                                                                    />
+                                                                                                                    <FileUploader 
+                                                                                                                      folder={tempLesson.contentType === 'video-upload' ? 'videos' : tempLesson.contentType === 'image-upload' ? 'images' : 'files'}
+                                                                                                                      accept={tempLesson.contentType === 'video-upload' ? 'video/*' : tempLesson.contentType === 'image-upload' ? 'image/*' : '*/*'}
+                                                                                                                      label={`Upload ${tempLesson.contentType === 'video-upload' ? 'Video' : tempLesson.contentType === 'image-upload' ? 'Gambar' : 'File'}`}
+                                                                                                                      onUploadSuccess={(url) => setTempLesson(prev => ({ ...prev, url }))}
+                                                                                                                    />
+                                                                                                                    {tempLesson.url && (
+                                                                                                                      <div className="p-2 bg-green-50 rounded-lg border border-green-200">
+                                                                                                                        <p className="text-xs text-green-700 font-medium">Berhasil diunggah!</p>
+                                                                                                                        <p className="text-[10px] text-gray-500 truncate mt-1">{tempLesson.url}</p>
+                                                                                                                      </div>
+                                                                                                                    )}
+                                                                                                                  </div>
+                                                                                                                )}
                                                         
-                                                        {tempLesson.contentType === 'youtube' && (
+                                                        {(tempLesson.contentType === 'youtube' || tempLesson.contentType === 'bunny' || tempLesson.contentType === 'vdocipher') && (
                                                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 mb-2 md:mb-3">
                                                             <input 
                                                               type="text" 
@@ -1203,7 +1338,11 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                                                             />
                                                             <input 
                                                               type="text" 
-                                                              placeholder="URL Youtube"
+                                                              placeholder={
+                                                                tempLesson.contentType === 'youtube' ? "URL Youtube" :
+                                                                tempLesson.contentType === 'bunny' ? "Bunny Video ID" :
+                                                                "VdoCipher Video ID"
+                                                              }
                                                               className="px-3 md:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#C5A059] outline-none text-black placeholder:text-gray-400 text-sm"
                                                               value={tempLesson.url} 
                                                               onChange={e => setTempLesson({...tempLesson, url: e.target.value})}
@@ -1227,27 +1366,40 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                                                               onChange={handleRichTextChange}
                                                               placeholder="Tulis artikel di sini..."
                                                               showSaveButton={false}
-                                                            />                              </div>
-                            )}
+                                                            />
+                                                          </div>
+                                                        )}
                             
-                            <div className="my-2 md:my-3 space-y-2">
+                            <div className="my-2 md:my-3 space-y-2 border-t pt-3 mt-4">
                               <label className="text-xs font-bold text-gray-600 block">
-                                Lampiran (Opsional)
+                                Lampiran / File Pendukung (PDF, Word, dll)
                               </label>
-                              <input 
-                                placeholder="Nama File Lampiran" 
-                                className="px-3 md:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#C5A059] outline-none text-black placeholder:text-gray-400 w-full text-xs md:text-sm"
-                                value={tempLesson.attachmentName || ''} 
-                                onChange={e => setTempLesson(prev => ({...prev, attachmentName: e.target.value}))}
-                                disabled={isLoading}
-                              />
-                              <input 
-                                placeholder="URL File (Drive, Docs, dll)" 
-                                className="px-3 md:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#C5A059] outline-none text-black placeholder:text-gray-400 w-full text-xs md:text-sm"
-                                value={tempLesson.attachmentUrl || ''} 
-                                onChange={e => setTempLesson(prev => ({...prev, attachmentUrl: e.target.value}))}
-                                disabled={isLoading}
-                              />
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div className="space-y-2">
+                                  <input 
+                                    placeholder="Nama File Lampiran" 
+                                    className="px-3 md:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#C5A059] outline-none text-black placeholder:text-gray-400 w-full text-xs md:text-sm"
+                                    value={tempLesson.attachmentName || ''} 
+                                    onChange={e => setTempLesson(prev => ({...prev, attachmentName: e.target.value}))}
+                                    disabled={isLoading}
+                                  />
+                                  <input 
+                                    placeholder="URL File (Drive, Docs, dll)" 
+                                    className="px-3 md:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#C5A059] outline-none text-black placeholder:text-gray-400 w-full text-xs md:text-sm"
+                                    value={tempLesson.attachmentUrl || ''} 
+                                    onChange={e => setTempLesson(prev => ({...prev, attachmentUrl: e.target.value}))}
+                                    disabled={isLoading}
+                                  />
+                                </div>
+                                <div>
+                                  <FileUploader 
+                                    folder="attachments" 
+                                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" 
+                                    label="Upload File Lampiran"
+                                    onUploadSuccess={(url, name) => setTempLesson(prev => ({...prev, attachmentUrl: url, attachmentName: prev.attachmentName || name}))} 
+                                  />
+                                </div>
+                              </div>
                             </div>
                             
                             <div className="flex flex-col md:flex-row gap-2 justify-end">

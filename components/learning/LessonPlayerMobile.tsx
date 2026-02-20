@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { MarkdownRenderer } from "@/components/shared/MarkdownRenderer";
-import YoutubePlayer from "./YoutubePlayer";
+import VdoCipherPlayer from "./VdoCipherPlayer";
 
 interface LessonPlayerMobileProps {
   courseId: string;
@@ -60,18 +60,106 @@ export function LessonPlayerMobile({
     return null;
   }, [lesson.url, lesson.contentType]);
 
+  const [player, setPlayer] = useState<YT.Player | null>(null);
+  const [progressInterval, setProgressInterval] = useState<NodeJS.Timeout | null>(null);
+
   const [isVideoCompleted, setIsVideoCompleted] = useState(initialCompleted);
   const [isUpdating, setIsUpdating] = useState(false);
   const [showLessonMenu, setShowLessonMenu] = useState(false);
   
+  const videoContainerRef = useRef<HTMLDivElement>(null);
+  const videoElementRef = useRef<HTMLVideoElement>(null as any); // For Plyr
+
   // Initialize completion state for text content
   useEffect(() => {
-    if (lesson.contentType === 'text') {
+    if (lesson.contentType === 'text' || lesson.contentType === 'image-upload' || lesson.contentType === 'file-upload') {
       setIsVideoCompleted(true);
     } else {
       setIsVideoCompleted(initialCompleted);
     }
   }, [lesson.id, initialCompleted, lesson.contentType]);
+
+  useEffect(() => {
+    return () => {
+      if (progressInterval) {
+        clearInterval(progressInterval);
+      }
+    };
+  }, [progressInterval]);
+
+  const onPlayerStateChange = (event: YT.OnStateChangeEvent) => {
+    if (event.data === YT.PlayerState.PLAYING) {
+      if (progressInterval) clearInterval(progressInterval);
+      const interval = setInterval(() => {
+        if (player) {
+          const currentTime = player.getCurrentTime();
+          const duration = player.getDuration();
+          if (duration > 0 && (currentTime / duration) >= 0.9) {
+            setIsVideoCompleted(true);
+            if(interval) clearInterval(interval);
+          }
+        }
+      }, 1000);
+      setProgressInterval(interval);
+    } else {
+      if (progressInterval) clearInterval(progressInterval);
+    }
+    if (event.data === YT.PlayerState.ENDED) {
+      setIsVideoCompleted(true);
+    }
+  };
+
+  useEffect(() => {
+    if (!videoId) return;
+    
+    const onYouTubeIframeAPIReady = () => {
+      if (player) {
+         try { player.destroy(); } catch(e) {} 
+      }
+      if (progressInterval) clearInterval(progressInterval);
+      
+      const newPlayer = new YT.Player(`youtube-player-mobile-${lesson.id}`, {
+        height: '100%',
+        width: '100%',
+        videoId: videoId,
+        host: 'https://www.youtube-nocookie.com', // Moved host out of playerVars
+        playerVars: { 
+          'playsinline': 1, 
+          'controls': 0, // IMPORTANT: No native controls
+          'rel': 0, 
+          'modestbranding': 1,
+          'disablekb': 1,
+          'iv_load_policy': 3,
+        },
+        events: { 
+          'onStateChange': onPlayerStateChange,
+          'onReady': (event) => {
+            const iframe = event.target.getIframe();
+            if (iframe) {
+              videoElementRef.current = iframe as any;
+            }
+          }
+        }
+      });
+      setPlayer(newPlayer);
+    };
+    
+    if (window.YT && window.YT.Player) {
+      onYouTubeIframeAPIReady();
+    } else {
+      (window as any).onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
+      if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+      }
+    }
+    
+    return () => {
+       if (progressInterval) clearInterval(progressInterval);
+    };
+  }, [videoId, lesson.id]);
 
   const handleMarkComplete = async () => {
     if (!user || !isVideoCompleted) return;
@@ -168,15 +256,66 @@ export function LessonPlayerMobile({
                 <MarkdownRenderer content={lesson.textContent || ''} />
               </div>
             </div>
+          ) : lesson.contentType === "image-upload" ? (
+            <div className="h-[calc(100vh-140px)] overflow-y-auto bg-white flex flex-col items-center justify-center p-4">
+              <img 
+                src={lesson.url} 
+                alt={lesson.title} 
+                className="w-full h-auto rounded-lg shadow-sm"
+              />
+            </div>
+          ) : lesson.contentType === "file-upload" ? (
+            <div className="h-[calc(100vh-140px)] overflow-y-auto bg-white flex flex-col items-center justify-center p-8 text-center">
+              <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-4">
+                <Download size={32} />
+              </div>
+              <h2 className="text-lg font-bold text-black mb-2">File Materi</h2>
+              <p className="text-xs text-gray-500 mb-6">Silakan unduh atau buka file materi melalui tombol di bawah.</p>
+              <a 
+                href={lesson.url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-[#C5A059] text-black text-sm font-bold rounded-lg hover:bg-[#B08F4A]"
+              >
+                <Download size={16} /> Buka / Unduh File
+              </a>
+            </div>
           ) : (
             <div
               className="relative w-full bg-black rounded-lg overflow-hidden"
               data-protected="true"
             >
               {lesson.contentType === 'youtube' && videoId ? (
-                <YoutubePlayer videoId={videoId as string} />
+                <div
+                  ref={videoContainerRef}
+                  className="relative w-full"
+                  style={{ paddingTop: "56.25%" }} // Maintain aspect ratio
+                  data-protected="true"
+                >
+                  <div
+                    id={`youtube-player-mobile-${lesson.id}`}
+                    className="absolute top-0 left-0 w-full h-full"
+                  />
+                  {/* Minimal overlay to prevent accidental interaction with hidden YouTube elements if any */}
+                  <div
+                    className="absolute bottom-0 left-0 w-full"
+                    style={{ height: '100px', zIndex: 10, cursor: 'not-allowed' }}
+                  />
+                </div>
+              ) : lesson.contentType === 'vdocipher' && lesson.url ? (
+                <VdoCipherPlayer videoId={lesson.url} />
+              ) : lesson.contentType === 'video-upload' && lesson.url ? (
+                <div className="aspect-video w-full">
+                  <video 
+                    src={lesson.url} 
+                    className="w-full h-full" 
+                    controls 
+                    controlsList="nodownload"
+                    onEnded={() => setIsVideoCompleted(true)}
+                  />
+                </div>
               ) : (
-                <p className="text-white p-4">Tipe konten tidak didukung.</p>
+                <p className="text-white p-4 text-center">Tipe konten tidak didukung.</p>
               )}
             </div>
           )}

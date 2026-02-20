@@ -3,6 +3,7 @@ import * as admin from 'firebase-admin';
 
 let adminAuth: admin.auth.Auth;
 let adminDb: admin.firestore.Firestore;
+let adminStorage: admin.storage.Storage;
 
 try {
   if (!admin.apps.length) {
@@ -26,10 +27,11 @@ try {
 
   adminAuth = admin.auth();
   adminDb = admin.firestore();
+  adminStorage = admin.storage();
 
 } catch (error) {
   console.error('[FIREBASE ADMIN ERROR] Initialization failed:', error);
   // Biarkan undefined agar API route yang memakainya bisa handle errornya
 }
 
-export { adminAuth, adminDb };
+export { adminAuth, adminDb, adminStorage };

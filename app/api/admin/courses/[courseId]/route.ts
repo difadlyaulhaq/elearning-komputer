@@ -91,7 +91,7 @@ export async function PATCH(
 
     // Daftar field yang boleh diupdate dari body
     const allowedFields = [
-      'title', 'level', 'description', 'coverImage', 
+      'title', 'level', 'description', 'coverImage', 'thumbnail',
       'status', 'sections', 'enrolledUserIds', 'enrolledDivisionIds'
     ];
 
@@ -133,8 +133,8 @@ export async function PATCH(
       }
     }
     
-    // Prioritaskan thumbnail baru, fallback ke coverImage, lalu ke thumbnail lama
-    updatePayload.thumbnail = courseThumbnail || updatePayload.coverImage || existingData.thumbnail;
+    // Prioritaskan: thumbnail manual > auto YouTube > coverImage > thumbnail lama
+    updatePayload.thumbnail = body.thumbnail || courseThumbnail || updatePayload.coverImage || existingData.thumbnail;
 
     console.log('[PATCH COURSE] Updating with thumbnail:', updatePayload.thumbnail);
 
