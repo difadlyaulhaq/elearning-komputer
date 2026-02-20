@@ -53,7 +53,7 @@ export interface Progress {
 export interface Lesson {
   id: string;
   title: string;
-  contentType: 'youtube' | 'text' | 'bunny' | 'vdocipher' | 'video-upload' | 'image-upload' | 'file-upload';
+  contentType: 'youtube' | 'text' | 'video-upload' | 'image-upload' | 'file-upload';
   sourceType: 'embed' | 'drive';
   url: string;
   textContent: string; // Untuk tipe 'text'

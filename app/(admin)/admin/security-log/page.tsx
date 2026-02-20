@@ -39,8 +39,23 @@ const SecurityLogPage = () => {
         throw new Error('Failed to fetch logs');
       }
       const data = await response.json();
-      setLogs(data.data);
-      setFilteredLogs(data.data);
+      
+      // Filter hanya untuk upaya tangkapan layar (screenshot attempts)
+      const screenshotActions = [
+        'screenshot_attempt',
+        'mobile_screenshot_gesture',
+        'mobile_palm_gesture',
+        'mobile_hardware_button',
+        'mobile_hardware_combo',
+        'mobile_power_double_click'
+      ];
+      
+      const filteredData = data.data.filter((log: LogEntry) => 
+        screenshotActions.includes(log.action)
+      );
+
+      setLogs(filteredData);
+      setFilteredLogs(filteredData);
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message === 'Failed to fetch logs' ? 'Gagal memuat log' : err.message);
@@ -63,17 +78,29 @@ const SecurityLogPage = () => {
     if (filters.userId) {
       updatedLogs = updatedLogs.filter(log => log.userId.includes(filters.userId));
     }
-    if (filters.action) {
-      updatedLogs = updatedLogs.filter(log => log.action === filters.action);
-    }
     setFilteredLogs(updatedLogs);
-  }, [filters, logs]);
+  }, [filters.userId, logs]);
 
   
 
   const columns: Column[] = [
     { header: 'Pengguna', accessor: 'userName', icon: User },
-    { header: 'Tindakan', accessor: 'action', icon: AlertCircle },
+    { 
+      header: 'Tindakan', 
+      accessor: 'action', 
+      icon: AlertCircle,
+      render: (log: LogEntry) => {
+        const labels: Record<string, string> = {
+          'screenshot_attempt': 'Upaya Tangkapan Layar (Desktop)',
+          'mobile_screenshot_gesture': 'Gestur Tangkapan Layar',
+          'mobile_palm_gesture': 'Gestur Telapak Tangan',
+          'mobile_hardware_button': 'Tombol Hardware',
+          'mobile_hardware_combo': 'Kombinasi Tombol',
+          'mobile_power_double_click': 'Double Click Power'
+        };
+        return <span>{labels[log.action] || log.action}</span>;
+      }
+    },
     { header: 'Halaman', accessor: 'page', icon: FileText },
     {
       header: 'Waktu',
@@ -96,29 +123,20 @@ const SecurityLogPage = () => {
       <div className="flex items-center mb-6">
         <Shield size={32} className="text-[#C5A059] mr-4" />
         <div>
-          <h1 className="text-2xl font-bold text-white">Log Keamanan</h1>
-          <p className="text-white">Riwayat kejadian terkait keamanan.</p>
+          <h1 className="text-2xl font-bold text-white">Log Keamanan - Upaya Tangkapan Layar</h1>
+          <p className="text-white">Riwayat kejadian deteksi upaya screenshot.</p>
         </div>
       </div>
       
       <div className="bg-white rounded-lg shadow p-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="mb-6">
           <input
             type="text"
             placeholder="Filter berdasarkan ID Pengguna"
             value={filters.userId}
             onChange={(e) => setFilters({ ...filters, userId: e.target.value })}
-            className="text-black w-full px-4 py-2 border rounded-lg"
+            className="text-black w-full px-4 py-2 border rounded-lg max-w-md"
           />
-          <select
-            value={filters.action}
-            onChange={(e) => setFilters({ ...filters, action: e.target.value })}
-            className="text-black w-full px-4 py-2 border rounded-lg"
-          >
-            <option value="">Semua Tindakan</option>
-            <option value="screenshot_attempt">Upaya Tangkapan Layar</option>
-            <option value="recording_detected">Perekaman Terdeteksi</option>
-          </select>
         </div>
 
         {isLoading ? (

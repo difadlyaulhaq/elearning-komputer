@@ -6,8 +6,7 @@ import toast from 'react-hot-toast';
 import { MarkdownRenderer } from '@/components/shared/MarkdownRenderer';
 import RichTextEditor from '@/components/admin/RichTextEditor';
 import { Course, Section, Lesson, Category, User, Division } from '@/types';
-import BunnyPlayer from '../learning/BunnyPlayer';
-import VdoCipherPlayer from '../learning/VdoCipherPlayer';
+import UniversalPlayer from '../learning/UniversalPlayer';
 
 import { FileUploader } from '@/components/admin/FileUploader';
 
@@ -92,40 +91,17 @@ export const CoursePreviewModal: React.FC<{
       );
     }
 
-    const isVideo = ['youtube', 'bunny', 'vdocipher', 'video-upload'].includes(activeLesson.contentType);
+    const isVideo = ['youtube', 'video-upload'].includes(activeLesson.contentType);
 
     return (
       <div className="space-y-6 animate-fadeIn">
          {/* Media Player/Display */}
-         {activeLesson.contentType === 'youtube' && activeLesson.url && (
-            <div className="aspect-video bg-black rounded-xl overflow-hidden shadow-xl ring-1 ring-gray-900/10">
-               <iframe
-                 src={getYouTubeEmbedUrl(activeLesson.url) || ''}
-                 className="w-full h-full"
-                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                 allowFullScreen
-               />
-            </div>
-         )}
-         
-         {activeLesson.contentType === 'bunny' && activeLesson.url && (
-            <div className="aspect-video bg-black rounded-xl overflow-hidden shadow-xl ring-1 ring-gray-900/10">
-                <BunnyPlayer 
-                  videoId={activeLesson.url}
-                  onEnded={() => {}}
-                  onTimeUpdate={() => {}}
-                />
-            </div>
-         )}
-
-         {activeLesson.contentType === 'video-upload' && activeLesson.url && (
-            <div className="aspect-video bg-black rounded-xl overflow-hidden shadow-xl ring-1 ring-gray-900/10">
-               <video 
-                 src={activeLesson.url} 
-                 className="w-full h-full" 
-                 controls 
-               />
-            </div>
+         {['youtube', 'video-upload'].includes(activeLesson.contentType) && activeLesson.url && (
+            <UniversalPlayer 
+              src={activeLesson.url}
+              contentType={activeLesson.contentType as any}
+              watermark={activeLesson.watermark}
+            />
          )}
 
          {activeLesson.contentType === 'image-upload' && activeLesson.url && (
@@ -153,12 +129,6 @@ export const CoursePreviewModal: React.FC<{
                >
                  Buka File
                </a>
-            </div>
-         )}
-
-         {activeLesson.contentType === 'vdocipher' && activeLesson.url && (
-            <div className="aspect-video bg-black rounded-xl overflow-hidden shadow-xl ring-1 ring-gray-900/10">
-                <VdoCipherPlayer videoId={activeLesson.url} />
             </div>
          )}
 
@@ -277,7 +247,7 @@ export const CoursePreviewModal: React.FC<{
                                   }`}
                                 >
                                    <div className={`mt-0.5 shrink-0 ${activeLesson?.id === lesson.id ? 'text-white' : 'text-yellow-600'}`}>
-                                      {['youtube', 'bunny', 'vdocipher', 'video-upload'].includes(lesson.contentType) ? <PlayCircle size={16} /> : lesson.contentType === 'image-upload' ? <ImageIcon size={16} /> : <FileText size={16} />}
+                                      {['youtube', 'video-upload'].includes(lesson.contentType) ? <PlayCircle size={16} /> : lesson.contentType === 'image-upload' ? <ImageIcon size={16} /> : <FileText size={16} />}
                                    </div>
                                    <span className={`line-clamp-2 text-xs md:text-sm ${activeLesson?.id === lesson.id ? 'font-semibold' : ''}`}>
                                       {lesson.title}
@@ -318,7 +288,7 @@ export const CoursePreviewModal: React.FC<{
                           }`}
                         >
                            <div className={activeLesson?.id === lesson.id ? 'text-white' : 'text-gray-400'}>
-                             {['youtube', 'bunny', 'vdocipher', 'video-upload'].includes(lesson.contentType) ? <PlayCircle size={16} /> : lesson.contentType === 'image-upload' ? <ImageIcon size={16} /> : <FileText size={16} />}
+                             {['youtube', 'video-upload'].includes(lesson.contentType) ? <PlayCircle size={16} /> : lesson.contentType === 'image-upload' ? <ImageIcon size={16} /> : <FileText size={16} />}
                            </div>
                            <span className="truncate text-xs">{lesson.title}</span>
                         </button>
@@ -348,6 +318,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
   const [allDivisions, setAllDivisions] = useState<Division[]>([]);
   const [searchTermDivisions, setSearchTermDivisions] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploadingLesson, setIsUploadingLesson] = useState(false);
   
   // State untuk tampilan mobile
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -442,6 +413,23 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Matikan protection saat modal upload atau preview terbuka
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (showModal || showPreview) {
+        window.disableScreenProtection = true;
+      } else {
+        window.disableScreenProtection = false;
+      }
+    }
+    
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.disableScreenProtection = false;
+      }
+    };
+  }, [showModal, showPreview]);
 
   // Filter courses untuk pencarian
   const filteredCourses = courses.filter(course => {
@@ -716,7 +704,6 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
 
   const handleSaveLesson = (sectionId: string) => {
     if (!tempLesson.title) return toast.error('Judul materi wajib diisi', { duration: 3000 });
-    if (tempLesson.contentType === 'youtube' && !tempLesson.url) return toast.error('URL materi wajib diisi', { duration: 3000 });
     if (tempLesson.contentType === 'text' && !tempLesson.textContent) return toast.error('Konten artikel wajib diisi', { duration: 3000 });
 
     const lessonData = { ...tempLesson, id: editingLessonId || Date.now().toString() } as Lesson;
@@ -982,8 +969,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
       </div>
 
       {/* Modal untuk Create/Edit Course */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-0 md:p-4">
+      <div className={`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-0 md:p-4 ${showModal ? 'flex' : 'hidden'}`}>
           <div className="bg-white w-full h-full md:w-full md:max-w-5xl md:h-[90vh] md:rounded-xl flex flex-col shadow-2xl">
             <div className="flex items-center justify-between p-4 md:p-6 border-b">
               <h2 className="text-lg md:text-xl font-bold text-black">
@@ -991,8 +977,8 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
               </h2>
               <button 
                 onClick={() => setShowModal(false)}
-                disabled={isLoading}
-                className="p-2 rounded-full hover:bg-gray-100"
+                disabled={isLoading || isUploadingLesson}
+                className="p-2 rounded-full hover:bg-gray-100 disabled:opacity-50"
               >
                 <X size={20} className="text-gray-400 hover:text-red-500" />
               </button>
@@ -1003,8 +989,8 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
               <div className="flex items-center space-x-1 md:space-x-4">
                 <button 
                   onClick={() => setCurrentStep(1)}
-                  disabled={isLoading}
-                  className={`px-3 md:px-4 py-2 rounded-full flex items-center space-x-2 ${currentStep === 1 ? 'bg-[#FFF8E7] text-[#C5A059] border border-[#C5A059]' : 'text-gray-400'}`}
+                  disabled={isLoading || isUploadingLesson}
+                  className={`px-3 md:px-4 py-2 rounded-full flex items-center space-x-2 ${currentStep === 1 ? 'bg-[#FFF8E7] text-[#C5A059] border border-[#C5A059]' : 'text-gray-400 opacity-50 cursor-not-allowed'}`}
                 >
                   <span className="w-6 h-6 rounded-full bg-current text-white flex items-center justify-center text-xs">
                     1
@@ -1016,8 +1002,8 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                 <div className="w-4 md:w-8 h-px bg-gray-300"></div>
                 <button 
                   onClick={() => isDirty ? handleSaveAndContinue() : setCurrentStep(2)}
-                  disabled={!isEditing && !formData.title}
-                  className={`px-3 md:px-4 py-2 rounded-full flex items-center space-x-2 ${currentStep === 2 ? 'bg-[#FFF8E7] text-[#C5A059] border border-[#C5A059]' : 'text-gray-400'}`}
+                  disabled={(!isEditing && !formData.title) || isLoading || isUploadingLesson}
+                  className={`px-3 md:px-4 py-2 rounded-full flex items-center space-x-2 ${currentStep === 2 ? 'bg-[#FFF8E7] text-[#C5A059] border border-[#C5A059]' : 'text-gray-400 opacity-50 cursor-not-allowed'}`}
                 >
                   <span className="w-6 h-6 rounded-full bg-current text-white flex items-center justify-center text-xs">
                     2
@@ -1029,8 +1015,8 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                 <div className="w-4 md:w-8 h-px bg-gray-300"></div>
                 <button 
                   onClick={() => isDirty ? handleSaveAndContinue() : setCurrentStep(3)}
-                  disabled={!isEditing && !formData.title}
-                  className={`px-3 md:px-4 py-2 rounded-full flex items-center space-x-2 ${currentStep === 3 ? 'bg-[#FFF8E7] text-[#C5A059] border border-[#C5A059]' : 'text-gray-400'}`}
+                  disabled={(!isEditing && !formData.title) || isLoading || isUploadingLesson}
+                  className={`px-3 md:px-4 py-2 rounded-full flex items-center space-x-2 ${currentStep === 3 ? 'bg-[#FFF8E7] text-[#C5A059] border border-[#C5A059]' : 'text-gray-400 opacity-50 cursor-not-allowed'}`}
                 >
                   <span className="w-6 h-6 rounded-full bg-current text-white flex items-center justify-center text-xs">
                     3
@@ -1044,7 +1030,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
             
             {/* Form Content */}
             <div className="flex-1 overflow-y-auto p-4 md:p-8">
-              {currentStep === 1 && (
+              <div className={`${currentStep === 1 ? 'block' : 'hidden'}`}>
                 <div className="max-w-2xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="md:col-span-2">
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -1118,6 +1104,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                           folder="course-covers" 
                           accept="image/*" 
                           label="Upload Cover" 
+                          onIsUploadingChange={setIsUploadingLesson}
                           onUploadSuccess={(url) => setFormData({...formData, coverImage: url, thumbnail: formData.thumbnail || url})} 
                         />
                         <input 
@@ -1135,6 +1122,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                           folder="course-thumbnails" 
                           accept="image/*" 
                           label="Upload Thumbnail" 
+                          onIsUploadingChange={setIsUploadingLesson}
                           onUploadSuccess={(url) => setFormData({...formData, thumbnail: url})} 
                         />
                         <input 
@@ -1207,9 +1195,9 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
 
-              {currentStep === 2 && (
+              <div className={`${currentStep === 2 ? 'block' : 'hidden'}`}>
                 <div className="max-w-4xl mx-auto space-y-4">
                   {formData.sections?.map((section, sIndex) => (
                     <div key={section.id} className="bg-white border rounded-xl shadow-sm overflow-hidden">
@@ -1240,7 +1228,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                         {section.lessons.map((lesson) => (
                           <div key={lesson.id} className="flex items-center p-2 md:p-3 bg-gray-100 rounded border group">
                                                           <div className="w-8 h-8 md:w-10 md:h-10 bg-[#C5A059]/10 text-[#C5A059] flex items-center justify-center rounded mr-2 md:mr-3 shrink-0">
-                                                          {['youtube', 'bunny', 'vdocipher', 'video-upload'].includes(lesson.contentType) ? <Youtube size={16} /> : lesson.contentType === 'image-upload' ? <ImageIcon size={16} /> : <BookText size={16} />}
+                                                          {['youtube', 'video-upload'].includes(lesson.contentType) ? <PlayCircle size={16} /> : lesson.contentType === 'image-upload' ? <ImageIcon size={16} /> : <BookText size={16} />}
                                                         </div>
                                                         <div className="flex-1">
                                                           <h4 className="font-bold text-black text-xs md:text-sm">
@@ -1292,9 +1280,6 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                                                             disabled={isLoading}
                                                           >
                                                             <option value="video-upload">Upload Video</option>
-                                                            <option value="youtube">Link Youtube</option>
-                                                            <option value="bunny">Link Bunny</option>
-                                                            <option value="vdocipher">VdoCipher</option>
                                                             <option value="text">Artikel Teks</option>
                                                             <option value="image-upload">Upload Gambar</option>
                                                             <option value="file-upload">Upload File (PDF/Word/Lainnya)</option>
@@ -1315,6 +1300,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                                                                                                                       folder={tempLesson.contentType === 'video-upload' ? 'videos' : tempLesson.contentType === 'image-upload' ? 'images' : 'files'}
                                                                                                                       accept={tempLesson.contentType === 'video-upload' ? 'video/*' : tempLesson.contentType === 'image-upload' ? 'image/*' : '*/*'}
                                                                                                                       label={`Upload ${tempLesson.contentType === 'video-upload' ? 'Video' : tempLesson.contentType === 'image-upload' ? 'Gambar' : 'File'}`}
+                                                                                                                      onIsUploadingChange={setIsUploadingLesson}
                                                                                                                       onUploadSuccess={(url) => setTempLesson(prev => ({ ...prev, url }))}
                                                                                                                     />
                                                                                                                     {tempLesson.url && (
@@ -1325,39 +1311,6 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                                                                                                                     )}
                                                                                                                   </div>
                                                                                                                 )}
-                                                        
-                                                        {(tempLesson.contentType === 'youtube' || tempLesson.contentType === 'bunny' || tempLesson.contentType === 'vdocipher') && (
-                                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 mb-2 md:mb-3">
-                                                            <input 
-                                                              type="text" 
-                                                              placeholder="Durasi (menit)" 
-                                                              className="px-3 md:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#C5A059] outline-none text-black placeholder:text-gray-400 text-sm"
-                                                              value={tempLesson.duration} 
-                                                              onChange={e => setTempLesson({...tempLesson, duration: e.target.value})}
-                                                              disabled={isLoading}
-                                                            />
-                                                            <input 
-                                                              type="text" 
-                                                              placeholder={
-                                                                tempLesson.contentType === 'youtube' ? "URL Youtube" :
-                                                                tempLesson.contentType === 'bunny' ? "Bunny Video ID" :
-                                                                "VdoCipher Video ID"
-                                                              }
-                                                              className="px-3 md:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#C5A059] outline-none text-black placeholder:text-gray-400 text-sm"
-                                                              value={tempLesson.url} 
-                                                              onChange={e => setTempLesson({...tempLesson, url: e.target.value})}
-                                                              onBlur={e => {
-                                                                if (tempLesson.contentType === 'youtube') {
-                                                                  const videoId = getYouTubeId(e.target.value);
-                                                                  if (videoId && !formData.coverImage) {
-                                                                    setFormData({...formData, thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`});
-                                                                  }
-                                                                }
-                                                              }}
-                                                              disabled={isLoading}
-                                                            />
-                                                          </div>
-                                                        )}
                                                         
                                                         {tempLesson.contentType === 'text' && (
                                                           <div className="mb-2 md:mb-3">
@@ -1396,6 +1349,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                                     folder="attachments" 
                                     accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" 
                                     label="Upload File Lampiran"
+                                    onIsUploadingChange={setIsUploadingLesson}
                                     onUploadSuccess={(url, name) => setTempLesson(prev => ({...prev, attachmentUrl: url, attachmentName: prev.attachmentName || name}))} 
                                   />
                                 </div>
@@ -1405,17 +1359,24 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                             <div className="flex flex-col md:flex-row gap-2 justify-end">
                               <button 
                                 onClick={handleCancelEditLesson}
-                                disabled={isLoading}
+                                disabled={isLoading || isUploadingLesson}
                                 className="w-full md:w-auto px-3 py-1.5 text-xs text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 font-semibold"
                               >
                                 Batal
                               </button>
                               <button 
                                 onClick={() => handleSaveLesson(section.id)}
-                                disabled={isLoading}
+                                disabled={isLoading || isUploadingLesson}
                                 className="w-full md:w-auto px-3 py-1.5 text-xs bg-[#C5A059] text-black rounded font-bold hover:bg-[#B08F4A]"
                               >
-                                {editingLessonId ? 'Update Materi' : 'Simpan Materi'}
+                                {isUploadingLesson ? (
+                                  <span className="flex items-center gap-1">
+                                    <Loader2 size={12} className="animate-spin" />
+                                    <span>Uploading...</span>
+                                  </span>
+                                ) : (
+                                  editingLessonId ? 'Update Materi' : 'Simpan Materi'
+                                )}
                               </button>
                             </div>
                           </div>
@@ -1440,9 +1401,9 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                     <Plus size={16} className="mr-2" /> Tambah Bab Baru
                   </button>
                 </div>
-              )}
+              </div>
 
-              {currentStep === 3 && (
+              <div className={`${currentStep === 3 ? 'block' : 'hidden'}`}>
                 <div className="max-w-2xl mx-auto space-y-4 md:space-y-6">
                   {/* Enroll Users */}
                   <div>
@@ -1564,7 +1525,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Modal Footer */}
@@ -1572,8 +1533,8 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
               {currentStep > 1 && (
                 <button 
                   onClick={() => setCurrentStep(prev => prev - 1)}
-                  disabled={isLoading}
-                  className="w-full md:w-auto px-4 md:px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-semibold text-sm"
+                  disabled={isLoading || isUploadingLesson}
+                  className="w-full md:w-auto px-4 md:px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-semibold text-sm disabled:opacity-50"
                 >
                   Kembali
                 </button>
@@ -1583,8 +1544,8 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                 isDirty ? (
                   <button 
                     onClick={handleSaveAndContinue}
-                    disabled={isLoading}
-                    className="w-full md:w-auto px-4 md:px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold flex items-center justify-center shadow-md text-sm"
+                    disabled={isLoading || isUploadingLesson}
+                    className="w-full md:w-auto px-4 md:px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold flex items-center justify-center shadow-md text-sm disabled:opacity-50"
                   >
                     {isLoading ? (
                       <Loader2 size={16} className="mr-2 animate-spin" />
@@ -1596,8 +1557,8 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                 ) : (
                   <button 
                     onClick={() => setCurrentStep(prev => prev + 1)}
-                    disabled={isLoading}
-                    className="w-full md:w-auto px-4 md:px-6 py-2.5 bg-[#C5A059] text-black rounded-lg hover:bg-[#B08F4A] font-bold text-sm"
+                    disabled={isLoading || isUploadingLesson}
+                    className="w-full md:w-auto px-4 md:px-6 py-2.5 bg-[#C5A059] text-black rounded-lg hover:bg-[#B08F4A] font-bold text-sm disabled:opacity-50"
                   >
                     Lanjut
                   </button>
@@ -1605,7 +1566,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
               ) : (
                 <button 
                   onClick={handleSaveCourse}
-                  disabled={isLoading || (!isDirty && isEditing)}
+                  disabled={isLoading || isUploadingLesson || (!isDirty && isEditing)}
                   className="w-full md:w-auto px-4 md:px-6 py-2.5 bg-[#C5A059] text-black rounded-lg hover:bg-[#B08F4A] font-bold flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
                   {isLoading ? (
@@ -1619,7 +1580,6 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
             </div>
           </div>
         </div>
-      )}
 
       {/* Preview Modal */}
       {showPreview && previewData && (

@@ -17,7 +17,7 @@ import {
 import toast from "react-hot-toast";
 import { MarkdownRenderer } from "@/components/shared/MarkdownRenderer";
 // import { ScreenProtection } from "@/components/shared/ScreenProtection";
-import VdoCipherPlayer from "./VdoCipherPlayer";
+import UniversalPlayer from "./UniversalPlayer";
 
 interface LessonPlayerDesktopProps {
   courseId: string;
@@ -43,11 +43,6 @@ export function LessonPlayerDesktop({
   
   const [isVideoCompleted, setIsVideoCompleted] = useState(initialCompleted);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [player, setPlayer] = useState<YT.Player | null>(null);
-  const [progressInterval, setProgressInterval] = useState<NodeJS.Timeout | null>(null);
-  
-  const videoContainerRef = useRef<HTMLDivElement>(null);
-  const videoElementRef = useRef<HTMLVideoElement>(null as any);
 
   useEffect(() => {
     if (['text', 'image-upload', 'file-upload'].includes(lesson.contentType)) {
@@ -56,110 +51,6 @@ export function LessonPlayerDesktop({
       setIsVideoCompleted(initialCompleted);
     }
   }, [lesson.id, initialCompleted, lesson.contentType]);
-
-  useEffect(() => {
-    return () => {
-      if (progressInterval) {
-        clearInterval(progressInterval);
-      }
-    };
-  }, [progressInterval]);
-
-  const getYouTubeId = (url: string) => {
-    if (!url) return null;
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
-    return match && match[2].length === 11 ? match[2] : null;
-  };
-
-  const vdoCipherVideoId = useMemo(() => {
-    if (lesson.contentType === "vdocipher") {
-      return lesson.url;
-    }
-    return null;
-  }, [lesson.url, lesson.contentType]);
-
-  useEffect(() => {
-    if (['text', 'image-upload', 'file-upload'].includes(lesson.contentType)) {
-      setIsVideoCompleted(true);
-    } else {
-      setIsVideoCompleted(initialCompleted);
-    }
-  }, [lesson.id, initialCompleted, lesson.contentType]);
-
-  const onPlayerStateChange = (event: YT.OnStateChangeEvent) => {
-    if (event.data === YT.PlayerState.PLAYING) {
-      if (progressInterval) clearInterval(progressInterval);
-      const interval = setInterval(() => {
-        if (player) {
-          const currentTime = player.getCurrentTime();
-          const duration = player.getDuration();
-          if (duration > 0 && (currentTime / duration) >= 0.9) {
-            setIsVideoCompleted(true);
-            if(interval) clearInterval(interval);
-          }
-        }
-      }, 1000);
-      setProgressInterval(interval);
-    } else {
-      if (progressInterval) clearInterval(progressInterval);
-    }
-    if (event.data === YT.PlayerState.ENDED) {
-      setIsVideoCompleted(true);
-    }
-  };
-
-  useEffect(() => {
-    if (!videoId) return;
-    
-    const onYouTubeIframeAPIReady = () => {
-      if (player) {
-         try { player.destroy(); } catch(e) {} 
-      }
-      if (progressInterval) clearInterval(progressInterval);
-      
-      const newPlayer = new YT.Player(`youtube-player-${lesson.id}`, {
-        height: '100%',
-        width: '100%',
-        videoId: videoId,
-        host: 'https://www.youtube-nocookie.com', // Use privacy-enhanced mode
-        playerVars: { 
-          'playsinline': 1, 
-          'controls': 0, // IMPORTANT: No native controls
-          'rel': 0, 
-          'modestbranding': 1,
-          'disablekb': 1,
-          'iv_load_policy': 3,
-        },
-        events: { 
-          'onStateChange': onPlayerStateChange,
-          'onReady': (event) => {
-            const iframe = event.target.getIframe();
-            if (iframe) {
-              videoElementRef.current = iframe as any;
-            }
-          }
-        }
-      });
-      setPlayer(newPlayer);
-    };
-    
-    if (window.YT && window.YT.Player) {
-      onYouTubeIframeAPIReady();
-    } else {
-      (window as any).onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
-      if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
-        const tag = document.createElement('script');
-        tag.src = "https://www.youtube.com/iframe_api";
-        const firstScriptTag = document.getElementsByTagName('script')[0];
-        firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
-      }
-    }
-    
-    return () => {
-       if (progressInterval) clearInterval(progressInterval);
-    };
-  }, [videoId, lesson.id]);
 
   const handleMarkComplete = async () => {
     if (!user || !isVideoCompleted) return;
@@ -267,40 +158,17 @@ export function LessonPlayerDesktop({
             </div>
           ) : (
             <div className="max-w-4xl mx-auto">
-              <div 
-                ref={videoContainerRef}
-                className="relative w-full bg-black rounded-lg overflow-hidden" 
-                style={{ paddingTop: "56.25%" }}
-                data-protected="true"
-              >
-                {lesson.contentType === 'youtube' && videoId && (
-                  <>
-                                    <div
-                                      id={`youtube-player-${lesson.id}`}
-                                      className="absolute top-0 left-0 w-full h-full"
-                                    />
-                                    {/* Overlay to block share button and related videos */}
-                                    <div
-                                      className="absolute bottom-0 left-0 w-full"
-                                      style={{ height: '100px', zIndex: 10, cursor: 'not-allowed' }}
-                                    />
-                  </>
-                )}
-                {lesson.contentType === 'vdocipher' && vdoCipherVideoId && (
-                  <div className="absolute top-0 left-0 w-full h-full">
-                    <VdoCipherPlayer videoId={vdoCipherVideoId} />
-                  </div>
-                )}
-                {lesson.contentType === 'video-upload' && lesson.url && (
-                  <video 
-                    src={lesson.url} 
-                    className="absolute inset-0 w-full h-full" 
-                    controls 
-                    controlsList="nodownload"
-                    onEnded={() => setIsVideoCompleted(true)}
-                  />
-                )}
-              </div>
+              <UniversalPlayer 
+                src={lesson.url}
+                contentType={lesson.contentType as any}
+                onEnded={() => setIsVideoCompleted(true)}
+                onTimeUpdate={(currentTime, duration) => {
+                  if (duration > 0 && (currentTime / duration) >= 0.9) {
+                    setIsVideoCompleted(true);
+                  }
+                }}
+                watermark={lesson.watermark}
+              />
             </div>
           )}
 

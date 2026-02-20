@@ -15,6 +15,9 @@ declare module '*.sass' {
 
 interface Window {
   VdoPlayer: any; // Or a more specific type if known
+  isPickingFile?: boolean;
+  disableScreenProtection?: boolean;
+  YT?: any;
 }
 
 declare namespace JSX {

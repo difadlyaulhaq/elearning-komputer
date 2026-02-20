@@ -78,6 +78,17 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
   const handleBlur = useCallback(() => {
     if (!enableBlurOnFocusLoss) return;
     
+    // ABAIKAN jika protection dinonaktifkan secara global (misal saat modal upload buka)
+    if (typeof window !== 'undefined' && window.disableScreenProtection) {
+      return;
+    }
+    
+    // ABAIKAN jika sedang memilih file
+    if (typeof window !== 'undefined' && window.isPickingFile) {
+      console.log('File picker detected, skipping blur protection');
+      return;
+    }
+    
     // Immediate trigger for mobile devices (Camera, Notification shade, App Switch)
     if (isMobileDevice()) {
       if (blurDebounceRef.current) clearTimeout(blurDebounceRef.current);
@@ -153,6 +164,24 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
   const handleFocus = useCallback(() => {
     if (!enableBlurOnFocusLoss) return;
 
+    // ABAIKAN jika protection dinonaktifkan secara global
+    if (typeof window !== 'undefined' && window.disableScreenProtection) {
+      return;
+    }
+
+    // Check if we were picking a file
+    const wasPicking = typeof window !== 'undefined' && window.isPickingFile;
+
+    // Reset picking flag saat kembali fokus
+    if (typeof window !== 'undefined') {
+      window.isPickingFile = false;
+    }
+
+    // If returning from file picker, don't trigger protection
+    if (wasPicking) {
+      return;
+    }
+
     // Clear any pending blur debounce
     if (blurDebounceRef.current) {
       clearTimeout(blurDebounceRef.current);
@@ -180,6 +209,7 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!enableKeyboardBlock) return;
+      if (typeof window !== 'undefined' && window.disableScreenProtection) return;
 
       let isScreenshotAttempt = false;
       let preventDefaultAction = false;
@@ -327,6 +357,7 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
     if (!enableContextMenuBlock) return;
 
     const handleContextMenu = (e: MouseEvent) => {
+      if (typeof window !== 'undefined' && window.disableScreenProtection) return;
       e.preventDefault(); // Always prevent default if blocking is enabled
       attemptCountRef.current++;
     };
@@ -373,6 +404,7 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
     if (!enableDragBlock) return;
 
     const handleDragStart = (e: DragEvent) => {
+      if (typeof window !== 'undefined' && window.disableScreenProtection) return;
       e.preventDefault(); // Always prevent default if blocking is enabled
     };
 

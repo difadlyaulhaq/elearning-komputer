@@ -16,7 +16,11 @@ const nextConfig: NextConfig = {
         hostname: 'img.youtube.com', // Izinkan domain thumbnail YouTube
         pathname: '/**',
       },
-      // ... domain lain yang sudah ada (misal firebasestorage, dll)
+      {
+        protocol: 'https',
+        hostname: 'firebasestorage.googleapis.com',
+        pathname: '/**',
+      },
     ],
   },
   async headers() {
