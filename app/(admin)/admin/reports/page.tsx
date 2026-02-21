@@ -167,6 +167,48 @@ const ReportsPage = () => {
     return new Date(dateString).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
+  const handleExportExcel = () => {
+    if (filteredReports.length === 0) {
+      alert('Tidak ada data untuk diekspor');
+      return;
+    }
+
+    const headers = [
+      'Nama Pegawai',
+      'Email',
+      'Divisi',
+      'Kursus',
+      'Progress (%)',
+      'Status',
+      'Akses Terakhir',
+      'Tanggal Selesai'
+    ];
+
+    const csvContent = [
+      headers.join(','),
+      ...filteredReports.map(item => [
+        `"${item.userName.replace(/"/g, '""')}"`,
+        `"${item.userEmail.replace(/"/g, '""')}"`,
+        `"${item.userDivision.replace(/"/g, '""')}"`,
+        `"${item.courseName.replace(/"/g, '""')}"`,
+        `"${item.progress}"`,
+        `"${item.status === 'completed' ? 'Selesai' : item.status === 'in-progress' ? 'Berjalan' : 'Belum Mulai'}"`,
+        `"${item.lastAccess ? new Date(item.lastAccess).toLocaleString('id-ID') : '-'}"`,
+        `"${item.completedAt ? new Date(item.completedAt).toLocaleString('id-ID') : '-'}"`
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `laporan_belajar_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // --- Click Outside Handler ---
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -196,7 +238,7 @@ const ReportsPage = () => {
             <h1 className="text-lg font-bold text-black">Laporan Belajar</h1>
             <p className="text-xs text-gray-600">Monitor progress pembelajaran</p>
           </div>
-          <button className="flex items-center gap-2 bg-[#C5A059] text-black px-3 py-2 rounded-lg hover:bg-[#B08F4A] transition-colors font-semibold text-sm">
+          <button onClick={handleExportExcel} className="flex items-center gap-2 bg-[#C5A059] text-black px-3 py-2 rounded-lg hover:bg-[#B08F4A] transition-colors font-semibold text-sm">
             <Download size={16} />
             <span>Export</span>
           </button>
@@ -244,7 +286,7 @@ const ReportsPage = () => {
             <h1 className="text-2xl font-bold text-black">Laporan Belajar</h1>
             <p className="text-gray-600 mt-1">Monitor progress pembelajaran pegawai</p>
           </div>
-          <button className="flex items-center space-x-2 bg-[#C5A059] text-black px-5 py-2.5 rounded-lg hover:bg-[#B08F4A] transition-colors font-semibold">
+          <button onClick={handleExportExcel} className="flex items-center space-x-2 bg-[#C5A059] text-black px-5 py-2.5 rounded-lg hover:bg-[#B08F4A] transition-colors font-semibold">
             <Download size={20} /><span>Export Excel</span>
           </button>
         </div>

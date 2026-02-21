@@ -190,7 +190,7 @@ export const CoursePreviewModal: React.FC<{
                   <p className="text-xs text-yellow-700 truncate max-w-[200px] md:max-w-md">{previewData.title}</p>
                 </div>
              </div>
-             <button onClick={onClose} className="p-2 bg-gray-100 hover:bg-red-50 hover:text-red-600 rounded-full transition-colors">
+             <button onClick={onClose} className="p-2 text-gray-500 hover:bg-red-50 hover:text-red-600 rounded-full transition-colors">
                 <X size={20} />
              </button>
         </div>
