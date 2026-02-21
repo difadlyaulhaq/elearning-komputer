@@ -51,11 +51,26 @@ export const CoursePreviewModal: React.FC<{
            {/* Course Overview */}
            <div className="relative aspect-video rounded-xl overflow-hidden bg-gray-100 shadow-md">
              <img 
-               src={previewData.coverImage || previewData.thumbnail || "/logo-alfajr.png"} 
+               src={previewData.coverImage || "/logo-alfajr.png"} 
                className="w-full h-full object-cover"
                alt="Cover"
                onError={(e) => { e.currentTarget.src = "/logo-alfajr.png"; }}
              />
+             
+             {/* Thumbnail Overlay for Verification */}
+             {previewData.thumbnail && (
+               <div className="absolute bottom-4 left-4 w-32 aspect-video rounded-lg border-2 border-white shadow-xl overflow-hidden z-10">
+                 <img 
+                   src={previewData.thumbnail} 
+                   className="w-full h-full object-cover"
+                   alt="Thumbnail"
+                 />
+                 <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                    <span className="text-[8px] text-white font-bold bg-black/50 px-1 rounded">Thumbnail</span>
+                 </div>
+               </div>
+             )}
+
              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                 <button 
                   onClick={() => {
@@ -556,6 +571,10 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
     if (!formData.title || !formData.categoryId) {
       return toast.error('Judul dan Kategori wajib diisi', { duration: 3000 });
     }
+
+    if (!formData.coverImage || !formData.thumbnail) {
+      return toast.error('Cover Image dan Thumbnail wajib diunggah', { duration: 3000 });
+    }
     
     setIsLoading(true);
     const loadingToast = toast.loading('Menyimpan perubahan...');
@@ -615,6 +634,13 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
       setIsLoading(false);
       return;
     }
+
+    if (!formData.coverImage || !formData.thumbnail) {
+      toast.error('Cover Image dan Thumbnail wajib diunggah', { duration: 3000 });
+      setIsLoading(false);
+      return;
+    }
+
     const loadingToast = toast.loading('Menyimpan kursus...');
     
     try {
@@ -1095,17 +1121,17 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                   
                   <div className="md:col-span-2">
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Cover Image & Thumbnail
+                      Cover Image & Thumbnail <span className="text-red-500">* Wajib Keduanya</span>
                     </label>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <span className="text-xs font-medium text-gray-500">Cover Image</span>
+                        <span className="text-xs font-medium text-gray-500">Cover Image (Rasio 16:9 disarankan)</span>
                         <FileUploader 
                           folder="course-covers" 
                           accept="image/*" 
                           label="Upload Cover" 
                           onIsUploadingChange={setIsUploadingLesson}
-                          onUploadSuccess={(url) => setFormData({...formData, coverImage: url, thumbnail: formData.thumbnail || url})} 
+                          onUploadSuccess={(url) => setFormData({...formData, coverImage: url})} 
                         />
                         <input 
                           type="text" 
@@ -1117,7 +1143,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                         />
                       </div>
                       <div className="space-y-2">
-                        <span className="text-xs font-medium text-gray-500">Thumbnail</span>
+                        <span className="text-xs font-medium text-gray-500">Thumbnail (Rasio 1:1 atau 4:3 disarankan)</span>
                         <FileUploader 
                           folder="course-thumbnails" 
                           accept="image/*" 
@@ -1138,31 +1164,56 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                   </div>
                   
                   {(formData.thumbnail || formData.coverImage) && (
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Preview Visual
+                    <div className="md:col-span-2 bg-gray-50 p-4 rounded-xl border border-dashed border-gray-300">
+                      <label className="block text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+                        <Eye size={16} className="text-[#C5A059]" />
+                        Preview Visual Terunggah
                       </label>
-                      <div className="grid grid-cols-2 gap-4">
-                        {formData.coverImage && (
-                          <div>
-                            <p className="text-[10px] text-gray-500 mb-1">Cover</p>
-                            <img 
-                              src={formData.coverImage} 
-                              alt="Cover Preview" 
-                              className="w-full h-32 object-cover rounded-lg border" 
-                            />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <p className="text-xs font-semibold text-gray-500 flex justify-between">
+                            <span>Cover Preview (16:9)</span>
+                            {!formData.coverImage && <span className="text-red-400">Belum ada</span>}
+                          </p>
+                          <div className="relative aspect-video bg-white rounded-lg border overflow-hidden shadow-sm group">
+                            {formData.coverImage ? (
+                              <img 
+                                key={formData.coverImage}
+                                src={formData.coverImage} 
+                                alt="Cover Preview" 
+                                className="w-full h-full object-cover transition-transform group-hover:scale-105" 
+                                onError={(e) => { e.currentTarget.src = "/logo-alfajr.png"; }}
+                              />
+                            ) : (
+                              <div className="w-full h-full flex flex-col items-center justify-center text-gray-300">
+                                <ImageIcon size={32} />
+                                <span className="text-[10px] mt-1">Belum ada cover</span>
+                              </div>
+                            )}
                           </div>
-                        )}
-                        {formData.thumbnail && (
-                          <div>
-                            <p className="text-[10px] text-gray-500 mb-1">Thumbnail</p>
-                            <img 
-                              src={formData.thumbnail} 
-                              alt="Thumbnail Preview" 
-                              className="w-1/2 h-32 object-cover rounded-lg border mx-auto" 
-                            />
+                        </div>
+                        <div className="space-y-2">
+                          <p className="text-xs font-semibold text-gray-500 flex justify-between">
+                            <span>Thumbnail Preview (Square/4:3)</span>
+                            {!formData.thumbnail && <span className="text-red-400">Belum ada</span>}
+                          </p>
+                          <div className="relative aspect-video md:aspect-square bg-white rounded-lg border overflow-hidden shadow-sm group w-full md:w-48 mx-auto">
+                            {formData.thumbnail ? (
+                              <img 
+                                key={formData.thumbnail}
+                                src={formData.thumbnail} 
+                                alt="Thumbnail Preview" 
+                                className="w-full h-full object-cover transition-transform group-hover:scale-105" 
+                                onError={(e) => { e.currentTarget.src = "/logo-alfajr.png"; }}
+                              />
+                            ) : (
+                              <div className="w-full h-full flex flex-col items-center justify-center text-gray-300">
+                                <ImageIcon size={32} />
+                                <span className="text-[10px] mt-1">Belum ada thumbnail</span>
+                              </div>
+                            )}
                           </div>
-                        )}
+                        </div>
                       </div>
                     </div>
                   )}

@@ -190,6 +190,7 @@ export function LessonPlayerMobile({
                   }
                 }}
                 watermark={lesson.watermark}
+                disableSeeking={!isVideoCompleted}
               />
             </div>
           )}

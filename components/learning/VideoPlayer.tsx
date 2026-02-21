@@ -107,6 +107,7 @@ export function VideoPlayer({
               }
             }}
             watermark={lesson.watermark}
+            disableSeeking={!isVideoCompleted}
           />
         );
       default:

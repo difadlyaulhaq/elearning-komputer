@@ -11,6 +11,7 @@ interface UniversalPlayerProps {
   onEnded?: () => void;
   onTimeUpdate?: (currentTime: number, duration: number) => void;
   watermark?: boolean;
+  disableSeeking?: boolean;
 }
 
 const UniversalPlayer: React.FC<UniversalPlayerProps> = ({
@@ -18,10 +19,13 @@ const UniversalPlayer: React.FC<UniversalPlayerProps> = ({
   contentType,
   onEnded,
   onTimeUpdate,
-  watermark = true
+  watermark = true,
+  disableSeeking = false
 }) => {
   const { user } = useAuth();
   const plyrRef = useRef<APITypes>(null);
+  const lastTimeRef = useRef(0);
+  const maxTimeReachedRef = useRef(0);
 
   // Helper for YouTube ID
   const getYouTubeId = (url: string) => {
@@ -80,12 +84,11 @@ const UniversalPlayer: React.FC<UniversalPlayerProps> = ({
     },
     // Prevent downloading
     download: false,
+    // Disable seeking keyboard shortcuts if seeking is disabled
+    keyboard: { focused: true, global: false },
   };
 
   useEffect(() => {
-    // The APITypes has a 'plyr' property which might not be ready immediately
-    // or might be accessed differently in some versions.
-    
     const interval = setInterval(() => {
       const player = plyrRef.current?.plyr;
       
@@ -95,13 +98,39 @@ const UniversalPlayer: React.FC<UniversalPlayerProps> = ({
         };
 
         const handleTimeUpdate = () => {
+          if (disableSeeking) {
+            // Jika user mencoba skip ke depan (lebih dari 2 detik dari posisi terakhir yang valid)
+            if (player.currentTime > maxTimeReachedRef.current + 2) {
+              player.currentTime = maxTimeReachedRef.current;
+            } else if (player.currentTime > maxTimeReachedRef.current) {
+              maxTimeReachedRef.current = player.currentTime;
+            }
+          }
+          
+          lastTimeRef.current = player.currentTime;
           if (onTimeUpdate) {
             onTimeUpdate(player.currentTime, player.duration);
           }
         };
 
+        const handleSeeking = () => {
+          if (disableSeeking) {
+            lastTimeRef.current = player.currentTime;
+          }
+        };
+
+        const handleSeeked = () => {
+          if (disableSeeking) {
+            if (player.currentTime > maxTimeReachedRef.current) {
+              player.currentTime = maxTimeReachedRef.current;
+            }
+          }
+        };
+
         player.on('ended', handleEnded);
         player.on('timeupdate', handleTimeUpdate);
+        player.on('seeking', handleSeeking);
+        player.on('seeked', handleSeeked);
         
         clearInterval(interval);
       }
@@ -109,13 +138,8 @@ const UniversalPlayer: React.FC<UniversalPlayerProps> = ({
 
     return () => {
       clearInterval(interval);
-      const player = plyrRef.current?.plyr;
-      if (player && typeof (player as any).off === 'function') {
-        // We can't easily remove the local handlers without storing them,
-        // but clearing the interval and the player unmounting handles most cases.
-      }
     };
-  }, [onEnded, onTimeUpdate]);
+  }, [onEnded, onTimeUpdate, disableSeeking]);
 
   return (
     <div className="relative w-full overflow-hidden rounded-xl shadow-lg group bg-black">

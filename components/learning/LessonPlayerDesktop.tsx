@@ -168,6 +168,7 @@ export function LessonPlayerDesktop({
                   }
                 }}
                 watermark={lesson.watermark}
+                disableSeeking={!isVideoCompleted}
               />
             </div>
           )}
