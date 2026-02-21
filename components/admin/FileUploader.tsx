@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL, UploadTask } from 'firebase/storage';
 import { storage } from '@/lib/firebase/config';
 import { Upload, X, CheckCircle2, Loader2, FileIcon, ImageIcon, VideoIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -25,6 +25,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
   const [progress, setProgress] = useState(0);
   const [fileName, setFileName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadTaskRef = useRef<UploadTask | null>(null);
 
   const setUploadingState = (state: boolean) => {
     setIsUploading(state);
@@ -39,12 +40,26 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
     uploadFile(file);
   };
 
+  const handleCancel = () => {
+    if (uploadTaskRef.current) {
+      uploadTaskRef.current.cancel();
+      setUploadingState(false);
+      setProgress(0);
+      setFileName(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      toast.error('Unggahan dibatalkan');
+    }
+  };
+
   const uploadFile = (file: File) => {
     setUploadingState(true);
     setProgress(0);
 
     const storageRef = ref(storage, `${folder}/${Date.now()}-${file.name}`);
     const uploadTask = uploadBytesResumable(storageRef, file);
+    uploadTaskRef.current = uploadTask;
 
     uploadTask.on(
       'state_changed',
@@ -53,14 +68,20 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
         setProgress(Math.round(p));
       },
       (error) => {
-        console.error("Upload error:", error);
-        toast.error(`Gagal mengunggah: ${error.message}`);
+        if (error.code === 'storage/canceled') {
+          console.log("Upload canceled by user");
+        } else {
+          console.error("Upload error:", error);
+          toast.error(`Gagal mengunggah: ${error.message}`);
+        }
         setUploadingState(false);
+        uploadTaskRef.current = null;
       },
       async () => {
         const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
         onUploadSuccess(downloadURL, file.name);
         setUploadingState(false);
+        uploadTaskRef.current = null;
         toast.success('File berhasil diunggah!');
       }
     );
@@ -79,19 +100,20 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
           isUploading ? 'border-yellow-400 bg-yellow-50' : 'border-gray-300 hover:border-[#C5A059] bg-white'
         }`}
       >
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          onClick={() => {
-            if (typeof window !== 'undefined') {
-              (window as any).isPickingFile = true;
-            }
-          }}
-          accept={accept}
-          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
-          disabled={isUploading}
-        />
+        {!isUploading && (
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                (window as any).isPickingFile = true;
+              }
+            }}
+            accept={accept}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+          />
+        )}
         
         <div className="flex flex-col items-center justify-center space-y-2">
           {isUploading ? (
@@ -103,7 +125,19 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
                   style={{ width: `${progress}%` }}
                 ></div>
               </div>
-              <p className="text-xs font-medium text-gray-600">{progress}% Mengunggah...</p>
+              <div className="flex flex-col items-center space-y-1">
+                <p className="text-xs font-medium text-gray-600">{progress}% Mengunggah...</p>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCancel();
+                  }}
+                  className="mt-2 flex items-center gap-1 px-3 py-1 text-xs font-medium text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded-full transition-colors border border-red-200"
+                >
+                  <X size={12} />
+                  Batalkan
+                </button>
+              </div>
             </>
           ) : (
             <>
