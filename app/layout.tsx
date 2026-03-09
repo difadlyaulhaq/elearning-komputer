@@ -49,23 +49,35 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               function isMobileDevice() {
-                const isSmallScreen = window.innerWidth < 768; // Adjust threshold as needed
-                const hasTouchScreen = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-                const ua = navigator.userAgent.toLowerCase();
-                const isMobileUa = /mobile|android|iphone|ipad|phone/i.test(ua);
+                const ua = navigator.userAgent;
+                const platform = navigator.platform || '';
+                const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+                
+                // 1. Standard UA Check
+                const isMobileUA = /mobile|android|iphone|ipad|phone/i.test(ua);
+                
+                // 2. Aggressive Desktop Mode Check
+                const isLinuxWithTouch = hasTouch && /Linux/i.test(platform);
+                const isMacWithTouch = hasTouch && /MacIntel/i.test(platform) && navigator.maxTouchPoints > 1;
+                const hasOrientation = typeof window.orientation !== 'undefined';
 
-                let score = 0;
-                if (isSmallScreen) score++;
-                if (hasTouchScreen) score++;
-                if (isMobileUa) score++;
-
-                return score >= 2;
+                return {
+                  isMobile: isMobileUA || isLinuxWithTouch || isMacWithTouch || (hasTouch && hasOrientation),
+                  isLinuxWithTouch: isLinuxWithTouch
+                };
               }
 
-              if (isMobileDevice()) {
-                document.body.innerHTML = '<div style="display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:100vh;text-align:center;padding:20px;background-color:#f8f8f8;color:#333;"><h1 style="font-size:2.5em;color:#d9534f;">Akses Ditolak</h1><p style="font-size:1.2em;max-width:600px;">Mohon maaf, website ini hanya dapat diakses dari perangkat desktop. Silakan gunakan komputer atau laptop Anda untuk melanjutkan.</p><p style="font-size:1em;color:#666;">Terima kasih atas pengertiannya.</p></div>';
-                // Optionally, you could redirect:
-                // window.location.href = '/blocked';
+              const device = isMobileDevice();
+              const uaLower = navigator.userAgent.toLowerCase();
+              const isNativeApp = uaLower.includes('alfajrapp') || window.Capacitor;
+              const isAllowedPath = window.location.pathname === '/download-app' || window.location.pathname === '/blocked';
+
+              if (device.isMobile && !isNativeApp && !isAllowedPath) {
+                if (/android/i.test(uaLower) || device.isLinuxWithTouch) {
+                  window.location.replace('/download-app');
+                } else {
+                  window.location.replace('/blocked');
+                }
               }
             `,
           }}

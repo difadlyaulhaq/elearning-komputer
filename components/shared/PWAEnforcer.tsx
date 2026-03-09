@@ -36,6 +36,8 @@ export default function PWAEnforcer({ children }: { children: React.ReactNode })
   // Penting agar "Login with Google" bisa redirect kembali ke sini sebelum deep link ke aplikasi.
   const isExcludedPage = 
     pathname === '/login' || 
+    pathname === '/download-app' || 
+    pathname === '/blocked' || 
     pathname.startsWith('/auth') || 
     searchParams.has('return_to');
 
@@ -86,7 +88,7 @@ export default function PWAEnforcer({ children }: { children: React.ReactNode })
              variant="primary" 
              className="w-full py-3.5 text-sm font-bold bg-[#C5A059] hover:bg-[#b08d4b] text-white rounded-xl shadow-lg shadow-[#C5A059]/20 transition-all active:scale-95" 
              text="Download Aplikasi Android"
-             apkUrl="/Alfajr-elearning.apk"
+             apkUrl="/alfajr-elearning.apk"
            /> 
 
            {/* Divider */}

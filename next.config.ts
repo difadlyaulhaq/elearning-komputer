@@ -26,7 +26,7 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: '/Alfajr-elearning.apk',
+        source: '/alfajr-elearning.apk',
         headers: [
           {
             key: 'Content-Type',
@@ -34,7 +34,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Content-Disposition',
-            value: 'attachment; filename="Alfajr-elearning.apk"',
+            value: 'attachment; filename="alfajr-elearning.apk"',
           },
         ],
       },

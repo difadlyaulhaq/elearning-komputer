@@ -49,7 +49,7 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
   // --- Mobile App Enforcer (Currently commented out) ---
   // This `useEffect` block provides a client-side backup mechanism to redirect users
   // on mobile web browsers to a download page, encouraging native app usage.
-  // The primary protection for this logic is often handled in middleware (e.g., `proxy.ts`)
+  // The primary protection for this logic is often handled in middleware (e.g., `middleware.ts`)
   // for better security and performance.
   //
   // To re-enable this client-side mobile web enforcement:

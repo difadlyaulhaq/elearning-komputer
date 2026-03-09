@@ -3,13 +3,26 @@
 	"appName": "Alfajr E-Learning",
 	"webDir": "public",
 	"server": {
-		"url": "http://10.107.217.17:3000",
-		"cleartext": true,
-		"androidScheme": "http"
+		"url": "https://alfajr-elearning.vercel.app",
+		"allowNavigation": [
+			"alfajr-elearning.vercel.app",
+			"*.alfajr-elearning.vercel.app",
+			"alfajr-elearning-*.vercel.app"
+		]
+	},
+	"android": {
+		"appendUserAgent": " AlfajrApp/1.0"
 	},
 	"plugins": {
+		"FirebaseAuthentication": {
+			"skipNativeAuth": false,
+			"providers": [
+				"google.com"
+			],
+			"serverClientId": "342608432294-6okq9uilstspcmrs7av1obn5859ktr32.apps.googleusercontent.com"
+		},
 		"PrivacyScreen": {
-			"enable": false,
+			"enable": true,
 			"imageName": "Splash"
 		},
 		"SplashScreen": {

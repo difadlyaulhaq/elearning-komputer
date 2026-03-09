@@ -1,4 +1,4 @@
-// proxy.ts (ROOT PROJECT) - Next.js 16 Proxy Convention
+// middleware.ts (ROOT PROJECT) - Next.js Middleware Guard
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
@@ -6,7 +6,8 @@ import type { NextRequest } from 'next/server';
 const PUBLIC_ROUTES = [
   '/login', 
   '/forgot-password',
-  '/download-app', // Allow access to download page
+  '/download-app', 
+  '/blocked', // CRITICAL: Allow blocked page access
 ];
 
 // API routes that should bypass proxy completely
@@ -15,7 +16,7 @@ const PUBLIC_API_ROUTES = [
   '/api/auth/logout',
   '/api/auth/check',
   '/api/admin',
-  '/api/auth/login-native', // Allow native login API
+  '/api/auth/login-native',
 ];
 
 // Routes that are only accessible when NOT authenticated
@@ -27,44 +28,54 @@ const GUEST_ONLY_ROUTES = [
 // Admin routes prefix
 const ADMIN_ROUTES = '/admin';
 
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  
+  const userAgent = request.headers.get('user-agent') || '';
+  const url = request.nextUrl.clone();
+
   // ============================================
   // 0. BYPASS FOR API ROUTES & STATIC FILES
   // ============================================
   
-  // 1. Bypass API Routes yang publik
   if (PUBLIC_API_ROUTES.some(route => pathname.startsWith(route))) {
     return NextResponse.next();
   }
 
-  // 2. Bypass file statis (APK, gambar, dll) secara manual agar tidak error regex
   if (pathname.match(/\.(svg|png|jpg|jpeg|gif|webp|apk|ico)$/)) {
     return NextResponse.next();
   }
+
+  // ============================================
+  // MOBILE BROWSER GUARD (Enhanced)
+  // ============================================
   
-  // ============================================
-  // MOBILE BROWSER GUARD (Server-side)
-  // ============================================
-  const userAgent = request.headers.get('user-agent');
-  const url = request.nextUrl.clone();
+  // 1. Detect Native App (Bypass all mobile blocks)
+  const isNativeApp = userAgent.toLowerCase().includes('alfajrapp');
+  
+  // 2. Detect Mobile Browsers
+  const isAndroid = /Android/i.test(userAgent);
+  const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
+  const isMobile = isAndroid || isIOS || /Mobile|WebOS|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
 
-  // List of keywords to detect mobile devices
-  const mobileKeywords = [
-    'Android', 'iPhone', 'iPod', 'BlackBerry', 'Windows Phone', 'Mobile',
-    // Add more specific keywords if necessary, but avoid 'iPad' here as it's often desktop-like
-  ];
-
-  const isMobile = userAgent && mobileKeywords.some(keyword => userAgent.includes(keyword));
-
-  // If mobile and not already on the blocked page, redirect to blocked
-  if (isMobile && url.pathname !== '/blocked' && url.pathname !== '/download-app') {
-    url.pathname = '/blocked';
-    return NextResponse.redirect(url);
+  // Guard Logic
+  if (!isNativeApp && isMobile) {
+    // Android redirects to download page
+    if (isAndroid && pathname !== '/download-app') {
+      url.pathname = '/download-app';
+      return NextResponse.redirect(url);
+    }
+    
+    // iOS and others redirect to blocked
+    if (!isAndroid && pathname !== '/blocked' && pathname !== '/download-app') {
+      url.pathname = '/blocked';
+      return NextResponse.redirect(url);
+    }
   }
 
-  // Get authentication cookies
+  // ============================================
+  // AUTHENTICATION & ACCESS CONTROL
+  // ============================================
+  
   const authToken = request.cookies.get('auth_token')?.value;
   const userRole = request.cookies.get('user_role')?.value;
   
@@ -72,9 +83,7 @@ export function proxy(request: NextRequest) {
   const isGuestOnlyRoute = GUEST_ONLY_ROUTES.includes(pathname);
   const isAdminRoute = pathname.startsWith(ADMIN_ROUTES);
 
-  // ============================================
   // 1. HANDLE PUBLIC ROUTES
-  // ============================================
   if (isPublicRoute) {
     if (isGuestOnlyRoute && authToken) {
       return redirectBasedOnRole(userRole, request.url);
@@ -82,16 +91,12 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // ============================================
   // 2. CHECK AUTHENTICATION
-  // ============================================
   if (!authToken) {
     return redirectToLogin(request.url, pathname);
   }
 
-  // ============================================
   // 3. ROLE-BASED ACCESS CONTROL
-  // ============================================
   if (isAdminRoute) {
     if (userRole !== 'admin') {
       return NextResponse.redirect(new URL('/learning/dashboard', request.url));
@@ -99,9 +104,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // ============================================
   // 4. ROOT PATH REDIRECT
-  // ============================================
   if (pathname === '/') {
     return redirectBasedOnRole(userRole, request.url);
   }
@@ -125,15 +128,9 @@ function redirectBasedOnRole(role: string | undefined, originalUrl: string) {
   return NextResponse.redirect(redirectUrl);
 }
 
-// Matcher configuration yang lebih sederhana dan aman
+// Matcher configuration
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
     '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 };

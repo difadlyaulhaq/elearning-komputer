@@ -30,7 +30,20 @@ type ViolationCallback = (event: ViolationEvent) => void;
 
 export const isMobileDevice = (): boolean => {
   if (typeof window === 'undefined') return false;
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  
+  const ua = navigator.userAgent;
+  const platform = (navigator as any).platform || '';
+  
+  // 1. Standard UA Check
+  const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+  
+  // 2. Aggressive Desktop Mode Check
+  const hasTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+  const isLinuxWithTouch = hasTouch && /Linux/i.test(platform);
+  const isMacWithTouch = hasTouch && /MacIntel/i.test(platform) && navigator.maxTouchPoints > 1;
+  const hasOrientation = typeof window.orientation !== 'undefined';
+
+  return isMobileUA || isLinuxWithTouch || isMacWithTouch || (hasTouch && hasOrientation);
 };
 
 export const isIOS = (): boolean => {
