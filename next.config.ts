@@ -23,23 +23,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  async headers() {
-    return [
-      {
-        source: '/alfajr-elearning.apk',
-        headers: [
-          {
-            key: 'Content-Type',
-            value: 'application/vnd.android.package-archive',
-          },
-          {
-            key: 'Content-Disposition',
-            value: 'attachment; filename="alfajr-elearning.apk"',
-          },
-        ],
-      },
-    ];
-  },
   /* config options here */
 };
 

@@ -131,6 +131,13 @@ function redirectBasedOnRole(role: string | undefined, originalUrl: string) {
 // Matcher configuration
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - alfajr-elearning.apk (direct download)
+     */
+    '/((?!_next/static|_next/image|favicon.ico|alfajr-elearning.apk).*)',
   ],
 };
