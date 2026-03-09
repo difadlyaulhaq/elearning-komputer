@@ -16,6 +16,8 @@ import {
 import toast from "react-hot-toast";
 import { MarkdownRenderer } from "@/components/shared/MarkdownRenderer";
 import UniversalPlayer from "./UniversalPlayer";
+import { ScreenProtection } from "@/components/shared/ScreenProtection";
+import { APITypes } from "plyr-react";
 
 interface VideoPlayerProps {
   courseId: string;
@@ -34,6 +36,15 @@ export function VideoPlayer({
 }: VideoPlayerProps) {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const plyrRef = useRef<APITypes>(null);
+  const videoElementRef = useRef<HTMLVideoElement | null>(null);
+
+  // Sync plyr's internal video element to our ref
+  useEffect(() => {
+    if (plyrRef.current?.plyr?.media) {
+      videoElementRef.current = plyrRef.current.plyr.media as HTMLVideoElement;
+    }
+  }, [plyrRef.current]);
 
   const [isVideoCompleted, setIsVideoCompleted] = useState(initialCompleted);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -97,18 +108,24 @@ export function VideoPlayer({
       case 'youtube':
       case 'video-upload':
         return (
-          <UniversalPlayer 
-            src={lesson.url}
-            contentType={lesson.contentType}
-            onEnded={() => setIsVideoCompleted(true)}
-            onTimeUpdate={(currentTime, duration) => {
-              if (duration > 0 && (currentTime / duration) >= 0.9) {
-                setIsVideoCompleted(true);
-              }
-            }}
-            watermark={lesson.watermark}
-            disableSeeking={!isVideoCompleted}
-          />
+          <ScreenProtection 
+            userEmail={user?.email}
+            videoElementRef={videoElementRef}
+          >
+            <UniversalPlayer 
+              ref={plyrRef}
+              src={lesson.url}
+              contentType={lesson.contentType}
+              onEnded={() => setIsVideoCompleted(true)}
+              onTimeUpdate={(currentTime, duration) => {
+                if (duration > 0 && (currentTime / duration) >= 0.9) {
+                  setIsVideoCompleted(true);
+                }
+              }}
+              watermark={lesson.watermark}
+              disableSeeking={!isVideoCompleted}
+            />
+          </ScreenProtection>
         );
       default:
         return <p>Tipe konten tidak didukung.</p>

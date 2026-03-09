@@ -46,8 +46,22 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const isMouseInsideRef = useRef(true); // Track if mouse is inside window
 
+  // Helper function to pause video
+  const pauseVideo = useCallback(() => {
+    if (videoElementRef?.current) {
+      try {
+        videoElementRef.current.pause();
+      } catch (e) {
+        console.warn('Failed to auto-pause video:', e);
+      }
+    }
+  }, [videoElementRef]);
+
   // Start countdown timer
   const startCountdown = useCallback((seconds: number) => {
+    // Pause video immediately when countdown/violation starts
+    pauseVideo();
+
     if (countdownIntervalRef.current) {
       clearInterval(countdownIntervalRef.current);
     }
@@ -72,7 +86,7 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
         setViolationType(null);
       }
     }, 1000);
-  }, []);
+  }, [pauseVideo]);
 
   // Smart blur detection - hanya trigger jika benar-benar pindah tab/window
   const handleBlur = useCallback(() => {
@@ -88,6 +102,9 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
       console.log('File picker detected, skipping blur protection');
       return;
     }
+    
+    // Pause video immediately on blur
+    pauseVideo();
     
     // Immediate trigger for mobile devices (Camera, Notification shade, App Switch)
     if (isMobileDevice()) {
@@ -114,7 +131,7 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
         startCountdown(5);
       }
     }, 100); // 100ms delay untuk menghindari false trigger
-  }, [enableBlurOnFocusLoss, startCountdown]);
+  }, [enableBlurOnFocusLoss, startCountdown, pauseVideo]);
 
   // Initialize mobile protection with gesture support
   useEffect(() => {

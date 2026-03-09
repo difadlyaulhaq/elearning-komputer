@@ -14,16 +14,20 @@ interface UniversalPlayerProps {
   disableSeeking?: boolean;
 }
 
-const UniversalPlayer: React.FC<UniversalPlayerProps> = ({
+const UniversalPlayer = React.forwardRef<APITypes, UniversalPlayerProps>(({
   src,
   contentType,
   onEnded,
   onTimeUpdate,
   watermark = true,
   disableSeeking = false
-}) => {
+}, ref) => {
   const { user } = useAuth();
-  const plyrRef = useRef<APITypes>(null);
+  const internalPlyrRef = useRef<APITypes>(null);
+  
+  // Use the forwarded ref if provided, otherwise use internal
+  const plyrRef = (ref as React.RefObject<APITypes>) || internalPlyrRef;
+
   const lastTimeRef = useRef(0);
   const maxTimeReachedRef = useRef(0);
 
@@ -189,6 +193,6 @@ const UniversalPlayer: React.FC<UniversalPlayerProps> = ({
       )}
     </div>
   );
-};
+});
 
 export default UniversalPlayer;
