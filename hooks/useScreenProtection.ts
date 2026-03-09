@@ -14,7 +14,7 @@ interface ScreenProtectionOptions {
   watermarkText?: string;
   onScreenshotAttempt?: () => void;
   onRecordingDetected?: () => void;
-  videoElementRef?: React.RefObject<HTMLVideoElement>;
+  videoElementRef?: React.RefObject<HTMLVideoElement | null>;
 }
 
 export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {

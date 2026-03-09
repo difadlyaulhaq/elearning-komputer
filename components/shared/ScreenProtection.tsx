@@ -20,7 +20,7 @@ interface ScreenProtectionProps {
   enableDevToolsDetection?: boolean; // Passed to useScreenProtection, controls dev tools detection.
   enableDragBlock?: boolean; // Passed to useScreenProtection, controls drag blocking.
   showWarningOnAttempt?: boolean; // Controls visibility of the toast warning on screenshot attempts.
-  videoElementRef?: React.RefObject<HTMLVideoElement>; // Reference to a video element for specific protection.
+  videoElementRef?: React.RefObject<HTMLVideoElement | null>; // Reference to a video element for specific protection.
   className?: string; // Additional CSS classes for the main wrapper.
 }
 

@@ -41,8 +41,9 @@ export function VideoPlayer({
 
   // Sync plyr's internal video element to our ref
   useEffect(() => {
-    if (plyrRef.current?.plyr?.media) {
-      videoElementRef.current = plyrRef.current.plyr.media as HTMLVideoElement;
+    const plyrInstance = plyrRef.current?.plyr as any;
+    if (plyrInstance?.media) {
+      videoElementRef.current = plyrInstance.media as HTMLVideoElement;
     }
   }, [plyrRef.current]);
 
