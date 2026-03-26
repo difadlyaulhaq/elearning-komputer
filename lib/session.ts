@@ -5,7 +5,17 @@ import type { User } from '@/types'; // Import the main User type
 
 export async function getCurrentUser(): Promise<User | null> {
   const cookieStore = await cookies();
-  const idToken = cookieStore.get('auth_token')?.value;
+  let idToken = cookieStore.get('auth_token')?.value;
+
+  // FALLBACK UNTUK MOBILE: Cek Header Authorization jika cookie kosong
+  if (!idToken) {
+    const { headers } = await import('next/headers');
+    const headerStore = await headers();
+    const authHeader = headerStore.get('authorization');
+    if (authHeader?.startsWith('Bearer ')) {
+      idToken = authHeader.split('Bearer ')[1];
+    }
+  }
 
   if (!idToken) {
     return null;
