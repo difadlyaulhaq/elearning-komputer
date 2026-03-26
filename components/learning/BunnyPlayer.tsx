@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import Hls from 'hls.js';
+import { useAuth } from '@/context/AuthContext';
 
 interface BunnyPlayerProps {
   videoId: string;
@@ -13,6 +14,7 @@ export default function BunnyPlayer({ videoId, onEnded, onTimeUpdate }: BunnyPla
   const videoRef = useRef<HTMLVideoElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { authFetch } = useAuth();
 
   useEffect(() => {
     if (!videoId) return;
@@ -24,7 +26,7 @@ export default function BunnyPlayer({ videoId, onEnded, onTimeUpdate }: BunnyPla
       setError(null);
       try {
         // 1. Ambil URL aman dari backend
-        const response = await fetch('/api/learning/video', {
+        const response = await authFetch('/api/learning/video', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ videoId }),

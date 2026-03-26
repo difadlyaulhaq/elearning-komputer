@@ -43,7 +43,7 @@ export function LessonPlayerMobile({
   completedLessons,
   isCompleted: initialCompleted,
 }: LessonPlayerMobileProps) {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, authFetch } = useAuth();
   const router = useRouter();
 
   const [isVideoCompleted, setIsVideoCompleted] = useState(initialCompleted);
@@ -65,10 +65,10 @@ export function LessonPlayerMobile({
     toast.loading('Menyimpan progress...');
     
     try {
-      const res = await fetch('/api/progress/lesson', {
+      const res = await authFetch('/api/progress/lesson', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.uid, courseId, lessonId: lesson.id })
+        body: JSON.stringify({ userId: user.id, courseId, lessonId: lesson.id })
       });
       
       if (!res.ok) {

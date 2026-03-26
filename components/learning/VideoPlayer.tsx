@@ -34,7 +34,7 @@ export function VideoPlayer({
   nextLesson,
   isCompleted: initialCompleted,
 }: VideoPlayerProps) {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, authFetch } = useAuth();
   const router = useRouter();
   const plyrRef = useRef<APITypes>(null);
   const videoElementRef = useRef<HTMLVideoElement | null>(null);
@@ -57,10 +57,10 @@ export function VideoPlayer({
     toast.loading('Menyimpan progress...');
     
     try {
-      const res = await fetch('/api/progress/lesson', {
+      const res = await authFetch('/api/progress/lesson', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.uid, courseId, lessonId: lesson.id })
+        body: JSON.stringify({ userId: user.id, courseId, lessonId: lesson.id })
       });
       
       if (!res.ok) {

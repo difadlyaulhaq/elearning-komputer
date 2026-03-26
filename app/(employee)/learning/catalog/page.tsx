@@ -54,7 +54,7 @@ const CourseCard: React.FC<{ course: Course; progress?: Progress }> = ({ course,
 
 // --- Main Component ---
 const CourseCatalogPage = () => {
-  const { user, isLoading: isAuthLoading } = useAuth();
+  const { user, isLoading: isAuthLoading, authFetch } = useAuth();
   const [courses, setCourses] = useState<Course[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [progress, setProgress] = useState<Record<string, Progress>>({});
@@ -67,13 +67,13 @@ const CourseCatalogPage = () => {
       setIsLoading(true);
       try {
         const fetches = [
-          fetch('/api/admin/courses'),
-          fetch('/api/admin/categories'),
+          authFetch('/api/admin/courses'),
+          authFetch('/api/admin/categories'),
         ];
 
         // Only fetch progress if user is logged in
-        if (user?.uid) {
-          fetches.push(fetch(`/api/progress/${user.uid}`));
+        if (user?.id) {
+          fetches.push(authFetch(`/api/progress/${user.id}`));
         }
         
         const responses = await Promise.all(fetches);

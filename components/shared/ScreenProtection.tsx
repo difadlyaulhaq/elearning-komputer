@@ -81,6 +81,8 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
     };
   }, []);
 
+  const { authFetch } = useAuth();
+
   // Use the `useScreenProtection` hook to get the current security state.
   const { isBlurred, isRecording, isDevToolsOpen, isViolation, isCoolDownActive, countdown, violationType } = useScreenProtection({
     enableWatermark,
@@ -91,13 +93,14 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
     enableDragBlock,
     watermarkText,
     videoElementRef,
+    authFetch, // Pass authFetch to the hook
     onScreenshotAttempt: () => {
       if (showWarningOnAttempt) {
         setWarningMessage('⚠️ Screenshot tidak diperbolehkan!');
         setShowWarning(true);
         setTimeout(() => setShowWarning(false), 3000);
       }
-      fetch('/api/security/log', {
+      authFetch('/api/security/log', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -112,7 +115,7 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
         setWarningMessage('⚠️ Screen recording terdeteksi!');
         setShowWarning(true);
       }
-      fetch('/api/security/log', {
+      authFetch('/api/security/log', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

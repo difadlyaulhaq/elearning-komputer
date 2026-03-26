@@ -5,7 +5,15 @@ import { adminAuth, adminDb } from '@/lib/firebase/admin';
 // GET: Mengambil data sesi pengguna yang sedang login
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get('auth_token')?.value;
+    let token = request.cookies.get('auth_token')?.value;
+
+    // FALLBACK: Cek Header Authorization jika cookie kosong (untuk Mobile/Native compatibility)
+    if (!token) {
+        const authHeader = request.headers.get('authorization');
+        if (authHeader?.startsWith('Bearer ')) {
+            token = authHeader.split('Bearer ')[1];
+        }
+    }
 
     if (!token) {
       return NextResponse.json({ isAuthenticated: false, error: 'Token tidak ditemukan' }, { status: 401 });

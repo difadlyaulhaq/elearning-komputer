@@ -19,7 +19,7 @@ import {
 import { Course, Progress } from '@/types';
 
 const LearningHistoryPage = () => {
-  const { user } = useAuth();
+  const { user, authFetch } = useAuth();
   const [history, setHistory] = useState<(Omit<Course, 'status'> & Progress)[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -36,7 +36,7 @@ const LearningHistoryPage = () => {
       }
       try {
         setLoading(true);
-        const response = await fetch('/api/learning/history');
+        const response = await authFetch('/api/learning/history');
         const result = await response.json();
         if (result.success) {
           setHistory(result.data);
@@ -51,7 +51,7 @@ const LearningHistoryPage = () => {
     };
 
     fetchHistory();
-  }, [user]);
+  }, [user, authFetch]);
 
   // Logic Filtering
   const filteredCourses = useMemo(() => {

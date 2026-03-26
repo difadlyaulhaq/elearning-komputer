@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect, Suspense } from 'react';
 import { Mail, Lock, Eye, EyeOff, Loader, Shield, Users, Smartphone, Globe } from 'lucide-react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
@@ -45,7 +45,7 @@ const LoginForm = () => {
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      // ... rest of handleLogin ...
+      
       const token = await userCredential.user.getIdToken();
       
       const response = await fetch('/api/auth/session', {
@@ -66,7 +66,6 @@ const LoginForm = () => {
         setIsLoading(false);
       }
     } catch (error: any) {
-       // ... error handling
        console.error('Login error:', error);
        setError(getErrorMessage(error.code));
        setIsLoading(false);
@@ -86,6 +85,11 @@ const LoginForm = () => {
         const idToken = result.credential?.idToken;
 
         if (idToken) {
+          // --- SINKRONISASI KE WEB SDK ---
+          // Ini CRITICAL: Supaya AuthContext di webview tau kalau kita sudah login
+          const credential = GoogleAuthProvider.credential(idToken);
+          await signInWithCredential(auth, credential);
+
           const res = await fetch('/api/auth/login-native', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -97,7 +101,7 @@ const LoginForm = () => {
             const resData = await res.json(); // Assuming res.json() will contain user data
             const userRole = resData.user?.role?.trim().toLowerCase();
             sessionStorage.setItem('loggedInUserRole', userRole); // Store user role for dashboard logic
-            window.location.href = '/learning/dashboard'; // Native directly redirects here
+            window.location.href = '/learning/dashboard'; // Native langsung ke dashboard
             return;
           }
         }

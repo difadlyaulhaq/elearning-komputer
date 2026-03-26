@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useAuth } from '@/context/AuthContext';
 
 interface VdoCipherPlayerProps {
   videoId: string;
@@ -11,10 +12,8 @@ interface PlaybackInfo {
   playbackInfo: string;
 }
 
-
-
-
 const VdoCipherPlayer = ({ videoId }: VdoCipherPlayerProps) => {
+  const { authFetch } = useAuth();
   const [playbackInfo, setPlaybackInfo] = useState<PlaybackInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +42,9 @@ const VdoCipherPlayer = ({ videoId }: VdoCipherPlayerProps) => {
 
     return () => {
       // Clean up script if component unmounts
-      document.body.removeChild(script);
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
     }
   }, []);
   
@@ -81,7 +82,7 @@ const VdoCipherPlayer = ({ videoId }: VdoCipherPlayerProps) => {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch('/api/vdocipher', {
+        const response = await authFetch('/api/vdocipher', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -106,7 +107,7 @@ const VdoCipherPlayer = ({ videoId }: VdoCipherPlayerProps) => {
     if (videoId) {
       fetchOtp();
     }
-  }, [videoId, scriptLoaded]);
+  }, [videoId, scriptLoaded, authFetch]);
 
   if (error) {
     return <div style={{ aspectRatio: '16 / 9', background: '#000', color: 'white', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>Error: {error}</div>;

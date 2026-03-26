@@ -15,6 +15,7 @@ interface ScreenProtectionOptions {
   onScreenshotAttempt?: () => void;
   onRecordingDetected?: () => void;
   videoElementRef?: React.RefObject<HTMLVideoElement | null>;
+  authFetch?: (input: RequestInfo, init?: RequestInit) => Promise<Response>;
 }
 
 export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
@@ -29,6 +30,7 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
     onScreenshotAttempt,
     onRecordingDetected,
     videoElementRef,
+    authFetch,
   } = options;
 
   const [isBlurred, setIsBlurred] = useState(false);
@@ -45,6 +47,12 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
   const coolDownTimerRef = useRef<NodeJS.Timeout | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const isMouseInsideRef = useRef(true); // Track if mouse is inside window
+
+  // Helper to use either authFetch or global fetch
+  const secureFetch = useCallback((input: RequestInfo, init?: RequestInit) => {
+    if (authFetch) return authFetch(input, init);
+    return fetch(input, init);
+  }, [authFetch]);
 
   // Helper function to pause video
   const pauseVideo = useCallback(() => {
@@ -160,7 +168,7 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
         }
         
         // Log mobile violation
-        fetch('/api/security/log', {
+        secureFetch('/api/security/log', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -176,7 +184,7 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
       
       return cleanup;
     }
-  }, [startCountdown, onScreenshotAttempt]);
+  }, [startCountdown, onScreenshotAttempt, secureFetch]);
 
   const handleFocus = useCallback(() => {
     if (!enableBlurOnFocusLoss) return;
