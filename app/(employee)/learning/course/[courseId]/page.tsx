@@ -222,9 +222,13 @@ export default async function CourseDetailPage({
                     <div className="px-4 pb-4">
                       <div className="space-y-2">
                         {section.lessons?.map((lesson, lIndex) => (
-                          <div key={lesson.id}>
-                            <div className="flex items-start p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors mt-2">
-                              <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#C5A059]/10 mr-3 shrink-0">
+                          <Link 
+                            key={lesson.id} 
+                            href={`/learning/course/${course.id}/lesson/${lesson.id}`}
+                            className="block"
+                          >
+                            <div className="flex items-start p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors mt-2 group">
+                              <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#C5A059]/10 mr-3 shrink-0 group-hover:bg-[#C5A059]/20 transition-colors">
                                 {lesson.contentType === 'youtube' ? (
                                   <PlayCircle size={16} className="text-[#C5A059]" />
                                 ) : (
@@ -233,7 +237,7 @@ export default async function CourseDetailPage({
                               </div>
                               <div className="flex-1">
                                 <div className="flex items-start justify-between mb-1">
-                                  <h4 className="font-medium text-black text-sm line-clamp-2">
+                                  <h4 className="font-medium text-black text-sm line-clamp-2 group-hover:text-[#C5A059] transition-colors">
                                     {lesson.title}
                                   </h4>
                                   <div className="flex items-center text-xs text-gray-500 ml-2">
@@ -244,19 +248,22 @@ export default async function CourseDetailPage({
                                 
                                 {/* Attachment Link */}
                                 {lesson.attachmentUrl && (
-                                  <a
-                                    href={lesson.attachmentUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                  <div
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      window.open(lesson.attachmentUrl, '_blank');
+                                    }}
                                     className="inline-flex items-center text-xs text-blue-600 hover:text-blue-800 mt-1"
                                   >
                                     <LinkIcon size={12} className="mr-1" />
                                     <span>{lesson.attachmentName || 'Lampiran'}</span>
-                                  </a>
+                                  </div>
                                 )}
                               </div>
+                              <ChevronRight size={16} className="text-gray-300 ml-2 self-center group-hover:text-[#C5A059] transition-all transform group-hover:translate-x-1" />
                             </div>
-                          </div>
+                          </Link>
                         ))}
                       </div>
                     </div>

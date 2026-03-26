@@ -10,16 +10,36 @@ export async function getMyEnrolledCourses(userId: string): Promise<CourseWithPr
 
   // 1. Get User's Division Name
   const userDoc = await adminDb.collection('users').doc(userId).get();
-  if (!userDoc.exists) return [];
+  if (!userDoc.exists) {
+    console.error(`[GET_MY_COURSES] User ${userId} not found`);
+    return [];
+  }
   const user = userDoc.data() as User;
   const userDivisionName = user.division;
+  
+  console.log(`[GET_MY_COURSES] User: ${user.name}, Division: ${userDivisionName}`);
 
   // 2. Find Division ID from Division Name (as enrollment is by ID)
   let divisionId: string | null = null;
-  if (userDivisionName) {
-    const divisionSnapshot = await adminDb.collection('divisions').where('name', '==', userDivisionName).limit(1).get();
+  if (userDivisionName && userDivisionName !== 'Unassigned') {
+    // Try exact match first
+    let divisionSnapshot = await adminDb.collection('divisions').where('name', '==', userDivisionName).limit(1).get();
+    
+    // If not found, try to find by case-insensitive name if possible (Firestore doesn't support native case-insensitive)
+    // For now, we'll stick to exact match but we log if it fails
     if (!divisionSnapshot.empty) {
       divisionId = divisionSnapshot.docs[0].id;
+      console.log(`[GET_MY_COURSES] Found Division ID: ${divisionId} for ${userDivisionName}`);
+    } else {
+      console.warn(`[GET_MY_COURSES] No division ID found for name: "${userDivisionName}"`);
+      
+      // Fallback: search all and match manually (only if collection is small)
+      const allDivisions = await adminDb.collection('divisions').get();
+      const matchedDiv = allDivisions.docs.find(d => d.data().name?.toLowerCase() === userDivisionName.toLowerCase());
+      if (matchedDiv) {
+        divisionId = matchedDiv.id;
+        console.log(`[GET_MY_COURSES] Found Division ID via fallback: ${divisionId}`);
+      }
     }
   }
 
