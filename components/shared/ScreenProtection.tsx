@@ -8,6 +8,7 @@ import { Shield, Eye, Smartphone } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { PrivacyScreen } from '@capacitor-community/privacy-screen';
 import DownloadAppButton from '@/components/shared/DownloadAppButton';
+import { useAuth } from '@/context/AuthContext';
 
 interface ScreenProtectionProps {
   children: React.ReactNode; // The content to be protected.
