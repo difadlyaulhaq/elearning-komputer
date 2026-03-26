@@ -110,7 +110,7 @@ const CourseCatalogPage = () => {
     if (!isAuthLoading) {
         fetchData();
     }
-  }, [user, isAuthLoading]);
+  }, [user, isAuthLoading, authFetch]);
 
   const filteredCourses = useMemo(() => {
     return courses.filter(course => {

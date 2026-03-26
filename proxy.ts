@@ -28,13 +28,38 @@ const GUEST_ONLY_ROUTES = [
 // Admin routes prefix
 const ADMIN_ROUTES = '/admin';
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const userAgent = request.headers.get('user-agent') || '';
+  const origin = request.headers.get('origin') || '';
+  const referer = request.headers.get('referer') || '';
   const url = request.nextUrl.clone();
 
   // ============================================
-  // 0. BYPASS FOR API ROUTES & STATIC FILES
+  // 0. API SECURITY GUARD (Anti-Direct Access)
+  // ============================================
+  if (pathname.startsWith('/api/')) {
+    const isAllowedOrigin = 
+      origin.includes('alfajr-elearning.vercel.app') || 
+      origin.includes('localhost') ||
+      referer.includes('alfajr-elearning.vercel.app') || 
+      referer.includes('localhost');
+
+    // Block if request comes from outside the app (e.g., Postman or other sites)
+    // but allow during development if needed. 
+    // Note: Some native app requests might not have origin/referer, so be careful.
+    const isNativeApp = userAgent.toLowerCase().includes('alfajrapp');
+    
+    if (!isAllowedOrigin && !isNativeApp && process.env.NODE_ENV === 'production') {
+      return new NextResponse(JSON.stringify({ error: 'Direct API access is prohibited.' }), { 
+        status: 403,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }
+
+  // ============================================
+  // 1. BYPASS FOR PUBLIC API ROUTES & STATIC FILES
   // ============================================
   
   if (PUBLIC_API_ROUTES.some(route => pathname.startsWith(route))) {

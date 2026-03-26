@@ -47,6 +47,8 @@ export function VideoPlayer({
     }
   }, [plyrRef.current]);
 
+  // Kembali ke logika ketat: isVideoCompleted default false (atau sesuai status awal)
+  // Tombol hanya aktif jika video sudah ditonton minimal 90%
   const [isVideoCompleted, setIsVideoCompleted] = useState(initialCompleted);
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -124,7 +126,7 @@ export function VideoPlayer({
                 }
               }}
               watermark={lesson.watermark}
-              disableSeeking={!isVideoCompleted}
+              disableSeeking={false}
             />
           </ScreenProtection>
         );

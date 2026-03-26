@@ -1,9 +1,11 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { BookOpen, Clock, PlayCircle, Link as LinkIcon, ChevronRight, ArrowLeft } from "lucide-react";
 import { getCoursePageData } from "@/lib/data/courses";
 import Image from "next/image";
 import { getYouTubeThumbnail } from "@/lib/utils";
+import { getCurrentUser } from "@/lib/session";
+import { adminDb } from "@/lib/firebase/admin";
 
 export default async function CourseDetailPage({ 
   params 
@@ -11,10 +13,42 @@ export default async function CourseDetailPage({
   params: Promise<{ courseId: string }> 
 }) {
   const { courseId } = await params;
-  const course = await getCoursePageData(courseId);
+  const [course, user] = await Promise.all([
+    getCoursePageData(courseId),
+    getCurrentUser()
+  ]);
 
   if (!course) {
     notFound();
+  }
+
+  // Enrollment Check
+  if (user?.role !== 'admin') {
+    let isEnrolled = false;
+    
+    // Check direct user enrollment
+    if (course.enrolledUserIds?.includes(user?.id || '')) {
+      isEnrolled = true;
+    } 
+    
+    // Check division enrollment
+    if (!isEnrolled && user?.division && adminDb) {
+      const divisionSnapshot = await adminDb.collection('divisions')
+        .where('name', '==', user.division)
+        .limit(1)
+        .get();
+        
+      if (!divisionSnapshot.empty) {
+        const divisionId = divisionSnapshot.docs[0].id;
+        if (course.enrolledDivisionIds?.includes(divisionId)) {
+          isEnrolled = true;
+        }
+      }
+    }
+
+    if (!isEnrolled) {
+      redirect('/learning/dashboard');
+    }
   }
 
   const firstLessonId = course.sections?.[0]?.lessons?.[0]?.id;
@@ -188,9 +222,13 @@ export default async function CourseDetailPage({
                     <div className="px-4 pb-4">
                       <div className="space-y-2">
                         {section.lessons?.map((lesson, lIndex) => (
-                          <div key={lesson.id}>
-                            <div className="flex items-start p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors mt-2">
-                              <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#C5A059]/10 mr-3 shrink-0">
+                          <Link 
+                            key={lesson.id} 
+                            href={`/learning/course/${course.id}/lesson/${lesson.id}`}
+                            className="block"
+                          >
+                            <div className="flex items-start p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors mt-2 group">
+                              <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#C5A059]/10 mr-3 shrink-0 group-hover:bg-[#C5A059]/20 transition-colors">
                                 {lesson.contentType === 'youtube' ? (
                                   <PlayCircle size={16} className="text-[#C5A059]" />
                                 ) : (
@@ -199,7 +237,7 @@ export default async function CourseDetailPage({
                               </div>
                               <div className="flex-1">
                                 <div className="flex items-start justify-between mb-1">
-                                  <h4 className="font-medium text-black text-sm line-clamp-2">
+                                  <h4 className="font-medium text-black text-sm line-clamp-2 group-hover:text-[#C5A059] transition-colors">
                                     {lesson.title}
                                   </h4>
                                   <div className="flex items-center text-xs text-gray-500 ml-2">
@@ -210,19 +248,22 @@ export default async function CourseDetailPage({
                                 
                                 {/* Attachment Link */}
                                 {lesson.attachmentUrl && (
-                                  <a
-                                    href={lesson.attachmentUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                  <div
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      window.open(lesson.attachmentUrl, '_blank');
+                                    }}
                                     className="inline-flex items-center text-xs text-blue-600 hover:text-blue-800 mt-1"
                                   >
                                     <LinkIcon size={12} className="mr-1" />
                                     <span>{lesson.attachmentName || 'Lampiran'}</span>
-                                  </a>
+                                  </div>
                                 )}
                               </div>
+                              <ChevronRight size={16} className="text-gray-300 ml-2 self-center group-hover:text-[#C5A059] transition-all transform group-hover:translate-x-1" />
                             </div>
-                          </div>
+                          </Link>
                         ))}
                       </div>
                     </div>

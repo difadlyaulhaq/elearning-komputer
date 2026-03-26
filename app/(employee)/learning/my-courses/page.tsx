@@ -1,4 +1,3 @@
-
 import { getCurrentUser } from '@/lib/session';
 import { getMyEnrolledCourses } from '@/lib/data/my-courses';
 import { CourseCard } from '@/components/learning/CourseCard';
@@ -11,10 +10,14 @@ export default async function MyCoursesPage() {
   if (!user) {
     // This should ideally be handled by middleware, but as a fallback:
     return (
-      <div className="p-8 text-center">
-        <p>Anda harus login untuk melihat kursus Anda.</p>
-        <Link href="/login" className="text-blue-500 hover:underline">
-          Silakan login
+      <div className="p-8 text-center flex flex-col items-center justify-center min-h-screen bg-brand-gray">
+        <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mb-4">
+           <BookOpen className="h-10 w-10 text-red-400" />
+        </div>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">Akses Terbatas</h2>
+        <p className="text-gray-600 mb-6 max-w-xs">Anda harus login terlebih dahulu untuk melihat daftar kursus Anda.</p>
+        <Link href="/login" className="bg-brand-black text-white px-8 py-3 rounded-xl font-bold shadow-lg">
+          Silakan Login
         </Link>
       </div>
     );

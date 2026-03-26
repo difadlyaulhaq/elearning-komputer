@@ -202,22 +202,11 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
           backface-visibility: hidden;
           z-index: 999998;
         }
-        .anti-screenshot-pattern {
-          position: fixed; inset: 0;
-          background: 
-            repeating-linear-gradient(0deg, transparent, transparent 4px, rgba(0,0,0,0.01) 4px, rgba(0,0,0,0.01) 8px),
-            repeating-linear-gradient(90deg, transparent, transparent 4px, rgba(0,0,0,0.01) 4px, rgba(0,0,0,0.01) 8px);
-          pointer-events: none;
-          z-index: 999997;
-          opacity: 0.6;
-        }
         /* CSS to hide elements during screenshot on some browsers */
         @media print {
           body { display: none !important; }
         }
       `}</style>
-
-      <div className="anti-screenshot-pattern" />
 
       {enableWatermark && watermarkPositions.length > 0 && (
         <div className="fixed inset-0 pointer-events-none z-[999996] overflow-hidden">
