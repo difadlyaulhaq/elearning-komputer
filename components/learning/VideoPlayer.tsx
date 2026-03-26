@@ -62,7 +62,7 @@ export function VideoPlayer({
       const res = await fetch('/api/progress/lesson', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.uid, courseId, lessonId: lesson.id })
+        body: JSON.stringify({ userId: user.id, courseId, lessonId: lesson.id })
       });
       
       if (!res.ok) {

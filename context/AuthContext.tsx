@@ -7,16 +7,7 @@ import { auth } from '@/lib/firebase/config';
 import { App } from '@capacitor/app';
 import { useRouter } from 'next/navigation';
 
-// --- Tipe Data ---
-interface User {
-  uid: string;
-  name: string;
-  email: string;
-  role: 'admin' | 'user';
-  division: string;
-  status: 'active' | 'inactive';
-  createdAt?: string;
-}
+import { User } from '@/types';
 
 interface AuthContextType {
   user: User | null;
@@ -38,14 +29,51 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     let appListenerHandle: any;
 
+    const setupDeepLinks = async () => {
+      appListenerHandle = await App.addListener('appUrlOpen', async (data) => {
+        console.log('App opened with URL:', data.url);
+        
+        if (data.url.includes('alfajrelearning://auth/callback')) {
+          const url = new URL(data.url);
+          const token = url.searchParams.get('token');
+          
+          if (token) {
+            setIsLoading(true);
+            try {
+              const loginRes = await fetch('/api/auth/session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token }),
+              });
+              
+              const loginData = await loginRes.json();
+              if (loginRes.ok && loginData.success) {
+                const userData = {
+                  ...loginData.user,
+                  id: loginData.user.uid || loginData.user.id
+                } as User;
+                setUser(userData);
+                router.replace('/learning/dashboard');
+              }
+            } catch (e) {
+              console.error("Deep link auth error", e);
+            } finally {
+              setIsLoading(false);
+            }
+          }
+        }
+      });
+    };
+
+    setupDeepLinks();
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
         if (firebaseUser) {
           setIsSyncing(true);
-          // 1. Dapatkan Token Terbaru dari Firebase
           const token = await firebaseUser.getIdToken(true);
           
-          // 2. Sinkronisasi ke Server (Session API)
+          // Sinkronisasi Sesi ke Server
           const loginRes = await fetch('/api/auth/session', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -55,8 +83,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (loginRes.ok) {
             const loginData = await loginRes.json();
             if (loginData.success) {
-              setUser(loginData.user);
+              // Pastikan data user memiliki field 'id' (mapping dari uid)
+              const userData = {
+                ...loginData.user,
+                id: loginData.user.uid || loginData.user.id
+              } as User;
+              setUser(userData);
+              console.log('User synced successfully:', userData.email);
             }
+          } else {
+            console.error('Failed to sync session, status:', loginRes.status);
           }
           setIsSyncing(false);
         } else {
@@ -74,6 +110,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     return () => {
       unsubscribe();
+      if (appListenerHandle) {
+        appListenerHandle.remove();
+      }
     };
   }, []);
 
