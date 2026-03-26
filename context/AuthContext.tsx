@@ -83,38 +83,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
-        // ALWAYS check session from server first, because native login might establish 
-        // a server cookie without signing in the Firebase JS SDK properly.
-        const res = await fetch('/api/auth/session');
-        if (res.ok) {
-          const data = await res.json();
-          if (data.isAuthenticated) {
-            setUser(data.user);
-            setIsLoading(false);
-            return;
-          }
-        }
-
         if (firebaseUser) {
-          // 2. Jika session server mati tapi Firebase hidup, lakukan silent login (Sync)
-          const token = await firebaseUser.getIdToken();
+          // 1. Dapatkan Token Terbaru dari Firebase
+          const token = await firebaseUser.getIdToken(true); // Force refresh token
+          
+          // 2. Sinkronisasi ke Server (Session API)
+          // Ini sangat krusial untuk Mobile (Capacitor) agar cookie di server ter-update
           const loginRes = await fetch('/api/auth/session', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ token }),
           });
           
-          const loginData = await loginRes.json();
-          if (loginRes.ok && loginData.success) {
-            setUser(loginData.user);
+          if (loginRes.ok) {
+            const loginData = await loginRes.json();
+            if (loginData.success) {
+              setUser(loginData.user);
+            } else {
+              // Gagal sinkron di server meskipun Firebase login
+              console.warn('Server session sync failed:', loginData.error);
+              // Tetap set user dari Firebase sebagai fallback jika data user tersedia
+              // Tapi idealnya kita ingin data user dari DB (via session API)
+            }
           } else {
-            // Gagal sync, paksa logout
-            await signOut(auth);
-            setUser(null);
+            console.error('Failed to sync session with server');
           }
         } else {
-          // Tidak ada user di Firebase dan tidak ada session server
+          // Tidak ada user di Firebase, cek apakah masih ada session server (opsional)
+          // Jika tidak ada di Firebase, biasanya kita anggap logout total
           setUser(null);
+          
+          // Opsional: Panggil API logout untuk hapus cookie
+          fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
         }
       } catch (error) {
         console.error('Auth state change error:', error);
