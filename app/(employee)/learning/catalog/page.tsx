@@ -72,8 +72,8 @@ const CourseCatalogPage = () => {
         ];
 
         // Only fetch progress if user is logged in
-        if (user?.uid) {
-          fetches.push(fetch(`/api/progress/${user.uid}`));
+        if (user?.id) {
+          fetches.push(fetch(`/api/progress/${user.id}`));
         }
         
         const responses = await Promise.all(fetches);

@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation'; // Keep useRouter as it might be used in Link or other sub-components implicitly
 import { useAuth } from '@/context/AuthContext';
+import { auth } from '@/lib/firebase/config';
 import { BookOpen, Compass, CheckCircle, Loader2, Award, Target, Sparkles, Shield, Users } from 'lucide-react';
 import { Course, Progress } from '@/types';
 import { CourseCard } from '@/components/learning/CourseCard';
@@ -98,14 +99,24 @@ const EmployeeDashboardPage = () => {
       
       setIsLoadingData(true);
       try {
+        // Dapatkan Token Terbaru dari Firebase untuk dikirim di Header
+        const token = await auth.currentUser?.getIdToken();
+        const headers: HeadersInit = {
+          'Content-Type': 'application/json',
+        };
+        
+        // Tambahkan Token ke Header untuk stabilitas di Android (APK)
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
         const [coursesRes, historyRes] = await Promise.all([
-          fetch('/api/learning/my-courses'),
-          fetch('/api/learning/history')
+          fetch('/api/learning/my-courses', { headers }),
+          fetch('/api/learning/history', { headers })
         ]);
         
         const coursesData = await coursesRes.json();
         if (coursesData.success) {
-          // enrolledCourses from /api/learning/my-courses are already filtered
           setCourses(coursesData.data);
         }
 
@@ -123,7 +134,7 @@ const EmployeeDashboardPage = () => {
           setProgress(progressMap);
         }
       } catch (error) {
-        console.error("Gagal mengambil data:", error);
+        console.error("Gagal mengambil data materi:", error);
       } finally {
         setIsLoadingData(false);
       }
