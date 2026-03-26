@@ -99,13 +99,14 @@ const EmployeeDashboardPage = () => {
       setIsLoadingData(true);
       try {
         const [coursesRes, historyRes] = await Promise.all([
-          fetch('/api/admin/courses'),
+          fetch('/api/learning/my-courses'),
           fetch('/api/learning/history')
         ]);
         
         const coursesData = await coursesRes.json();
         if (coursesData.success) {
-          setCourses(coursesData.data.filter((c: any) => c.status === 'active'));
+          // enrolledCourses from /api/learning/my-courses are already filtered
+          setCourses(coursesData.data);
         }
 
         const historyData = await historyRes.json();

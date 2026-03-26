@@ -11,31 +11,39 @@ export async function PATCH(
     const body = await request.json();
     const { email, password, name, division, role } = body;
 
-    // 1. Update data di Firebase Authentication (jika ada perubahan sensitif)
+    console.log(`[USER_UPDATE] Updating user ${id}:`, { email, name, division, role, hasPassword: !!password });
+
+    // 1. Ambil data user lama dari Auth untuk perbandingan
+    const currentUser = await adminAuth.getUser(id);
+
+    // 2. Siapkan update untuk Firebase Authentication
     const updateAuthParams: any = {};
-    if (email) updateAuthParams.email = email;
+    if (name && name !== currentUser.displayName) updateAuthParams.displayName = name;
+    if (email && email !== currentUser.email) updateAuthParams.email = email;
     if (password && password.trim() !== '') updateAuthParams.password = password;
-    if (name) updateAuthParams.displayName = name;
 
     if (Object.keys(updateAuthParams).length > 0) {
+      console.log(`[USER_UPDATE] Updating Auth for ${id}:`, Object.keys(updateAuthParams));
       await adminAuth.updateUser(id, updateAuthParams);
     }
 
-    // 2. Update Custom Claims jika role berubah
+    // 3. Update Custom Claims jika role berubah
     if (role) {
       await adminAuth.setCustomUserClaims(id, { role });
     }
 
-    // 3. Update data di Firestore
-    // Kita filter undefined/null values agar tidak menimpa data yang tidak dikirim
-    const updateData: any = { ...body };
-    // Hapus password dari object updateData karena tidak disimpan di Firestore (hanya di Auth)
-    delete updateData.password;
+    // 4. Update data di Firestore secara eksplisit
+    const updateFirestoreData: any = {
+      updatedAt: new Date().toISOString()
+    };
     
-    // Hapus id dari body jika ada, agar tidak redundant
-    delete updateData.id;
+    if (name) updateFirestoreData.name = name;
+    if (email) updateFirestoreData.email = email;
+    if (division) updateFirestoreData.division = division;
+    if (role) updateFirestoreData.role = role;
 
-    await adminDb.collection('users').doc(id).update(updateData);
+    console.log(`[USER_UPDATE] Updating Firestore for ${id}:`, updateFirestoreData);
+    await adminDb.collection('users').doc(id).update(updateFirestoreData);
 
     return NextResponse.json({ success: true, message: 'Data user berhasil diperbarui' });
   } catch (error: any) {

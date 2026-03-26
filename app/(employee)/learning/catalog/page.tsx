@@ -67,7 +67,7 @@ const CourseCatalogPage = () => {
       setIsLoading(true);
       try {
         const fetches = [
-          fetch('/api/admin/courses'),
+          fetch('/api/learning/my-courses'),
           fetch('/api/admin/categories'),
         ];
 
@@ -83,7 +83,10 @@ const CourseCatalogPage = () => {
         const catData = await catRes.json();
 
         if (coursesData.success) {
-          setCourses(coursesData.data.filter((c: Course) => c.status === 'active'));
+          // Since these are specifically enrolled courses for the user, 
+          // we show them regardless of a strict status filter here, 
+          // as enrollment implies it's ready for them.
+          setCourses(coursesData.data);
         }
         if (catData.success) {
           setCategories(catData.data);

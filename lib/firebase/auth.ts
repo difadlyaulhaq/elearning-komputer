@@ -2,21 +2,11 @@
 import { auth } from './config';
 import { signOut } from 'firebase/auth';
 
-export const verifyIdToken = async (token: string) => {
-  try {
-    // Untuk demo, return user data hardcoded
-    // Di production, gunakan Firebase Admin SDK
-    return { 
-      uid: 'demo-admin', 
-      email: 'admin@alfajrumroh.com', 
-      name: 'Admin User',
-      role: 'admin'
-    };
-  } catch (error) {
-    console.error('Token verification error:', error);
-    return null;
-  }
-};
+/**
+ * Note: Token verification should always be done on the server-side 
+ * using the Firebase Admin SDK (e.g., via /api/auth/session).
+ * Client-side verification is insecure.
+ */
 
 export const logoutUser = async (): Promise<boolean> => {
   try {
