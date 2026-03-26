@@ -50,6 +50,8 @@ export async function getCoursePageData(
       sections: data.sections || [],
       totalVideos: data.totalVideos || 0,
       totalStudents: data.totalStudents || 0,
+      enrolledUserIds: data.enrolledUserIds || [],
+      enrolledDivisionIds: data.enrolledDivisionIds || [],
     } as Course;
   } catch (error) {
     console.error(
@@ -92,6 +94,8 @@ export async function getAllCourses(): Promise<Course[]> {
               sections: data.sections || [],
               totalVideos: data.totalVideos || 0,
               totalStudents: data.totalStudents || 0,
+              enrolledUserIds: data.enrolledUserIds || [],
+              enrolledDivisionIds: data.enrolledDivisionIds || [],
             } as Course;
         });
 

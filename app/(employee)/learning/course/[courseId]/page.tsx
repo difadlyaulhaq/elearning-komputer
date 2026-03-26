@@ -1,9 +1,11 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { BookOpen, Clock, PlayCircle, Link as LinkIcon, ChevronRight, ArrowLeft } from "lucide-react";
 import { getCoursePageData } from "@/lib/data/courses";
 import Image from "next/image";
 import { getYouTubeThumbnail } from "@/lib/utils";
+import { getCurrentUser } from "@/lib/session";
+import { adminDb } from "@/lib/firebase/admin";
 
 export default async function CourseDetailPage({ 
   params 
@@ -11,10 +13,42 @@ export default async function CourseDetailPage({
   params: Promise<{ courseId: string }> 
 }) {
   const { courseId } = await params;
-  const course = await getCoursePageData(courseId);
+  const [course, user] = await Promise.all([
+    getCoursePageData(courseId),
+    getCurrentUser()
+  ]);
 
   if (!course) {
     notFound();
+  }
+
+  // Enrollment Check
+  if (user?.role !== 'admin') {
+    let isEnrolled = false;
+    
+    // Check direct user enrollment
+    if (course.enrolledUserIds?.includes(user?.id || '')) {
+      isEnrolled = true;
+    } 
+    
+    // Check division enrollment
+    if (!isEnrolled && user?.division && adminDb) {
+      const divisionSnapshot = await adminDb.collection('divisions')
+        .where('name', '==', user.division)
+        .limit(1)
+        .get();
+        
+      if (!divisionSnapshot.empty) {
+        const divisionId = divisionSnapshot.docs[0].id;
+        if (course.enrolledDivisionIds?.includes(divisionId)) {
+          isEnrolled = true;
+        }
+      }
+    }
+
+    if (!isEnrolled) {
+      redirect('/learning/dashboard');
+    }
   }
 
   const firstLessonId = course.sections?.[0]?.lessons?.[0]?.id;

@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getCoursePageData } from "@/lib/data/courses";
 import { getCurrentUser } from "@/lib/session";
 import { adminDb } from "@/lib/firebase/admin";
@@ -19,6 +19,35 @@ export default async function LessonPage({
 
   if (!course) {
     notFound();
+  }
+
+  // Enrollment Check
+  if (user?.role !== 'admin') {
+    let isEnrolled = false;
+    
+    // Check direct user enrollment
+    if (course.enrolledUserIds?.includes(user?.id || '')) {
+      isEnrolled = true;
+    } 
+    
+    // Check division enrollment
+    if (!isEnrolled && user?.division && adminDb) {
+      const divisionSnapshot = await adminDb.collection('divisions')
+        .where('name', '==', user.division)
+        .limit(1)
+        .get();
+        
+      if (!divisionSnapshot.empty) {
+        const divisionId = divisionSnapshot.docs[0].id;
+        if (course.enrolledDivisionIds?.includes(divisionId)) {
+          isEnrolled = true;
+        }
+      }
+    }
+
+    if (!isEnrolled) {
+      redirect('/learning/dashboard');
+    }
   }
 
   let completedLessons: string[] = [];

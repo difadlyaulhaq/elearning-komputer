@@ -67,7 +67,7 @@ const CourseCatalogPage = () => {
       setIsLoading(true);
       try {
         const fetches = [
-          fetch('/api/admin/courses'),
+          fetch('/api/learning/my-courses'),
           fetch('/api/admin/categories'),
         ];
 

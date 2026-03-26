@@ -22,9 +22,6 @@ interface Window {
 
 declare namespace JSX {
   interface IntrinsicElements {
-    'vdocipher-player': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
-      playbackinfo?: string;
-      otp?: string;
-    };
+    // Add other custom elements if needed
   }
 }
