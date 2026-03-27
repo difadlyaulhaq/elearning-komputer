@@ -100,7 +100,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       )}
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+      <nav className="overflow-y-auto py-3 px-2 space-y-0.5 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
         {menuItems.map((item) => {
           const isCurrentPath = pathname.startsWith(item.href);
           return (
@@ -167,7 +167,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       </nav>
 
       {/* Footer — Logout */}
-      <div className="shrink-0 px-2 py-3 border-t border-white/10">
+      <div className="shrink-0 px-2 py-3 border-t border-white/10 mt-auto md:mt-0">
         <button
           onClick={handleLogout}
           disabled={isLoading}
