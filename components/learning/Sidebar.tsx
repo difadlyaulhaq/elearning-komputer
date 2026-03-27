@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Compass, BookCopy, Award, LogOut,
-  ChevronLeft, Loader2, X, PanelLeftClose, PanelLeftOpen, Shield, User
+  ChevronLeft, Loader2, X, PanelLeftClose, PanelLeftOpen, Shield
 } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
@@ -25,7 +25,6 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     { name: 'Katalog Materi', icon: Compass, href: '/learning/catalog' },
     { name: 'Kursus Saya', icon: BookCopy, href: '/learning/my-courses' },
     { name: 'Riwayat', icon: Award, href: '/learning/history' },
-    { name: 'Profil', icon: User, href: '/learning/profile' },
   ];
 
   const handleLogout = async () => {
@@ -81,30 +80,22 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       {/* User card */}
       {user && !isCollapsed && (
         <div className="px-3 py-3 border-b border-white/10 shrink-0">
-          <Link 
-            href="/learning/profile" 
-            onClick={onClose}
-            className="flex items-center gap-3 px-2 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors group"
-          >
+          <div className="flex items-center gap-3 px-2 py-2 rounded-xl bg-white/5 transition-colors">
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#C5A059] to-[#8B7355] flex items-center justify-center font-semibold text-white text-sm shrink-0">
               {user.name.charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-white truncate leading-tight group-hover:text-[#C5A059] transition-colors">{user.name}</p>
+              <p className="text-sm font-medium text-white truncate leading-tight transition-colors">{user.name}</p>
               <p className="text-[11px] text-[#C5A059] truncate">{user.division || 'Employee'}</p>
             </div>
-          </Link>
+          </div>
         </div>
       )}
       {user && isCollapsed && (
         <div className="px-2 py-3 border-b border-white/10 shrink-0 flex justify-center">
-          <Link 
-            href="/learning/profile"
-            title="Profil"
-            className="w-9 h-9 rounded-full bg-gradient-to-br from-[#C5A059] to-[#8B7355] flex items-center justify-center font-semibold text-white text-sm hover:ring-2 hover:ring-[#C5A059] transition-all"
-          >
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#C5A059] to-[#8B7355] flex items-center justify-center font-semibold text-white text-sm">
             {user.name.charAt(0).toUpperCase()}
-          </Link>
+          </div>
         </div>
       )}
 
