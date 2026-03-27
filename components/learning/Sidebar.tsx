@@ -1,10 +1,12 @@
-// components/learning/Sidebar.tsx
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Compass, BookCopy, Award, LogOut, ChevronLeft, Loader2, Sparkles } from 'lucide-react';
+import {
+  LayoutDashboard, Compass, BookCopy, Award, LogOut,
+  ChevronLeft, Loader2, X, PanelLeftClose, PanelLeftOpen, Shield, User
+} from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
 
@@ -16,174 +18,219 @@ interface SidebarProps {
 const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const pathname = usePathname();
   const { user, logout, isLoading } = useAuth();
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const menuItems = [
-    { name: 'Beranda', icon: LayoutDashboard, href: '/learning/dashboard', color: 'from-[#C5A059] to-[#B08F4A]' },
-    { name: 'Katalog Materi', icon: Compass, href: '/learning/catalog', color: 'from-gray-700 to-gray-900' },
-    { name: 'Kursus Saya', icon: BookCopy, href: '/learning/my-courses', color: 'from-[#28A745] to-[#1E7E34]' },
-    { name: 'Riwayat', icon: Award, href: '/learning/history', color: 'from-[#FFC107] to-[#FFA000]' },
+    { name: 'Beranda', icon: LayoutDashboard, href: '/learning/dashboard' },
+    { name: 'Katalog Materi', icon: Compass, href: '/learning/catalog' },
+    { name: 'Kursus Saya', icon: BookCopy, href: '/learning/my-courses' },
+    { name: 'Riwayat', icon: Award, href: '/learning/history' },
+    { name: 'Profil', icon: User, href: '/learning/profile' },
   ];
 
   const handleLogout = async () => {
     await logout();
   };
 
-  const handleNavigation = () => {
-    onClose();
-  };
+  const sidebarWidth = isCollapsed ? 'w-[72px]' : 'w-64';
 
   const SidebarContent = () => (
-    <>
-      {/* Logo Section */}
-      <div className="relative p-4 md:p-6 border-b border-gray-800/50">
-        <div className="absolute inset-0 bg-gradient-to-r from-[#C5A059]/10 to-transparent"></div>
-        <Link href="/learning/dashboard" className="relative block" onClick={handleNavigation}>
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-[#C5A059] to-[#8B7355] rounded-xl blur-lg opacity-30"></div>
-            <div className="relative bg-white/95 backdrop-blur-sm rounded-xl p-2 md:p-3 shadow-xl border border-[#C5A059]/30">
-              <Image 
-                src="/logo-alfajr.png" 
-                alt="Alfajr E-Learning" 
-                width={150} 
-                height={40} 
-                className="w-full h-auto" 
-              />
+    <div className="flex flex-col h-full overflow-hidden">
+
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-4 border-b border-white/10 shrink-0">
+        {!isCollapsed && (
+          <Link href="/learning/dashboard" onClick={onClose} className="flex items-center gap-3 min-w-0 group">
+            <div className="w-9 h-9 rounded-xl overflow-hidden bg-white/10 flex items-center justify-center shrink-0">
+              <Image src="/logo-alfajr.png" alt="Logo" width={32} height={32} className="object-contain p-0.5" />
             </div>
-          </div>
-          <div className="mt-2 md:mt-3 text-center">
-            <div className="flex items-center justify-center gap-1.5">
-              <Sparkles className="text-[#C5A059]" size={12} />
-              <p className="text-[10px] md:text-xs font-bold bg-gradient-to-r from-[#C5A059] to-[#D4AF37] bg-clip-text text-transparent">
-                Learning Portal
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-white truncate leading-tight group-hover:text-[#C5A059] transition-colors">
+                Alfajr E-Learning
               </p>
+              <p className="text-[11px] text-[#C5A059] font-medium">Learning Portal</p>
             </div>
-          </div>
-        </Link>
+          </Link>
+        )}
+        {isCollapsed && (
+          <Link href="/learning/dashboard" onClick={onClose} className="w-9 h-9 rounded-xl overflow-hidden bg-white/10 mx-auto block">
+            <Image src="/logo-alfajr.png" alt="Logo" width={36} height={36} className="object-contain p-0.5" />
+          </Link>
+        )}
+
+        {/* Desktop collapse toggle */}
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="hidden md:flex items-center justify-center w-7 h-7 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-all shrink-0"
+          title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          {isCollapsed
+            ? <PanelLeftOpen size={16} />
+            : <PanelLeftClose size={16} />}
+        </button>
+
+        {/* Mobile close */}
+        <button
+          onClick={onClose}
+          className="md:hidden flex items-center justify-center w-7 h-7 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-all shrink-0"
+        >
+          <X size={16} />
+        </button>
       </div>
 
-      {/* User Info Card */}
-      {user && (
-        <div className="px-3 md:px-4 py-3 md:py-4">
-          <div className="bg-gradient-to-br from-gray-800/40 to-black/40 backdrop-blur-sm rounded-xl p-3 md:p-4 border border-gray-700/30 shadow-lg">
-            <div className="flex items-center space-x-2 md:space-x-3">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#C5A059] to-[#8B7355] rounded-full blur-md opacity-50"></div>
-                <div className="relative w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-[#C5A059] to-[#8B7355] rounded-full flex items-center justify-center font-bold text-white shadow-xl border-2 border-white/20 text-sm md:text-base">
-                  {user.name.charAt(0).toUpperCase()}
-                </div>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs md:text-sm font-bold text-white truncate">{user.name}</p>
-                <p className="text-[10px] md:text-xs text-[#C5A059] truncate">{user.division}</p>
-              </div>
+      {/* User card */}
+      {user && !isCollapsed && (
+        <div className="px-3 py-3 border-b border-white/10 shrink-0">
+          <Link 
+            href="/learning/profile" 
+            onClick={onClose}
+            className="flex items-center gap-3 px-2 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors group"
+          >
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#C5A059] to-[#8B7355] flex items-center justify-center font-semibold text-white text-sm shrink-0">
+              {user.name.charAt(0).toUpperCase()}
             </div>
-          </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-white truncate leading-tight group-hover:text-[#C5A059] transition-colors">{user.name}</p>
+              <p className="text-[11px] text-[#C5A059] truncate">{user.division || 'Employee'}</p>
+            </div>
+          </Link>
+        </div>
+      )}
+      {user && isCollapsed && (
+        <div className="px-2 py-3 border-b border-white/10 shrink-0 flex justify-center">
+          <Link 
+            href="/learning/profile"
+            title="Profil"
+            className="w-9 h-9 rounded-full bg-gradient-to-br from-[#C5A059] to-[#8B7355] flex items-center justify-center font-semibold text-white text-sm hover:ring-2 hover:ring-[#C5A059] transition-all"
+          >
+            {user.name.charAt(0).toUpperCase()}
+          </Link>
         </div>
       )}
 
-      {/* Navigation Menu */}
-      <nav className="flex-1 px-3 md:px-4 py-3 md:py-4 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-black">
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
         {menuItems.map((item) => {
           const isCurrentPath = pathname.startsWith(item.href);
           return (
             <Link
               key={item.name}
               href={item.href}
-              onClick={handleNavigation}
-              className={`group flex items-center px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm font-medium rounded-xl transition-all relative overflow-hidden ${
-                isCurrentPath
-                  ? 'bg-gradient-to-r from-[#C5A059] to-[#B08F4A] text-white shadow-lg shadow-[#C5A059]/30'
-                  : 'text-gray-300 hover:bg-gray-800/30 hover:text-white'
-              }`}
+              onClick={onClose}
+              title={isCollapsed ? item.name : undefined}
+              className={`
+                flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group relative
+                ${isCurrentPath
+                  ? 'bg-[#C5A059] text-black shadow-sm'
+                  : 'text-gray-300 hover:bg-white/8 hover:text-white'}
+                ${isCollapsed ? 'justify-center' : ''}
+              `}
             >
-              {/* Icon Container */}
-              <div className={`relative mr-2 md:mr-3 ${isCurrentPath ? '' : 'group-hover:scale-110 transition-transform'}`}>
-                {isCurrentPath && (
-                  <div className={`absolute inset-0 bg-gradient-to-br ${item.color} blur-lg opacity-50`}></div>
-                )}
-                <div className={`relative p-1 md:p-1.5 rounded-lg ${
-                  isCurrentPath 
-                    ? 'bg-white/20' 
-                    : 'bg-black/50 group-hover:bg-gray-800/50'
-                }`}>
-                  <item.icon 
-                    className={`w-4 h-4 md:w-5 md:h-5 ${
-                      isCurrentPath 
-                        ? 'text-white' 
-                        : 'text-brand-gold'
-                    }`} 
-                  />
+              <item.icon
+                size={18}
+                className={`shrink-0 ${isCurrentPath ? 'text-black' : 'text-[#C5A059]'}`}
+              />
+              {!isCollapsed && (
+                <span className={`text-sm font-medium truncate ${isCurrentPath ? 'font-semibold' : ''}`}>
+                  {item.name}
+                </span>
+              )}
+              {/* Collapsed tooltip */}
+              {isCollapsed && (
+                <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 border border-white/10">
+                  {item.name}
                 </div>
-              </div>
-
-              <span className={isCurrentPath ? 'font-bold' : ''}>{item.name}</span>
-
-              {/* Shine Effect */}
-              {!isCurrentPath && (
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
               )}
             </Link>
           );
         })}
 
-        {/* Bottom Actions (Mobile/Scrollable) */}
-        <div className="mt-5 space-y-2">
-            {/* Back to Admin */}
-            {user && user.role === 'admin' && (
-              <Link 
-                href="/admin/dashboard"
-                onClick={handleNavigation}
-                className="relative flex items-center px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-medium rounded-xl text-gray-300 hover:bg-gradient-to-r hover:from-gray-800/30 hover:to-gray-700/30 hover:text-[#C5A059] transition-all group border border-gray-800/30 hover:border-[#C5A059]/30"
-              >
-                <ChevronLeft className="w-4 h-4 md:w-5 md:h-5 mr-2 md:mr-3 text-[#C5A059]" />
-                <span>Kembali ke Admin</span>
-              </Link>
-            )}
-
-            {/* Logout */}
-            <button
-              onClick={handleLogout}
-              disabled={isLoading}
-              className="relative w-full flex items-center justify-center px-3 md:px-4 py-2 md:py-2.5 bg-red-600 text-white text-xs md:text-sm font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-red-600 shadow-lg shadow-red-900/20"
+        {/* Admin link (only for admins) */}
+        {user?.role === 'admin' && (
+          <div className="pt-3 mt-2 border-t border-white/10">
+            <Link
+              href="/admin/dashboard"
+              onClick={onClose}
+              title={isCollapsed ? 'Kembali ke Admin' : undefined}
+              className={`
+                flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-400
+                hover:bg-white/8 hover:text-[#C5A059] transition-all group relative
+                ${isCollapsed ? 'justify-center' : ''}
+              `}
             >
-              {isLoading ? (
+              <Shield size={18} className="shrink-0 text-[#C5A059]" />
+              {!isCollapsed && (
                 <>
-                  <Loader2 className="w-4 h-4 md:w-5 md:h-5 mr-2 md:mr-3 animate-spin" />
-                  Keluar...
-                </>
-              ) : (
-                <>
-                  <LogOut className="w-4 h-4 md:w-5 md:h-5 mr-2 md:mr-3" />
-                  Keluar
+                  <span className="text-sm font-medium flex-1">Kembali ke Admin</span>
+                  <ChevronLeft size={14} className="opacity-50" />
                 </>
               )}
-            </button>
-        </div>
+              {isCollapsed && (
+                <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 border border-white/10">
+                  Panel Admin
+                </div>
+              )}
+            </Link>
+          </div>
+        )}
       </nav>
-    </>
+
+      {/* Footer — Logout */}
+      <div className="shrink-0 px-2 py-3 border-t border-white/10">
+        <button
+          onClick={handleLogout}
+          disabled={isLoading}
+          title={isCollapsed ? 'Keluar' : undefined}
+          className={`
+            w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-red-400
+            hover:bg-red-500/15 hover:text-red-300 transition-all disabled:opacity-50 group relative
+            ${isCollapsed ? 'justify-center' : ''}
+          `}
+        >
+          {isLoading
+            ? <Loader2 size={18} className="shrink-0 animate-spin" />
+            : <LogOut size={18} className="shrink-0" />}
+          {!isCollapsed && (
+            <span className="text-sm font-medium">{isLoading ? 'Keluar...' : 'Keluar'}</span>
+          )}
+          {isCollapsed && (
+            <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 border border-white/10">
+              Keluar
+            </div>
+          )}
+        </button>
+      </div>
+    </div>
   );
 
   return (
     <>
-      {/* Mobile Sidebar Overlay */}
+      {/* Mobile overlay */}
       {isOpen && (
-        <div 
-          className="md:hidden fixed inset-0 bg-black/50 z-40"
+        <div
+          className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
           onClick={onClose}
         />
       )}
 
-      {/* Sidebar - Mobile Drawer / Desktop Fixed */}
-      <div className={`
-        fixed top-0 left-0 h-screen bg-gradient-to-b from-black via-gray-900 to-black text-gray-100 border-r border-gray-800/30 flex flex-col shadow-2xl z-50 transition-transform duration-300 ease-in-out pt-[env(safe-area-inset-top)]
-        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-        md:translate-x-0 md:w-64 w-64
-      `}>
+      {/* Sidebar */}
+      <aside
+        className={`
+          fixed top-0 left-0 h-screen z-50 flex flex-col
+          bg-gradient-to-b from-[#0d0d0d] via-[#111111] to-[#0d0d0d]
+          border-r border-white/8 shadow-2xl
+          transition-all duration-300 ease-in-out
+          pt-[env(safe-area-inset-top)]
+          ${sidebarWidth}
+          ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+          md:translate-x-0
+        `}
+      >
         <SidebarContent />
-      </div>
+      </aside>
 
-      {/* Spacer for desktop layout */}
-      <div className="hidden md:block w-64" />
+      {/* Desktop spacer */}
+      <div className={`hidden md:block shrink-0 transition-all duration-300 ${sidebarWidth}`} />
     </>
   );
 };
