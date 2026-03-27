@@ -99,97 +99,99 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         </div>
       )}
 
-      {/* Navigation */}
-      <nav className="overflow-y-auto py-3 px-2 space-y-0.5 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-        {menuItems.map((item) => {
-          const isCurrentPath = pathname.startsWith(item.href);
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              onClick={onClose}
-              title={isCollapsed ? item.name : undefined}
-              className={`
-                flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group relative
-                ${isCurrentPath
-                  ? 'bg-[#C5A059] text-black shadow-sm'
-                  : 'text-gray-300 hover:bg-white/8 hover:text-white'}
-                ${isCollapsed ? 'justify-center' : ''}
-              `}
-            >
-              <item.icon
-                size={18}
-                className={`shrink-0 ${isCurrentPath ? 'text-black' : 'text-[#C5A059]'}`}
-              />
-              {!isCollapsed && (
-                <span className={`text-sm font-medium truncate ${isCurrentPath ? 'font-semibold' : ''}`}>
-                  {item.name}
-                </span>
-              )}
-              {/* Collapsed tooltip */}
-              {isCollapsed && (
-                <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 border border-white/10">
-                  {item.name}
-                </div>
-              )}
-            </Link>
-          );
-        })}
+      {/* Navigation & Footer Area */}
+      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+        <nav className="py-3 px-2 space-y-0.5">
+          {menuItems.map((item) => {
+            const isCurrentPath = pathname.startsWith(item.href);
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                onClick={onClose}
+                title={isCollapsed ? item.name : undefined}
+                className={`
+                  flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group relative
+                  ${isCurrentPath
+                    ? 'bg-[#C5A059] text-black shadow-sm'
+                    : 'text-gray-300 hover:bg-white/8 hover:text-white'}
+                  ${isCollapsed ? 'justify-center' : ''}
+                `}
+              >
+                <item.icon
+                  size={18}
+                  className={`shrink-0 ${isCurrentPath ? 'text-black' : 'text-[#C5A059]'}`}
+                />
+                {!isCollapsed && (
+                  <span className={`text-sm font-medium truncate ${isCurrentPath ? 'font-semibold' : ''}`}>
+                    {item.name}
+                  </span>
+                )}
+                {/* Collapsed tooltip */}
+                {isCollapsed && (
+                  <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 border border-white/10">
+                    {item.name}
+                  </div>
+                )}
+              </Link>
+            );
+          })}
 
-        {/* Admin link (only for admins) */}
-        {user?.role === 'admin' && (
-          <div className="pt-3 mt-2 border-t border-white/10">
-            <Link
-              href="/admin/dashboard"
-              onClick={onClose}
-              title={isCollapsed ? 'Kembali ke Admin' : undefined}
-              className={`
-                flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-400
-                hover:bg-white/8 hover:text-[#C5A059] transition-all group relative
-                ${isCollapsed ? 'justify-center' : ''}
-              `}
-            >
-              <Shield size={18} className="shrink-0 text-[#C5A059]" />
-              {!isCollapsed && (
-                <>
-                  <span className="text-sm font-medium flex-1">Kembali ke Admin</span>
-                  <ChevronLeft size={14} className="opacity-50" />
-                </>
-              )}
-              {isCollapsed && (
-                <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 border border-white/10">
-                  Panel Admin
-                </div>
-              )}
-            </Link>
-          </div>
-        )}
-      </nav>
-
-      {/* Footer — Logout */}
-      <div className="shrink-0 px-2 py-3 border-t border-white/10 mt-auto md:mt-0">
-        <button
-          onClick={handleLogout}
-          disabled={isLoading}
-          title={isCollapsed ? 'Keluar' : undefined}
-          className={`
-            w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-red-400
-            hover:bg-red-500/15 hover:text-red-300 transition-all disabled:opacity-50 group relative
-            ${isCollapsed ? 'justify-center' : ''}
-          `}
-        >
-          {isLoading
-            ? <Loader2 size={18} className="shrink-0 animate-spin" />
-            : <LogOut size={18} className="shrink-0" />}
-          {!isCollapsed && (
-            <span className="text-sm font-medium">{isLoading ? 'Keluar...' : 'Keluar'}</span>
-          )}
-          {isCollapsed && (
-            <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 border border-white/10">
-              Keluar
+          {/* Admin link (only for admins) */}
+          {user?.role === 'admin' && (
+            <div className="pt-3 mt-2 border-t border-white/10">
+              <Link
+                href="/admin/dashboard"
+                onClick={onClose}
+                title={isCollapsed ? 'Kembali ke Admin' : undefined}
+                className={`
+                  flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-400
+                  hover:bg-white/8 hover:text-[#C5A059] transition-all group relative
+                  ${isCollapsed ? 'justify-center' : ''}
+                `}
+              >
+                <Shield size={18} className="shrink-0 text-[#C5A059]" />
+                {!isCollapsed && (
+                  <>
+                    <span className="text-sm font-medium flex-1">Kembali ke Admin</span>
+                    <ChevronLeft size={14} className="opacity-50" />
+                  </>
+                )}
+                {isCollapsed && (
+                  <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 border border-white/10">
+                    Panel Admin
+                  </div>
+                )}
+              </Link>
             </div>
           )}
-        </button>
+        </nav>
+
+        {/* Footer — Logout */}
+        <div className="px-2 py-3 border-t border-white/10">
+          <button
+            onClick={handleLogout}
+            disabled={isLoading}
+            title={isCollapsed ? 'Keluar' : undefined}
+            className={`
+              w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-red-400
+              hover:bg-red-500/15 hover:text-red-300 transition-all disabled:opacity-50 group relative
+              ${isCollapsed ? 'justify-center' : ''}
+            `}
+          >
+            {isLoading
+              ? <Loader2 size={18} className="shrink-0 animate-spin" />
+              : <LogOut size={18} className="shrink-0" />}
+            {!isCollapsed && (
+              <span className="text-sm font-medium">{isLoading ? 'Keluar...' : 'Keluar'}</span>
+            )}
+            {isCollapsed && (
+              <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 border border-white/10">
+                Keluar
+              </div>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );

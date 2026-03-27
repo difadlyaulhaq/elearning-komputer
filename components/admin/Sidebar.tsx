@@ -117,91 +117,93 @@ const AdminSidebar = ({ isOpen, onClose }: AdminSidebarProps) => {
         </button>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-        {menuItems.map((item) => (
-          <div key={item.key}>
-            <button
-              onClick={() => item.hasSubmenu ? toggleSubmenu(item.key) : handleNavigation(item.path)}
-              title={isCollapsed ? item.label : undefined}
-              className={`
-                w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all group relative
-                ${isActive(item.path)
-                  ? 'bg-[#C5A059] text-black shadow-sm'
-                  : 'text-gray-300 hover:bg-white/8 hover:text-white'}
-                ${isCollapsed ? 'justify-center' : ''}
-              `}
-            >
-              <item.icon
-                size={18}
-                className={`shrink-0 ${isActive(item.path) ? 'text-black' : 'text-[#C5A059]'}`}
-              />
-              {!isCollapsed && (
-                <>
-                  <span className={`flex-1 text-sm font-medium truncate ${isActive(item.path) ? 'font-semibold' : ''}`}>
+      {/* Navigation & Footer Area */}
+      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+        <nav className="py-3 px-2 space-y-0.5">
+          {menuItems.map((item) => (
+            <div key={item.key}>
+              <button
+                onClick={() => item.hasSubmenu ? toggleSubmenu(item.key) : handleNavigation(item.path)}
+                title={isCollapsed ? item.label : undefined}
+                className={`
+                  w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all group relative
+                  ${isActive(item.path)
+                    ? 'bg-[#C5A059] text-black shadow-sm'
+                    : 'text-gray-300 hover:bg-white/8 hover:text-white'}
+                  ${isCollapsed ? 'justify-center' : ''}
+                `}
+              >
+                <item.icon
+                  size={18}
+                  className={`shrink-0 ${isActive(item.path) ? 'text-black' : 'text-[#C5A059]'}`}
+                />
+                {!isCollapsed && (
+                  <>
+                    <span className={`flex-1 text-sm font-medium truncate ${isActive(item.path) ? 'font-semibold' : ''}`}>
+                      {item.label}
+                    </span>
+                    {item.hasSubmenu && (
+                      expandedMenus[item.key]
+                        ? <ChevronDown size={14} className="shrink-0 opacity-60" />
+                        : <ChevronRight size={14} className="shrink-0 opacity-60" />
+                    )}
+                  </>
+                )}
+                {/* Collapsed tooltip */}
+                {isCollapsed && (
+                  <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 border border-white/10">
                     {item.label}
-                  </span>
-                  {item.hasSubmenu && (
-                    expandedMenus[item.key]
-                      ? <ChevronDown size={14} className="shrink-0 opacity-60" />
-                      : <ChevronRight size={14} className="shrink-0 opacity-60" />
-                  )}
-                </>
-              )}
-              {/* Collapsed tooltip */}
-              {isCollapsed && (
-                <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 border border-white/10">
-                  {item.label}
+                  </div>
+                )}
+              </button>
+
+              {/* Submenu */}
+              {!isCollapsed && item.hasSubmenu && expandedMenus[item.key] && (
+                <div className="ml-3 pl-3 mt-0.5 space-y-0.5 border-l border-white/10">
+                  {item.subItems?.map(sub => (
+                    <button
+                      key={sub.key}
+                      onClick={() => handleNavigation(sub.path)}
+                      className={`
+                        w-full flex items-center px-3 py-2 rounded-lg text-left text-sm transition-all
+                        ${isActive(sub.path)
+                          ? 'text-[#C5A059] font-semibold bg-[#C5A059]/10'
+                          : 'text-gray-400 hover:text-white hover:bg-white/5'}
+                      `}
+                    >
+                      {isActive(sub.path) && <span className="w-1 h-1 rounded-full bg-[#C5A059] mr-2 shrink-0" />}
+                      {sub.label}
+                    </button>
+                  ))}
                 </div>
               )}
-            </button>
+            </div>
+          ))}
+        </nav>
 
-            {/* Submenu */}
-            {!isCollapsed && item.hasSubmenu && expandedMenus[item.key] && (
-              <div className="ml-3 pl-3 mt-0.5 space-y-0.5 border-l border-white/10">
-                {item.subItems?.map(sub => (
-                  <button
-                    key={sub.key}
-                    onClick={() => handleNavigation(sub.path)}
-                    className={`
-                      w-full flex items-center px-3 py-2 rounded-lg text-left text-sm transition-all
-                      ${isActive(sub.path)
-                        ? 'text-[#C5A059] font-semibold bg-[#C5A059]/10'
-                        : 'text-gray-400 hover:text-white hover:bg-white/5'}
-                    `}
-                  >
-                    {isActive(sub.path) && <span className="w-1 h-1 rounded-full bg-[#C5A059] mr-2 shrink-0" />}
-                    {sub.label}
-                  </button>
-                ))}
+        {/* Footer — Logout */}
+        <div className={`px-2 py-3 border-t border-white/10 ${isCollapsed ? '' : ''}`}>
+          <button
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            title={isCollapsed ? 'Logout' : undefined}
+            className={`
+              w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-red-400
+              hover:bg-red-500/15 hover:text-red-300 transition-all disabled:opacity-50 group relative
+              ${isCollapsed ? 'justify-center' : ''}
+            `}
+          >
+            {isLoggingOut ? <Loader size={18} className="animate-spin shrink-0" /> : <LogOut size={18} className="shrink-0" />}
+            {!isCollapsed && (
+              <span className="text-sm font-medium">{isLoggingOut ? 'Keluar...' : 'Logout'}</span>
+            )}
+            {isCollapsed && (
+              <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 border border-white/10">
+                Logout
               </div>
             )}
-          </div>
-        ))}
-      </nav>
-
-      {/* Footer — Logout */}
-      <div className={`shrink-0 px-2 py-3 border-t border-white/10 ${isCollapsed ? '' : ''}`}>
-        <button
-          onClick={handleLogout}
-          disabled={isLoggingOut}
-          title={isCollapsed ? 'Logout' : undefined}
-          className={`
-            w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-red-400
-            hover:bg-red-500/15 hover:text-red-300 transition-all disabled:opacity-50 group relative
-            ${isCollapsed ? 'justify-center' : ''}
-          `}
-        >
-          {isLoggingOut ? <Loader size={18} className="animate-spin shrink-0" /> : <LogOut size={18} className="shrink-0" />}
-          {!isCollapsed && (
-            <span className="text-sm font-medium">{isLoggingOut ? 'Keluar...' : 'Logout'}</span>
-          )}
-          {isCollapsed && (
-            <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 border border-white/10">
-              Logout
-            </div>
-          )}
-        </button>
+          </button>
+        </div>
       </div>
     </div>
   );
