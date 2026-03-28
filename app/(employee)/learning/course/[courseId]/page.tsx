@@ -1,11 +1,12 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { BookOpen, Clock, PlayCircle, Link as LinkIcon, ChevronRight, ArrowLeft } from "lucide-react";
+import { BookOpen, Clock, PlayCircle, ChevronRight, ArrowLeft } from "lucide-react";
 import { getCoursePageData } from "@/lib/data/courses";
 import Image from "next/image";
 import { getYouTubeThumbnail } from "@/lib/utils";
 import { getCurrentUser } from "@/lib/session";
 import { adminDb } from "@/lib/firebase/admin";
+import { LessonAttachment } from "@/components/learning/LessonAttachment";
 
 export default async function CourseDetailPage({ 
   params 
@@ -248,17 +249,10 @@ export default async function CourseDetailPage({
                                 
                                 {/* Attachment Link */}
                                 {lesson.attachmentUrl && (
-                                  <div
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      window.open(lesson.attachmentUrl, '_blank');
-                                    }}
-                                    className="inline-flex items-center text-xs text-blue-600 hover:text-blue-800 mt-1"
-                                  >
-                                    <LinkIcon size={12} className="mr-1" />
-                                    <span>{lesson.attachmentName || 'Lampiran'}</span>
-                                  </div>
+                                  <LessonAttachment 
+                                    url={lesson.attachmentUrl} 
+                                    name={lesson.attachmentName} 
+                                  />
                                 )}
                               </div>
                               <ChevronRight size={16} className="text-gray-300 ml-2 self-center group-hover:text-[#C5A059] transition-all transform group-hover:translate-x-1" />
