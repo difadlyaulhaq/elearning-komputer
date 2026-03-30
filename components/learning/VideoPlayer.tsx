@@ -114,6 +114,7 @@ export function VideoPlayer({
           <ScreenProtection 
             userEmail={user?.email}
             videoElementRef={videoElementRef}
+            contentTitle={lesson.title} // Pass lesson title for better logging
           >
             <UniversalPlayer 
               ref={plyrRef}
@@ -121,7 +122,7 @@ export function VideoPlayer({
               contentType={lesson.contentType}
               onEnded={() => setIsVideoCompleted(true)}
               onTimeUpdate={(currentTime, duration) => {
-                if (duration > 0 && (currentTime / duration) >= 0.9) {
+                if (!isVideoCompleted && duration > 0 && (currentTime / duration) >= 0.9) {
                   setIsVideoCompleted(true);
                 }
               }}

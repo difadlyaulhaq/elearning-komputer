@@ -93,17 +93,18 @@ const UniversalPlayer = React.forwardRef<APITypes, UniversalPlayerProps>(({
   };
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      const player = plyrRef.current?.plyr;
-      
-      if (player && typeof (player as any).on === 'function') {
+    let player: any = null;
+    let eventListenersAttached = false;
+
+    const attachEvents = () => {
+      player = plyrRef.current?.plyr;
+      if (player && typeof player.on === 'function' && !eventListenersAttached) {
         const handleEnded = () => {
           if (onEnded) onEnded();
         };
 
         const handleTimeUpdate = () => {
           if (disableSeeking) {
-            // Jika user mencoba skip ke depan (lebih dari 2 detik dari posisi terakhir yang valid)
             if (player.currentTime > maxTimeReachedRef.current + 2) {
               player.currentTime = maxTimeReachedRef.current;
             } else if (player.currentTime > maxTimeReachedRef.current) {
@@ -135,14 +136,20 @@ const UniversalPlayer = React.forwardRef<APITypes, UniversalPlayerProps>(({
         player.on('timeupdate', handleTimeUpdate);
         player.on('seeking', handleSeeking);
         player.on('seeked', handleSeeked);
-        
-        clearInterval(interval);
+        eventListenersAttached = true;
+        return true;
       }
-    }, 500);
-
-    return () => {
-      clearInterval(interval);
+      return false;
     };
+
+    if (!attachEvents()) {
+      const interval = setInterval(() => {
+        if (attachEvents()) {
+          clearInterval(interval);
+        }
+      }, 500);
+      return () => clearInterval(interval);
+    }
   }, [onEnded, onTimeUpdate, disableSeeking]);
 
   return (
@@ -153,16 +160,15 @@ const UniversalPlayer = React.forwardRef<APITypes, UniversalPlayerProps>(({
         options={plyrOptions}
       />
       
-      {/* Watermark Overlay */}
+      {/* Watermark Overlay - Optimized for performance */}
       {watermark && user && (
-        <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden opacity-60">
           <div 
             className="absolute text-white/20 font-bold text-sm md:text-base whitespace-nowrap select-none"
             style={{
               top: '10%',
               left: '5%',
               transform: 'rotate(-15deg)',
-              textShadow: '1px 1px 2px rgba(0,0,0,0.5)'
             }}
           >
             {user.email}
@@ -173,7 +179,6 @@ const UniversalPlayer = React.forwardRef<APITypes, UniversalPlayerProps>(({
               bottom: '15%',
               right: '8%',
               transform: 'rotate(-10deg)',
-              textShadow: '1px 1px 2px rgba(0,0,0,0.5)'
             }}
           >
             PROPERTY OF ALFAJR • {user.name}
@@ -184,7 +189,6 @@ const UniversalPlayer = React.forwardRef<APITypes, UniversalPlayerProps>(({
               top: '50%',
               left: '50%',
               transform: 'translate(-50%, -50%) rotate(-45deg)',
-              textShadow: '1px 1px 2px rgba(0,0,0,0.5)'
             }}
           >
             {user.email} • {new Date().toLocaleDateString()}

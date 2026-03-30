@@ -20,6 +20,7 @@ interface ScreenProtectionProps {
   enableContextMenuBlock?: boolean; // Passed to useScreenProtection, controls context menu blocking.
   enableDevToolsDetection?: boolean; // Passed to useScreenProtection, controls dev tools detection.
   enableDragBlock?: boolean; // Passed to useScreenProtection, controls drag blocking.
+  contentTitle?: string; // New: To identify which content is being protected
   showWarningOnAttempt?: boolean; // Controls visibility of the toast warning on screenshot attempts.
   videoElementRef?: React.RefObject<HTMLVideoElement | null>; // Reference to a video element for specific protection.
   className?: string; // Additional CSS classes for the main wrapper.
@@ -37,6 +38,7 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
   enableContextMenuBlock = true,
   enableDevToolsDetection = true,
   enableDragBlock = true,
+  contentTitle = '',
   showWarningOnAttempt = true, // Set to `false` to disable the warning toast.
   videoElementRef,
   className = '',
@@ -93,6 +95,7 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
     enableDevToolsDetection,
     enableDragBlock,
     watermarkText,
+    contentTitle, // Pass content title
     videoElementRef,
     authFetch, // Pass authFetch to the hook
     onScreenshotAttempt: () => {
@@ -107,7 +110,11 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
         body: JSON.stringify({
           action: 'screenshot_attempt',
           page: window.location.pathname,
-          details: { userAgent: navigator.userAgent, fullscreen: !!document.fullscreenElement },
+          details: { 
+            userAgent: navigator.userAgent, 
+            fullscreen: !!document.fullscreenElement,
+            contentTitle: contentTitle // Include content title in log
+          },
         }),
       }).catch(console.error);
     },
@@ -122,7 +129,11 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
         body: JSON.stringify({
           action: 'recording_detected',
           page: window.location.pathname,
-          details: { userAgent: navigator.userAgent, fullscreen: !!document.fullscreenElement },
+          details: { 
+            userAgent: navigator.userAgent, 
+            fullscreen: !!document.fullscreenElement,
+            contentTitle: contentTitle // Include content title in log
+          },
         }),
       }).catch(console.error);
     },
@@ -198,7 +209,6 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
           pointer-events: none;
           font-family: sans-serif;
           font-weight: 600;
-          text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
           will-change: transform;
           backface-visibility: hidden;
           z-index: 999998;

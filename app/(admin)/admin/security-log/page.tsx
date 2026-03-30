@@ -13,11 +13,17 @@ interface LogEntry {
   action: string;
   page: string;
   timestamp: string;
+  details?: {
+    contentTitle?: string;
+    userAgent?: string;
+    fullscreen?: boolean;
+    [key: string]: any;
+  };
 }
 
 interface Column {
   header: string;
-  accessor: keyof LogEntry;
+  accessor: keyof LogEntry | 'contentTitle';
   icon: React.ElementType;
   render?: (log: LogEntry) => React.ReactNode;
 }
@@ -100,6 +106,12 @@ const SecurityLogPage = () => {
         };
         return <span>{labels[log.action] || log.action}</span>;
       }
+    },
+    { 
+      header: 'Konten/Video', 
+      accessor: 'contentTitle' as any, 
+      icon: FileText,
+      render: (log: LogEntry) => <span>{log.details?.contentTitle || '-'}</span>
     },
     { header: 'Halaman', accessor: 'page', icon: FileText },
     {

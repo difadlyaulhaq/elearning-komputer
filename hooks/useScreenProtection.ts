@@ -12,6 +12,7 @@ interface ScreenProtectionOptions {
   enableDevToolsDetection?: boolean;
   enableDragBlock?: boolean;
   watermarkText?: string;
+  contentTitle?: string; // New: To identify which content is being protected
   onScreenshotAttempt?: () => void;
   onRecordingDetected?: () => void;
   videoElementRef?: React.RefObject<HTMLVideoElement | null>;
@@ -27,6 +28,7 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
     enableDevToolsDetection = true,
     enableDragBlock = true, // New option
     watermarkText = 'PROTECTED CONTENT',
+    contentTitle = '', // New: context for logging
     onScreenshotAttempt,
     onRecordingDetected,
     videoElementRef,
@@ -176,6 +178,7 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
             page: window.location.pathname,
             details: { 
               userAgent: navigator.userAgent,
+              contentTitle: contentTitle, // Pass content title
               ...event.details 
             },
           }),
