@@ -23,7 +23,7 @@ interface LogEntry {
 
 interface Column {
   header: string;
-  accessor: keyof LogEntry | 'contentTitle';
+  accessor: string;
   icon: React.ElementType;
   render?: (log: LogEntry) => React.ReactNode;
 }
@@ -109,7 +109,7 @@ const SecurityLogPage = () => {
     },
     { 
       header: 'Konten/Video', 
-      accessor: 'contentTitle' as any, 
+      accessor: 'contentTitle', 
       icon: FileText,
       render: (log: LogEntry) => <span>{log.details?.contentTitle || '-'}</span>
     },
@@ -172,7 +172,7 @@ const SecurityLogPage = () => {
                   <tr key={log.id}>
                     {columns.map((col) => (
                       <td key={col.accessor} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {col.render ? col.render(log) : log[col.accessor]}
+                        {col.render ? col.render(log) : (log as any)[col.accessor]}
                       </td>
                     ))}
                   </tr>
@@ -185,6 +185,7 @@ const SecurityLogPage = () => {
     </div>
   );
 };
+
 
 
 export default SecurityLogPage;
