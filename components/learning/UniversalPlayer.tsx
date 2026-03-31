@@ -25,12 +25,24 @@ const UniversalPlayer = React.forwardRef<APITypes, UniversalPlayerProps>(({
 }, ref) => {
   const { user } = useAuth();
   const internalPlyrRef = useRef<APITypes>(null);
+  const nativeVideoRef = useRef<HTMLVideoElement>(null);
   const [, setHlsInstance] = useState<Hls | null>(null);
   
   const plyrRef = (ref as React.RefObject<APITypes>) || internalPlyrRef;
 
   const lastTimeRef = useRef(0);
   const maxTimeReachedRef = useRef(0);
+
+  // Sync ref for external components (like ScreenProtection)
+  React.useImperativeHandle(ref, () => ({
+    get plyr() {
+      return {
+        media: nativeVideoRef.current || internalPlyrRef.current?.plyr?.media,
+        currentTime: nativeVideoRef.current?.currentTime || internalPlyrRef.current?.plyr?.currentTime,
+        duration: nativeVideoRef.current?.duration || internalPlyrRef.current?.plyr?.duration,
+      };
+    }
+  } as any), [contentType, src]);
 
   const getYouTubeId = (url: string) => {
     if (!url) return null;
@@ -76,7 +88,24 @@ const UniversalPlayer = React.forwardRef<APITypes, UniversalPlayerProps>(({
     speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
   };
 
+  // Logic for native video element
+  const handleNativeTimeUpdate = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    const video = e.currentTarget;
+    if (disableSeeking) {
+      if (video.currentTime > maxTimeReachedRef.current + 2) {
+        video.currentTime = maxTimeReachedRef.current;
+      } else if (video.currentTime > maxTimeReachedRef.current) {
+        maxTimeReachedRef.current = video.currentTime;
+      }
+    }
+    lastTimeRef.current = video.currentTime;
+    if (onTimeUpdate) onTimeUpdate(video.currentTime, video.duration);
+  };
+
   useEffect(() => {
+    // Only init Plyr if we're not using native fallback
+    if (contentType === 'video-upload' && !src.includes('.m3u8')) return;
+
     let player: any = null;
     let isMounted = true;
     let hls: Hls | null = null;
@@ -97,7 +126,7 @@ const UniversalPlayer = React.forwardRef<APITypes, UniversalPlayerProps>(({
     };
 
     const initPlayer = () => {
-      player = plyrRef.current?.plyr;
+      player = internalPlyrRef.current?.plyr;
       if (player && typeof player.on === 'function' && isMounted) {
         player.on('ended', handleEnded);
         player.on('timeupdate', handleTimeUpdate);
@@ -115,8 +144,6 @@ const UniversalPlayer = React.forwardRef<APITypes, UniversalPlayerProps>(({
               hls.attachMedia(videoElement);
               setHlsInstance(hls);
             }
-          } else {
-            videoElement.preload = "auto";
           }
         }
         return true;
@@ -137,9 +164,28 @@ const UniversalPlayer = React.forwardRef<APITypes, UniversalPlayerProps>(({
     };
   }, [onEnded, onTimeUpdate, disableSeeking, src, contentType]);
 
+  const isNativeFallback = contentType === 'video-upload' && !src.includes('.m3u8');
+
   return (
     <div className="relative w-full overflow-hidden rounded-xl shadow-lg group bg-black">
-      <Plyr ref={plyrRef} source={plyrSource} options={plyrOptions} />
+      {isNativeFallback ? (
+        <video
+          ref={nativeVideoRef}
+          src={src}
+          className="w-full aspect-video"
+          controls
+          preload="metadata"
+          controlsList="nodownload"
+          onEnded={onEnded}
+          onTimeUpdate={handleNativeTimeUpdate}
+          onContextMenu={(e) => e.preventDefault()}
+          crossOrigin="anonymous"
+          playsInline
+        />
+      ) : (
+        <Plyr ref={internalPlyrRef} source={plyrSource} options={plyrOptions} />
+      )}
+      
       {watermark && user && (
         <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden opacity-60">
           <div className="absolute text-white/20 font-bold text-sm md:text-base whitespace-nowrap select-none" style={{ top: '10%', left: '5%', transform: 'rotate(-15deg)' }}>{user.email}</div>
