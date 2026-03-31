@@ -23,6 +23,7 @@ import {
 import toast from "react-hot-toast";
 import { MarkdownRenderer } from "@/components/shared/MarkdownRenderer";
 import UniversalPlayer from "./UniversalPlayer";
+import { LessonSkeleton } from "./LessonSkeleton";
 
 interface LessonPlayerMobileProps {
   courseId: string;
@@ -99,11 +100,7 @@ export function LessonPlayerMobile({
   };
 
   if (authLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader2 className="w-12 h-12 text-[#C5A059] animate-spin" />
-      </div>
-    );
+    return <LessonSkeleton />;
   }
 
   return (
@@ -190,7 +187,7 @@ export function LessonPlayerMobile({
                   }
                 }}
                 watermark={lesson.watermark}
-                disableSeeking={!isVideoCompleted}
+                disableSeeking={false}
               />
             </div>
           )}
