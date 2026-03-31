@@ -36,10 +36,11 @@ const UniversalPlayer = React.forwardRef<APITypes, UniversalPlayerProps>(({
   // Sync ref for external components (like ScreenProtection)
   React.useImperativeHandle(ref, () => ({
     get plyr() {
+      const plyrInstance = internalPlyrRef.current?.plyr as any;
       return {
-        media: nativeVideoRef.current || internalPlyrRef.current?.plyr?.media,
-        currentTime: nativeVideoRef.current?.currentTime || internalPlyrRef.current?.plyr?.currentTime,
-        duration: nativeVideoRef.current?.duration || internalPlyrRef.current?.plyr?.duration,
+        media: nativeVideoRef.current || plyrInstance?.media,
+        currentTime: nativeVideoRef.current?.currentTime || plyrInstance?.currentTime,
+        duration: nativeVideoRef.current?.duration || plyrInstance?.duration,
       };
     }
   } as any), [contentType, src]);
