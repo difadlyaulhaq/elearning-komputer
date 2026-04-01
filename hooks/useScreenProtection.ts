@@ -122,8 +122,7 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
       
       setIsBlurred(true);
       setViolationType('blur');
-      setCountdown(5);
-      startCountdown(5);
+      // No lockout timer for simple blur on mobile
       return;
     }
 
@@ -225,13 +224,16 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
       coolDownTimerRef.current = null;
     }
 
-    // Set cool-down active saat focus kembali
-    setIsCoolDownActive(true);
-    setIsBlurred(true);
-    setViolationType('blur');
-    setCountdown(5);
-    startCountdown(5);
-  }, [enableBlurOnFocusLoss, isViolation, startCountdown]);
+    // Reset states immediately on focus
+    setIsBlurred(false);
+    setIsCoolDownActive(false);
+    setViolationType(null);
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+    setCountdown(0);
+  }, [enableBlurOnFocusLoss, isViolation]);
 
   // Enhanced keyboard detection dengan deteksi lengkap
   useEffect(() => {
