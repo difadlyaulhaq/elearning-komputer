@@ -49,6 +49,7 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
     Array<{ top: number; left: number; rotation: number; opacity: number }>
   >([]); // Positions for dynamic watermarks.
   const [fullscreenElement, setFullscreenElement] = useState<Element | null>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   // Monitor fullscreen changes to ensure protection stays on top
   useEffect(() => {
@@ -273,9 +274,9 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
                 <Shield size={64} className="mx-auto text-[#C5A059] mb-4" />
                 <h2 className="text-2xl md:text-3xl font-bold mb-3">Konten Terlindungi</h2>
                 <p className="text-base md:text-lg text-gray-300">
-                  {isCoolDownActive ? 'Menyiapkan konten dengan aman...' : 'Halaman tidak aktif. Kembali untuk melihat.'}
+                  Menyiapkan konten dengan aman...
                 </p>
-                {countdown > 0 && isCoolDownActive && (
+                {countdown > 0 && (
                   <div className="mt-6">
                     <div className="inline-flex items-center justify-center w-20 h-20 rounded-full border-4 border-[#C5A059] mb-3">
                       <span className="text-4xl font-bold">{countdown}</span>
@@ -298,7 +299,11 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
   );
 
   return (
-    <div className={`screen-protected ${className}`}>
+    <div 
+      className={`screen-protected ${className} relative`} 
+      ref={wrapperRef} 
+      id="alfajr-screen-protection-wrapper"
+    >
       {children}
       {mounted && ReactDOM.createPortal(renderOverlays(), fullscreenElement || document.body)}
     </div>

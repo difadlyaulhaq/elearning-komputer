@@ -41,11 +41,15 @@ export function VideoPlayer({
 
   // Sync plyr's internal video element to our ref
   useEffect(() => {
-    const plyrInstance = plyrRef.current?.plyr as any;
-    if (plyrInstance?.media) {
-      videoElementRef.current = plyrInstance.media as HTMLVideoElement;
-    }
-  }, [plyrRef.current]);
+    const interval = setInterval(() => {
+      const plyrInstance = plyrRef.current?.plyr as any;
+      if (plyrInstance?.media) {
+        videoElementRef.current = plyrInstance.media as HTMLVideoElement;
+        clearInterval(interval);
+      }
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
 
   // Kembali ke logika ketat: isVideoCompleted default false (atau sesuai status awal)
   // Tombol hanya aktif jika video sudah ditonton minimal 90%

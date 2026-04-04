@@ -81,7 +81,14 @@ const UniversalPlayer = React.forwardRef<APITypes, UniversalPlayerProps>(({
     settings: ['quality', 'speed', 'loop'],
     youtube: { noCookie: true, rel: 0, showinfo: 0, iv_load_policy: 3, modestbranding: 1, autoplay: 0 },
     ratio: '16:9',
-    fullscreen: { enabled: true, fallback: true, iosNative: true },
+    fullscreen: { 
+      enabled: true, 
+      fallback: true, 
+      iosNative: true, 
+      ...(typeof document !== 'undefined' && document.getElementById('alfajr-screen-protection-wrapper') 
+        ? { container: '#alfajr-screen-protection-wrapper' } 
+        : {})
+    },
     download: false,
     keyboard: { focused: true, global: false },
     tooltips: { controls: true, seek: true },

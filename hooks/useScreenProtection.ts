@@ -39,6 +39,7 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isDevToolsOpen, setIsDevToolsOpen] = useState(false);
   const [isViolation, setIsViolation] = useState(false);
+  const isViolationRef = useRef(false); // Track secara sinkron
   const [isCoolDownActive, setIsCoolDownActive] = useState(false);
   const [countdown, setCountdown] = useState(0); // Countdown timer state
   const [violationType, setViolationType] = useState<'screenshot' | 'devtools' | 'blur' | null>(null);
@@ -56,6 +57,27 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
     return fetch(input, init);
   }, [authFetch]);
 
+  // Corrupt the clipboard with warning message repeatedly.
+  // Snipping Tool delays copying image until the user finishes drawing the rectangle.
+  // We spam the clipboard for 5 seconds to ensure we overwrite the Snipping Tool's payload!
+  const polluteClipboard = useCallback(() => {
+    let attempts = 0;
+    const intervalId = setInterval(() => {
+      try {
+        if (typeof navigator !== 'undefined' && navigator.clipboard) {
+          navigator.clipboard.writeText('⚠️ ALFAJR SECURITY: Pelanggaran terdeteksi! Konten ini dilindungi hak cipta eksklusif. Dilarang melakukan screenshot atau perekaman layar.');
+        }
+      } catch (e) {
+        // Ignore permission/activation errors
+      }
+      
+      attempts++;
+      if (attempts >= 10) { // 5 seconds (10 * 500ms)
+        clearInterval(intervalId);
+      }
+    }, 500);
+  }, []);
+
   // Helper function to pause video
   const pauseVideo = useCallback(() => {
     if (videoElementRef?.current) {
@@ -64,6 +86,44 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
       } catch (e) {
         console.warn('Failed to auto-pause video:', e);
       }
+    }
+  }, [videoElementRef]);
+
+  // Sangat agresif: sembunyikan video SEDETIK SEBELUM OS membekukan layar untuk screenshot
+  const hideVideoSynchronously = useCallback(() => {
+    // 1. Keluarkan dari Fullscreen BILA SEDANG FULLSCREEN
+    // Ini memaksa browser kembali ke mode normal sehingga overlay (yang dipasang di document.body) MUNCUL!
+    if (typeof document !== 'undefined') {
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      } else if ((document as any).webkitFullscreenElement) {
+        (document as any).webkitExitFullscreen().catch(() => {});
+      } else if ((document as any).mozFullScreenElement) {
+        (document as any).mozCancelFullScreen().catch(() => {});
+      } else if ((document as any).msFullscreenElement) {
+        (document as any).msExitFullscreen().catch(() => {});
+      }
+    }
+
+    if (videoElementRef?.current) {
+      try {
+        videoElementRef.current.pause();
+      } catch (e) {}
+      
+      // Paksa hilang dari tampilan secara synchronous (level DOM) tanpa nunggu React state
+      videoElementRef.current.style.opacity = '0';
+      videoElementRef.current.style.visibility = 'hidden';
+      videoElementRef.current.style.filter = 'blur(100px)';
+    }
+  }, [videoElementRef]);
+
+  const showVideoSynchronously = useCallback(() => {
+    if (videoElementRef?.current) {
+      // Kembalikan seperti semula
+      videoElementRef.current.style.opacity = '1';
+      videoElementRef.current.style.visibility = 'visible';
+      videoElementRef.current.style.filter = 'none';
+      // Biarkan user menekan play sendiri
     }
   }, [videoElementRef]);
 
@@ -90,13 +150,15 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
         }
         // Clear states setelah countdown selesai
         setIsViolation(false);
+        isViolationRef.current = false;
         setIsBlurred(false);
         setIsCoolDownActive(false);
         setIsDevToolsOpen(false);
         setViolationType(null);
+        showVideoSynchronously();
       }
     }, 1000);
-  }, [pauseVideo]);
+  }, [pauseVideo, showVideoSynchronously]);
 
   // Smart blur detection - hanya trigger jika benar-benar pindah tab/window
   const handleBlur = useCallback(() => {
@@ -112,35 +174,47 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
       console.log('File picker detected, skipping blur protection');
       return;
     }
-    
-    // Pause video immediately on blur
-    pauseVideo();
-    
-    // Immediate trigger for mobile devices (Camera, Notification shade, App Switch)
-    if (isMobileDevice()) {
-      if (blurDebounceRef.current) clearTimeout(blurDebounceRef.current);
-      
-      setIsBlurred(true);
-      setViolationType('blur');
-      // No lockout timer for simple blur on mobile
-      return;
-    }
 
-    // Delay blur untuk membedakan antara klik dalam page vs pindah tab (Desktop)
-    if (blurDebounceRef.current) {
-      clearTimeout(blurDebounceRef.current);
-    }
-    
-    blurDebounceRef.current = setTimeout(() => {
-      // Hanya blur jika document benar-benar hidden atau window blur
-      if (document.hidden || !document.hasFocus()) {
-        setIsBlurred(true);
-        setViolationType('blur');
-        setCountdown(5);
-        startCountdown(5);
+    // Eksekusi super agresif, tanpa delay.
+    // document.hasFocus() mendeteksi hilangnya fokus (Alt+tab/Pindah jendela).
+    // Bahkan jika klik iframe (seperti vdo cipher), document.hasFocus() tetap true.
+    if (document.hidden || !document.hasFocus()) {
+      // Jika sedang dalam violation (contoh: 10 detik dari keyboard), abaikan blur
+      if (isViolationRef.current) return;
+
+      const isFullscreenBlur = typeof document !== 'undefined' && 
+        (document.fullscreenElement || (document as any).webkitFullscreenElement || (document as any).mozFullScreenElement || (document as any).msFullscreenElement);
+
+      if (isFullscreenBlur) {
+        // ESKALASI: Jika kehilangan fokus saat fullscreen, ini sangat dicurigai sebagai OS Snipping Tool / PrtScrn!
+        attemptCountRef.current++;
+        setIsViolation(true);
+        isViolationRef.current = true;
+        setViolationType('screenshot');
+        setCountdown(10);
+        startCountdown(10);
+        
+        hideVideoSynchronously(); // Menghilangkan video dan mengeluarkan dari fullscreen
+        polluteClipboard(); // Bantai clipboardnya selama 5 detik!
+        
+        onScreenshotAttempt?.();
+        return;
       }
-    }, 100); // 100ms delay untuk menghindari false trigger
-  }, [enableBlurOnFocusLoss, startCountdown, pauseVideo]);
+
+      // Jika bukan fullscreen blur, pakai blur biasa 5 detik
+      hideVideoSynchronously();
+      setIsBlurred(true);
+      setIsCoolDownActive(false);
+      setViolationType('blur');
+      setCountdown(5);
+      
+      // Layar beku pada 5 detik
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
+      }
+    }
+  }, [enableBlurOnFocusLoss, hideVideoSynchronously, startCountdown, onScreenshotAttempt]);
 
   // Initialize mobile protection with gesture support
   useEffect(() => {
@@ -156,14 +230,14 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
             action === 'mobile_hardware_button' ||
             action === 'mobile_hardware_combo' ||
             action === 'mobile_power_double_click') {
+          hideVideoSynchronously();
           setIsViolation(true);
+          isViolationRef.current = true;
           setViolationType('screenshot');
           setCountdown(10);
           startCountdown(10);
           
-          try {
-            navigator.clipboard.writeText('⚠️ Screenshot tidak diizinkan').catch(() => {});
-          } catch (error) {}
+          polluteClipboard(); // Bantai clipboardnya!
           
           onScreenshotAttempt?.();
         }
@@ -224,7 +298,16 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
       coolDownTimerRef.current = null;
     }
 
-    // Reset states immediately on focus
+    // Reset states immediately on focus, UNLESS we are returning from a blur
+    if (isBlurred && violationType === 'blur') {
+      // User kembali ke layar, mulai countdown dari 5
+      setIsBlurred(false);
+      setIsCoolDownActive(true);
+      startCountdown(5);
+      return;
+    }
+
+    // Jika masuk ke sini, artinya bukan dari blur atau countdown sudah selesai
     setIsBlurred(false);
     setIsCoolDownActive(false);
     setViolationType(null);
@@ -233,7 +316,8 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
       countdownIntervalRef.current = null;
     }
     setCountdown(0);
-  }, [enableBlurOnFocusLoss, isViolation]);
+    showVideoSynchronously();
+  }, [enableBlurOnFocusLoss, isViolation, isBlurred, violationType, startCountdown, showVideoSynchronously]);
 
   // Enhanced keyboard detection dengan deteksi lengkap
   useEffect(() => {
@@ -297,6 +381,7 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
       }
 
       if (isScreenshotAttempt) {
+        hideVideoSynchronously();
         if (preventDefaultAction) {
           e.preventDefault();
           e.stopPropagation();
@@ -306,32 +391,29 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
         
         // Flag sebagai violation dengan countdown
         setIsViolation(true);
+        isViolationRef.current = true;
         setViolationType('screenshot');
         setCountdown(10);
         startCountdown(10);
         
-        // Clear clipboard secara agresif
-        try {
-          navigator.clipboard.writeText('⚠️ Screenshot tidak diizinkan').catch(() => {});
-        } catch (error) {
-          // Clipboard API tidak tersedia
-        }
+        // Clear clipboard secara agresif berkali-kali
+        polluteClipboard();
         
         onScreenshotAttempt?.();
       }
     };
 
-    // Gunakan capture phase untuk menangkap event lebih awal
-    document.addEventListener('keydown', handleKeyDown, true);
-    document.addEventListener('keyup', handleKeyDown, true);
+    // Gunakan capture phase di level window untuk prioritas absolut pertama
+    window.addEventListener('keydown', handleKeyDown, true);
+    window.addEventListener('keyup', handleKeyDown, true);
     
     return () => {
-      document.removeEventListener('keydown', handleKeyDown, true);
-      document.removeEventListener('keyup', handleKeyDown, true);
+      window.removeEventListener('keydown', handleKeyDown, true);
+      window.removeEventListener('keyup', handleKeyDown, true);
     };
   }, [enableKeyboardBlock, enableDevToolsDetection, onScreenshotAttempt]);
 
-  // Visibility change detection
+  // Visibility change & Window Focus detection
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden) {
@@ -341,44 +423,15 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
       }
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [handleBlur, handleFocus]);
-
-  // Track mouse position untuk mencegah false trigger
-  useEffect(() => {
-    const handleMouseEnter = () => {
-      isMouseInsideRef.current = true;
-    };
-    
-    const handleMouseLeave = () => {
-      isMouseInsideRef.current = false;
-    };
-    
-    document.addEventListener('mouseenter', handleMouseEnter);
-    document.addEventListener('mouseleave', handleMouseLeave);
-    
-    return () => {
-      document.removeEventListener('mouseenter', handleMouseEnter);
-      document.removeEventListener('mouseleave', handleMouseLeave);
-    };
-  }, []);
-
-  // Window focus/blur events dengan validasi mouse
-  useEffect(() => {
-    const smartBlur = (e: FocusEvent) => {
-      // Hanya trigger blur jika mouse benar-benar keluar dari window
-      if (!isMouseInsideRef.current || document.hidden) {
-        handleBlur();
-      }
-    };
-    
-    window.addEventListener('blur', smartBlur as any);
+    // Langsung trigger pada event blur tanpa perantara untuk agresivitas maksimal
+    window.addEventListener('blur', handleBlur as any);
     window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
-      window.removeEventListener('blur', smartBlur as any);
+      window.removeEventListener('blur', handleBlur as any);
       window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [handleBlur, handleFocus]);
 
