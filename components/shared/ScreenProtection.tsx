@@ -43,6 +43,14 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
   videoElementRef,
   className = '',
 }) => {
+  // On Capacitor native platforms (Android/iOS APK), skip ALL JS-based protection.
+  // Capacitor already uses FLAG_SECURE (Android) / native privacy screen (iOS)
+  // which handles screenshot prevention at the OS level.
+  // The JS-based overlays and capture-phase event listeners were blocking Plyr touch events.
+  if (Capacitor.isNativePlatform()) {
+    return <div className={className}>{children}</div>;
+  }
+
   const [showWarning, setShowWarning] = useState(false); // State for the warning toast.
   const [warningMessage, setWarningMessage] = useState(''); // Message for the warning toast.
   const [watermarkPositions, setWatermarkPositions] = useState<

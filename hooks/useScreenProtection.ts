@@ -197,8 +197,17 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
     }
   }, [enableBlurOnFocusLoss, hideVideoSynchronously, startCountdown, onScreenshotAttempt]);
 
-  // Initialize mobile protection with gesture support
+  // Initialize mobile protection with gesture support (web only, NOT native Capacitor)
   useEffect(() => {
+    // Skip on Capacitor native - FLAG_SECURE handles it at OS level
+    let isNative = false;
+    try {
+      const { Capacitor } = require('@capacitor/core');
+      isNative = Capacitor.isNativePlatform();
+    } catch (e) {}
+    
+    if (isNative) return;
+
     if (isMobileDevice()) {
       const cleanup = initializeMobileProtection((event) => {
         attemptCountRef.current++;
