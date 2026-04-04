@@ -84,10 +84,7 @@ const UniversalPlayer = React.forwardRef<APITypes, UniversalPlayerProps>(({
     fullscreen: { 
       enabled: true, 
       fallback: true, 
-      iosNative: true, 
-      ...(typeof document !== 'undefined' && document.getElementById('alfajr-screen-protection-wrapper') 
-        ? { container: '#alfajr-screen-protection-wrapper' } 
-        : {})
+      iosNative: true,
     },
     download: false,
     keyboard: { focused: true, global: false },
@@ -154,6 +151,16 @@ const UniversalPlayer = React.forwardRef<APITypes, UniversalPlayerProps>(({
             }
           }
         }
+        
+        // Dynamically set fullscreen container on desktop only (after DOM is ready)
+        const wrapper = document.getElementById('alfajr-screen-protection-wrapper');
+        if (wrapper && player.config) {
+          player.config.fullscreen = {
+            ...player.config.fullscreen,
+            container: '#alfajr-screen-protection-wrapper',
+          };
+        }
+
         return true;
       }
       return false;

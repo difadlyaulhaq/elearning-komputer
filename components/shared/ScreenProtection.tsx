@@ -199,6 +199,12 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
           user-select: none;
           -webkit-touch-callout: none;
         }
+        /* Ensure video player controls remain interactive on mobile */
+        .plyr, .plyr *, .plyr__controls, .plyr__control,
+        video, .plyr__video-wrapper {
+          pointer-events: auto !important;
+          touch-action: manipulation !important;
+        }
         @keyframes float-watermark {
           0%, 100% { transform: translate3d(0, 0, 0); }
           25% { transform: translate3d(8px, -10px, 0); }
@@ -221,7 +227,7 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
       `}</style>
 
       {enableWatermark && watermarkPositions.length > 0 && (
-        <div className="fixed inset-0 pointer-events-none z-[999996] overflow-hidden">
+        <div className="fixed inset-0 pointer-events-none z-[999996] overflow-hidden" style={{ touchAction: 'none' }}>
           {watermarkPositions.map((pos, index) => (
             <div
               key={index}

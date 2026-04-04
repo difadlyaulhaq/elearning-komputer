@@ -182,25 +182,6 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
       // Jika sedang dalam violation (contoh: 10 detik dari keyboard), abaikan blur
       if (isViolationRef.current) return;
 
-      const isFullscreenBlur = typeof document !== 'undefined' && 
-        (document.fullscreenElement || (document as any).webkitFullscreenElement || (document as any).mozFullScreenElement || (document as any).msFullscreenElement);
-
-      if (isFullscreenBlur) {
-        // ESKALASI: Jika kehilangan fokus saat fullscreen, ini sangat dicurigai sebagai OS Snipping Tool / PrtScrn!
-        attemptCountRef.current++;
-        setIsViolation(true);
-        isViolationRef.current = true;
-        setViolationType('screenshot');
-        setCountdown(10);
-        startCountdown(10);
-        
-        hideVideoSynchronously(); // Menghilangkan video dan mengeluarkan dari fullscreen
-        polluteClipboard(); // Bantai clipboardnya selama 5 detik!
-        
-        onScreenshotAttempt?.();
-        return;
-      }
-
       // Jika bukan fullscreen blur, pakai blur biasa 5 detik
       hideVideoSynchronously();
       setIsBlurred(true);

@@ -418,6 +418,13 @@ export const initializeMobileProtection = (
       -webkit-touch-callout: none !important;
     }
     
+    /* Exclude video player controls from touch blocking */
+    .plyr, .plyr *, .plyr__controls, .plyr__control,
+    .plyr__video-wrapper, video {
+      pointer-events: auto !important;
+      touch-action: manipulation !important;
+    }
+    
     img, video, canvas {
       -webkit-user-drag: none;
       -khtml-user-drag: none;
