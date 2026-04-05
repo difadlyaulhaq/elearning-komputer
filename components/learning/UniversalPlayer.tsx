@@ -125,7 +125,7 @@ const UniversalPlayer = React.forwardRef<APITypes, UniversalPlayerProps>(({
         hls = new Hls({
           maxBufferLength: 30,
           maxMaxBufferLength: 600,
-          enableWorker: true,
+          enableWorker: false, // Important: Real Android WebView often crashes with WebWorker for HLS
         });
         hls.loadSource(src);
         hls.attachMedia(videoElement);
@@ -236,7 +236,6 @@ const UniversalPlayer = React.forwardRef<APITypes, UniversalPlayerProps>(({
           onEnded={onEnded}
           onTimeUpdate={handleNativeTimeUpdate}
           onContextMenu={(e) => e.preventDefault()}
-          crossOrigin="anonymous"
           playsInline
         />
       ) : (
