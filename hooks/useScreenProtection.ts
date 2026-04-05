@@ -206,7 +206,10 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
       isNative = Capacitor.isNativePlatform();
     } catch (e) {}
     
-    if (isNative) return;
+    // Fallback detection using user agent or injected window var
+    const isApp = isNative || !!(window as any).__isNativeApp || (typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes('alfajrapp'));
+    
+    if (isApp) return;
 
     if (isMobileDevice()) {
       const cleanup = initializeMobileProtection((event) => {

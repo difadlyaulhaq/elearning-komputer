@@ -28,13 +28,10 @@ const UniversalPlayer = React.forwardRef<APITypes, UniversalPlayerProps>(({
   const nativeVideoRef = useRef<HTMLVideoElement>(null);
   const [, setHlsInstance] = useState<Hls | null>(null);
   
-  // App detection state
-  const [isApp, setIsApp] = useState(false);
-
-  useEffect(() => {
-    // Detect if we are inside the Alfajr Android App via the injected window variable or userAgent
-    const isNativeApp = !!(window as any).__isNativeApp || navigator.userAgent.toLowerCase().includes('alfajrapp');
-    setIsApp(isNativeApp);
+  // Synchronous app detection to prevent swapping elements after initial render
+  const isApp = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    return !!(window as any).__isNativeApp || navigator.userAgent.toLowerCase().includes('alfajrapp');
   }, []);
   
   const plyrRef = (ref as React.RefObject<APITypes>) || internalPlyrRef;
@@ -247,7 +244,7 @@ const UniversalPlayer = React.forwardRef<APITypes, UniversalPlayerProps>(({
       )}
       
       {watermark && user && (
-        <div className="absolute inset-0 pointer-events-none z-[1] overflow-hidden opacity-60" style={{ touchAction: 'none' }}>
+        <div className="absolute inset-0 pointer-events-none z-[1] overflow-hidden opacity-60">
           <div className="absolute text-white/20 font-bold text-sm md:text-base whitespace-nowrap select-none" style={{ top: '10%', left: '5%', transform: 'rotate(-15deg)' }}>{user.email}</div>
           <div className="absolute text-white/10 font-bold text-xs md:text-sm whitespace-nowrap select-none" style={{ bottom: '15%', right: '8%', transform: 'rotate(-10deg)' }}>PROPERTY OF ALFAJR • {user.name}</div>
           <div className="absolute text-white/15 font-bold text-[10px] md:text-xs whitespace-nowrap select-none" style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(-45deg)' }}>{user.email} • {new Date().toLocaleDateString()}</div>
