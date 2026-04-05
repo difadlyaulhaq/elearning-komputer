@@ -5,14 +5,17 @@ const config: CapacitorConfig = {
   appName: 'Alfajr E-Learning',
   webDir: 'public', // Set to public due to PWA build config
   server: {
-    // PRODUCTION MODE: Menggunakan domain Vercel
-    url: 'https://alfajr-elearning.vercel.app',
+    // PRODUCTION MODE: Mengarah ke URL Vercel yang sudah dideploy
+    url: 'https://alfajr-elearning.vercel.app', 
+    cleartext: true,
     allowNavigation: [
       "alfajr-elearning.vercel.app",
       "*.alfajr-elearning.vercel.app",
-      "alfajr-elearning-*.vercel.app"
+      "alfajr-elearning-*.vercel.app",
+      "firebasestorage.googleapis.com",
+      "*.googleapis.com",
+      "*.firebaseapp.com"
     ],
-    // cleartext and androidScheme are not needed for production Vercel deployment
   },
   android: {
     appendUserAgent: " AlfajrApp/1.0"

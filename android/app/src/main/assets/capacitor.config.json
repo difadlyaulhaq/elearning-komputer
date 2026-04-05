@@ -4,10 +4,14 @@
 	"webDir": "public",
 	"server": {
 		"url": "https://alfajr-elearning.vercel.app",
+		"cleartext": true,
 		"allowNavigation": [
 			"alfajr-elearning.vercel.app",
 			"*.alfajr-elearning.vercel.app",
-			"alfajr-elearning-*.vercel.app"
+			"alfajr-elearning-*.vercel.app",
+			"firebasestorage.googleapis.com",
+			"*.googleapis.com",
+			"*.firebaseapp.com"
 		]
 	},
 	"android": {

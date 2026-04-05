@@ -43,9 +43,9 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
   videoElementRef,
   className = '',
 }) => {
-  const [isApp, setIsApp] = useState(false);
-  useEffect(() => {
-    setIsApp(!!(window as any).__isNativeApp || navigator.userAgent.toLowerCase().includes('alfajrapp'));
+  const isApp = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    return Capacitor.isNativePlatform() || !!(window as any).__isNativeApp || navigator.userAgent.toLowerCase().includes('alfajrapp');
   }, []);
 
   const [showWarning, setShowWarning] = useState(false); // State for the warning toast.

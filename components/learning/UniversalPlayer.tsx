@@ -6,6 +6,9 @@ import 'plyr/dist/plyr.css';
 import { useAuth } from '@/context/AuthContext';
 import Hls from 'hls.js';
 
+import { Capacitor } from '@capacitor/core';
+import { PrivacyScreen } from '@capacitor-community/privacy-screen';
+
 interface UniversalPlayerProps {
   src: string;
   contentType: 'youtube' | 'video-upload';
@@ -28,10 +31,10 @@ const UniversalPlayer = React.forwardRef<APITypes, UniversalPlayerProps>(({
   const nativeVideoRef = useRef<HTMLVideoElement>(null);
   const [, setHlsInstance] = useState<Hls | null>(null);
   
-  // Synchronous app detection to prevent swapping elements after initial render
+  // Synchronous app detection using Capacitor + UserAgent fallback
   const isApp = useMemo(() => {
     if (typeof window === 'undefined') return false;
-    return !!(window as any).__isNativeApp || navigator.userAgent.toLowerCase().includes('alfajrapp');
+    return Capacitor.isNativePlatform() || !!(window as any).__isNativeApp || navigator.userAgent.toLowerCase().includes('alfajrapp');
   }, []);
   
   const plyrRef = (ref as React.RefObject<APITypes>) || internalPlyrRef;
