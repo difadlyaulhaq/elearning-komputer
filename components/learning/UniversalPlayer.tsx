@@ -28,6 +28,15 @@ const UniversalPlayer = React.forwardRef<APITypes, UniversalPlayerProps>(({
   const nativeVideoRef = useRef<HTMLVideoElement>(null);
   const [, setHlsInstance] = useState<Hls | null>(null);
   
+  // App detection state
+  const [isApp, setIsApp] = useState(false);
+
+  useEffect(() => {
+    // Detect if we are inside the Alfajr Android App via the injected window variable or userAgent
+    const isNativeApp = !!(window as any).__isNativeApp || navigator.userAgent.toLowerCase().includes('alfajrapp');
+    setIsApp(isNativeApp);
+  }, []);
+  
   const plyrRef = (ref as React.RefObject<APITypes>) || internalPlyrRef;
 
   const lastTimeRef = useRef(0);
@@ -107,9 +116,41 @@ const UniversalPlayer = React.forwardRef<APITypes, UniversalPlayerProps>(({
     if (onTimeUpdate) onTimeUpdate(video.currentTime, video.duration);
   };
 
+  // Logic for Native App HLS initialization
   useEffect(() => {
-    // Only init Plyr if we're not using native fallback
-    if (contentType === 'video-upload' && !src.includes('.m3u8')) return;
+    let hls: Hls | null = null;
+    
+    // If we are using the native video element and it's an M3U8 source
+    if (nativeVideoRef.current && contentType === 'video-upload' && src.includes('.m3u8')) {
+      const videoElement = nativeVideoRef.current;
+      
+      if (Hls.isSupported()) {
+        hls = new Hls({
+          maxBufferLength: 30,
+          maxMaxBufferLength: 600,
+          enableWorker: true,
+        });
+        hls.loadSource(src);
+        hls.attachMedia(videoElement);
+        setHlsInstance(hls);
+      } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+        // Fallback for native Safari iOS (if they use the app there)
+        videoElement.src = src;
+      }
+    }
+
+    return () => {
+      if (hls) {
+        hls.destroy();
+      }
+    };
+  }, [src, contentType, isApp]); // Re-run when isApp changes to ensure nativeVideoRef is ready
+
+  // Logic for Plyr initialization (only for web desktop/browser)
+  useEffect(() => {
+    // Determine dynamically if we should use Plyr or Native
+    const useNative = (contentType === 'video-upload' && !src.includes('.m3u8')) || (isApp && contentType === 'video-upload');
+    if (useNative) return;
 
     let player: any = null;
     let isMounted = true;
@@ -177,16 +218,20 @@ const UniversalPlayer = React.forwardRef<APITypes, UniversalPlayerProps>(({
         player.off('timeupdate', handleTimeUpdate);
       }
     };
-  }, [onEnded, onTimeUpdate, disableSeeking, src, contentType]);
+  }, [onEnded, onTimeUpdate, disableSeeking, src, contentType, isApp]);
 
-  const isNativeFallback = contentType === 'video-upload' && !src.includes('.m3u8');
+  // Determine which player to render:
+  // We use the Native Video tag if:
+  // 1. It's a non-m3u8 video upload (existing fallback logic)
+  // 2. OR we are running inside the Android APK (isApp is true) and it's a video upload
+  const useNativePlayer = (contentType === 'video-upload' && !src.includes('.m3u8')) || (isApp && contentType === 'video-upload');
 
   return (
     <div className="relative w-full overflow-hidden rounded-xl shadow-lg group bg-black">
-      {isNativeFallback ? (
+      {useNativePlayer ? (
         <video
           ref={nativeVideoRef}
-          src={src}
+          src={src.includes('.m3u8') ? undefined : src} // If M3U8, HLS.js will set the source via attachMedia
           className="w-full aspect-video"
           controls
           preload="metadata"

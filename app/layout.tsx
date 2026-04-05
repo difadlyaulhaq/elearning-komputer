@@ -71,6 +71,7 @@ export default function RootLayout({
               const device = isMobileDevice();
               const uaLower = navigator.userAgent.toLowerCase();
               const isNativeApp = uaLower.includes('alfajrapp') || window.Capacitor;
+              window.__isNativeApp = isNativeApp;
               const isAllowedPath = window.location.pathname === '/download-app' || window.location.pathname === '/blocked';
 
               if (device.isMobile && !isNativeApp && !isAllowedPath) {
