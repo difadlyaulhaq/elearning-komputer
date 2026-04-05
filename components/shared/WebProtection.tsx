@@ -1,9 +1,12 @@
 'use client';
 
 import { useEffect } from 'react';
+import { getIsNativeApp } from '@/lib/native-detection';
 
 export const WebProtection = () => {
   useEffect(() => {
+    if (getIsNativeApp()) return;
+
     // 1. Disable Right Click
     const handleContextMenu = (e: MouseEvent) => {
       e.preventDefault();

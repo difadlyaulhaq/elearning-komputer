@@ -68,14 +68,42 @@ export default function RootLayout({
                 };
               }
 
+              function checkApp() {
+                const uaLower = navigator.userAgent.toLowerCase();
+                const isNativeApp = uaLower.includes('alfajrapp') || 
+                                   uaLower.includes('capacitor') || 
+                                   !!window.Capacitor || 
+                                   !!(window.WebKit && window.WebKit.messageHandlers && window.WebKit.messageHandlers.cordova) ||
+                                   localStorage.getItem('alfajr_is_native') === 'true';
+                
+                if (isNativeApp) {
+                  window.__isNativeApp = true;
+                  try { localStorage.setItem('alfajr_is_native', 'true'); } catch(e) {}
+                  window.dispatchEvent(new Event('alfajr_native_detected'));
+                  return true;
+                }
+                return false;
+              }
+
+              // Pre-check
+              checkApp();
+              
+              // Extreme Polling (Android WebViews can delay injection up to 2 seconds)
+              let attempts = 0;
+              const interval = setInterval(() => {
+                attempts++;
+                if (checkApp() || attempts > 30) { // 3 seconds max
+                  clearInterval(interval);
+                }
+              }, 100);
+
               const device = isMobileDevice();
-              const uaLower = navigator.userAgent.toLowerCase();
-              const isNativeApp = uaLower.includes('alfajrapp') || window.Capacitor;
-              window.__isNativeApp = isNativeApp;
+              const isNativeApp = window.__isNativeApp || localStorage.getItem('alfajr_is_native') === 'true';
               const isAllowedPath = window.location.pathname === '/download-app' || window.location.pathname === '/blocked';
 
               if (device.isMobile && !isNativeApp && !isAllowedPath) {
-                if (/android/i.test(uaLower) || device.isLinuxWithTouch) {
+                // ... rest of logic
+                if (/android/i.test(navigator.userAgent) || device.isLinuxWithTouch) {
                   window.location.replace('/download-app');
                 } else {
                   window.location.replace('/blocked');

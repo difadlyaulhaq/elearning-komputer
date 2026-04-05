@@ -9,6 +9,9 @@ import Hls from 'hls.js';
 import { Capacitor } from '@capacitor/core';
 import { PrivacyScreen } from '@capacitor-community/privacy-screen';
 
+import { getIsNativeApp } from '@/lib/native-detection';
+import { isMobileDevice } from '@/lib/security/mobileProtection';
+
 interface UniversalPlayerProps {
   src: string;
   contentType: 'youtube' | 'video-upload';
@@ -31,11 +34,22 @@ const UniversalPlayer = React.forwardRef<APITypes, UniversalPlayerProps>(({
   const nativeVideoRef = useRef<HTMLVideoElement>(null);
   const [, setHlsInstance] = useState<Hls | null>(null);
   
-  // Synchronous app detection using Capacitor + UserAgent fallback
-  const isApp = useMemo(() => {
+  // Synchronous app detection using single source of truth
+  const [isApp, setIsApp] = useState(() => {
     if (typeof window === 'undefined') return false;
-    return Capacitor.isNativePlatform() || !!(window as any).__isNativeApp || navigator.userAgent.toLowerCase().includes('alfajrapp');
-  }, []);
+    return isMobileDevice() || getIsNativeApp();
+  });
+
+  useEffect(() => {
+    if (isMobileDevice()) {
+      setIsApp(true);
+      return;
+    }
+    const handleDetection = () => setIsApp(true);
+    window.addEventListener('alfajr_native_detected', handleDetection);
+    if (!isApp && getIsNativeApp()) setIsApp(true);
+    return () => window.removeEventListener('alfajr_native_detected', handleDetection);
+  }, [isApp]);
   
   const plyrRef = (ref as React.RefObject<APITypes>) || internalPlyrRef;
 

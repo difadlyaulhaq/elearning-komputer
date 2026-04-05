@@ -1,8 +1,9 @@
 // hooks/useScreenProtection.ts
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { isMobileDevice, initializeMobileProtection } from '@/lib/security/mobileProtection';
+import { getIsNativeApp } from '@/lib/native-detection';
 
 interface ScreenProtectionOptions {
   enableWatermark?: boolean;
@@ -34,6 +35,28 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
     videoElementRef,
     authFetch,
   } = options;
+
+  // Aggressive skip for ALL mobile devices
+  // Since mobile browsers are blocked at layout level, any mobile device here is the App.
+  // We disable web-layer protection to avoid touch-interaction bugs.
+  const [isNative, setIsNative] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return isMobileDevice() || getIsNativeApp();
+  });
+
+  useEffect(() => {
+    if (isMobileDevice()) {
+      setIsNative(true);
+      return;
+    }
+    const handleDetection = () => setIsNative(true);
+    window.addEventListener('alfajr_native_detected', handleDetection);
+    
+    // Final check after hydration to catch late injection
+    if (!isNative && getIsNativeApp()) setIsNative(true);
+    
+    return () => window.removeEventListener('alfajr_native_detected', handleDetection);
+  }, [isNative]);
 
   const [isBlurred, setIsBlurred] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -199,17 +222,7 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
 
   // Initialize mobile protection with gesture support (web only, NOT native Capacitor)
   useEffect(() => {
-    // Skip on Capacitor native - FLAG_SECURE handles it at OS level
-    let isNative = false;
-    try {
-      const { Capacitor } = require('@capacitor/core');
-      isNative = Capacitor.isNativePlatform();
-    } catch (e) {}
-    
-    // Fallback detection using user agent or injected window var
-    const isApp = isNative || !!(window as any).__isNativeApp || (typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes('alfajrapp'));
-    
-    if (isApp) return;
+    if (isNative) return;
 
     if (isMobileDevice()) {
       const cleanup = initializeMobileProtection((event) => {
@@ -253,7 +266,7 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
       
       return cleanup;
     }
-  }, [startCountdown, onScreenshotAttempt, secureFetch]);
+  }, [isNative, startCountdown, onScreenshotAttempt, secureFetch]);
 
   const handleFocus = useCallback(() => {
     if (!enableBlurOnFocusLoss) return;
@@ -314,6 +327,7 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
 
   // Enhanced keyboard detection dengan deteksi lengkap
   useEffect(() => {
+    if (isNative) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!enableKeyboardBlock) return;
       if (typeof window !== 'undefined' && window.disableScreenProtection) return;
@@ -408,6 +422,8 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
 
   // Visibility change & Window Focus detection
   useEffect(() => {
+    if (isNative) return;
+
     const handleVisibilityChange = () => {
       if (document.hidden) {
         handleBlur();
@@ -426,10 +442,11 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
       window.removeEventListener('focus', handleFocus);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [handleBlur, handleFocus]);
+  }, [isNative, handleBlur, handleFocus]);
 
   // Context menu blocking
   useEffect(() => {
+    if (isNative) return;
     if (!enableContextMenuBlock) return;
 
     const handleContextMenu = (e: MouseEvent) => {
@@ -440,10 +457,11 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
 
     document.addEventListener('contextmenu', handleContextMenu);
     return () => document.removeEventListener('contextmenu', handleContextMenu);
-  }, [enableContextMenuBlock]);
+  }, [isNative, enableContextMenuBlock]);
 
   // DevTools detection (optimized)
   useEffect(() => {
+    if (isNative) return;
     if (!enableDevToolsDetection) return;
 
     const threshold = 160;
@@ -473,10 +491,11 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
     checkDevTools(); // Check immediately on mount
     
     return () => clearInterval(interval);
-  }, [enableDevToolsDetection]);
+  }, [isNative, enableDevToolsDetection]);
 
   // Prevent drag operations
   useEffect(() => {
+    if (isNative) return;
     if (!enableDragBlock) return;
 
     const handleDragStart = (e: DragEvent) => {
@@ -486,7 +505,7 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
 
     document.addEventListener('dragstart', handleDragStart);
     return () => document.removeEventListener('dragstart', handleDragStart);
-  }, [enableDragBlock]); // Add enableDragBlock to dependency array
+  }, [isNative, enableDragBlock]); // Add enableDragBlock to dependency array
 
   // Cleanup on unmount
   useEffect(() => {

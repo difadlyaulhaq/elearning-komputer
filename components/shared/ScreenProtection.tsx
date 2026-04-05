@@ -10,6 +10,8 @@ import { PrivacyScreen } from '@capacitor-community/privacy-screen';
 import DownloadAppButton from '@/components/shared/DownloadAppButton';
 import { useAuth } from '@/context/AuthContext';
 
+import { getIsNativeApp } from '@/lib/native-detection';
+
 interface ScreenProtectionProps {
   children: React.ReactNode; // The content to be protected.
   watermarkText?: string; // Custom text for the watermark.
@@ -43,10 +45,21 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
   videoElementRef,
   className = '',
 }) => {
-  const isApp = useMemo(() => {
+  const [isApp, setIsApp] = useState(() => {
     if (typeof window === 'undefined') return false;
-    return Capacitor.isNativePlatform() || !!(window as any).__isNativeApp || navigator.userAgent.toLowerCase().includes('alfajrapp');
-  }, []);
+    return isMobileDevice() || getIsNativeApp();
+  });
+
+  useEffect(() => {
+    if (isMobileDevice()) {
+      setIsApp(true);
+      return;
+    }
+    const handleDetection = () => setIsApp(true);
+    window.addEventListener('alfajr_native_detected', handleDetection);
+    if (!isApp && getIsNativeApp()) setIsApp(true);
+    return () => window.removeEventListener('alfajr_native_detected', handleDetection);
+  }, [isApp]);
 
   const [showWarning, setShowWarning] = useState(false); // State for the warning toast.
   const [warningMessage, setWarningMessage] = useState(''); // Message for the warning toast.

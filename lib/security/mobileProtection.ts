@@ -76,6 +76,19 @@ export const initializeMobileProtection = (
   customConfig?: Partial<GestureConfig>
 ): (() => void) => {
   if (typeof window === 'undefined') return () => {};
+  
+  // CRITICAL: Skip if running inside a Native App to avoid interference with Capacitor/OS level protection
+  const uaLower = navigator.userAgent.toLowerCase();
+  const isApp = 
+    uaLower.includes('alfajrapp') || 
+    uaLower.includes('capacitor') || 
+    (window as any).Capacitor || 
+    (window as any).__isNativeApp;
+    
+  if (isApp) {
+    console.log('Mobile Protection: Native app detected, skipping web-layer mobile protection listeners.');
+    return () => {};
+  }
 
   const config = { ...DEFAULT_CONFIG, ...customConfig };
   const activePointers = new Map<number, PointerEvent>();
@@ -387,7 +400,8 @@ export const initializeMobileProtection = (
 
   // Detect task switcher (Android)
   const handleBlur = () => {
-    if (isMobileDevice()) {
+    // Only apply for mobile WEB (not native app which has OS level protection)
+    if (isMobileDevice() && !isApp) {
       onViolation?.({ 
         type: 'mobile_blur_event', 
         timestamp: Date.now() 
