@@ -130,8 +130,9 @@ const UniversalPlayer = React.forwardRef<APITypes, UniversalPlayerProps>(({
         hls.loadSource(src);
         hls.attachMedia(videoElement);
         setHlsInstance(hls);
-      } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
-        // Fallback for native Safari iOS (if they use the app there)
+      } else {
+        // Fallback for native iOS OR Android devices where MediaSource API is missing/broken
+        // We skip canPlayType check because many Android WebViews falsely report false for m3u8
         videoElement.src = src;
       }
     }
@@ -242,7 +243,7 @@ const UniversalPlayer = React.forwardRef<APITypes, UniversalPlayerProps>(({
         <Plyr ref={internalPlyrRef} source={plyrSource} options={plyrOptions} />
       )}
       
-      {watermark && user && (
+      {watermark && user && !isApp && (
         <div className="absolute inset-0 pointer-events-none z-[1] overflow-hidden opacity-60">
           <div className="absolute text-white/20 font-bold text-sm md:text-base whitespace-nowrap select-none" style={{ top: '10%', left: '5%', transform: 'rotate(-15deg)' }}>{user.email}</div>
           <div className="absolute text-white/10 font-bold text-xs md:text-sm whitespace-nowrap select-none" style={{ bottom: '15%', right: '8%', transform: 'rotate(-10deg)' }}>PROPERTY OF ALFAJR • {user.name}</div>
