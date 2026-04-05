@@ -37,7 +37,10 @@ export const isMobileDevice = (): boolean => {
   // 1. Standard UA Check
   const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
   
-  // 2. Aggressive Desktop Mode Check
+  // 2. Screen Size Check (Aggressive fallback)
+  const isSmallScreen = window.innerWidth <= 1024; // Mobile & Tablet
+
+  // 3. Aggressive Desktop Mode Check
   const hasTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
   const isLinuxWithTouch = hasTouch && /Linux/i.test(platform);
   const isMacWithTouch = hasTouch && /MacIntel/i.test(platform) && navigator.maxTouchPoints > 1;
