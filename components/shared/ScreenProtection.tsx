@@ -54,22 +54,23 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
     if (isMobileDevice()) {
       setIsApp(true);
       return;
-    useEffect(() => {
-      const handleDetection = () => setIsApp(true);
-      const handleResize = () => {
-        if (isMobileDevice()) setIsApp(true);
-      };
+    }
+    
+    const handleDetection = () => setIsApp(true);
+    const handleResize = () => {
+      if (isMobileDevice()) setIsApp(true);
+    };
 
-      window.addEventListener('alfajr_native_detected', handleDetection);
-      window.addEventListener('resize', handleResize);
+    window.addEventListener('alfajr_native_detected', handleDetection);
+    window.addEventListener('resize', handleResize);
 
-      if (!isApp && (isMobileDevice() || getIsNativeApp())) setIsApp(true);
+    if (!isApp && (isMobileDevice() || getIsNativeApp())) setIsApp(true);
 
-      return () => {
-        window.removeEventListener('alfajr_native_detected', handleDetection);
-        window.removeEventListener('resize', handleResize);
-      };
-    }, [isApp]);
+    return () => {
+      window.removeEventListener('alfajr_native_detected', handleDetection);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [isApp]);
 
   const [showWarning, setShowWarning] = useState(false); // State for the warning toast.
   const [warningMessage, setWarningMessage] = useState(''); // Message for the warning toast.

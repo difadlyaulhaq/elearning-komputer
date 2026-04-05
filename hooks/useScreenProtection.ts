@@ -48,23 +48,24 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
     if (isMobileDevice()) {
       setIsNative(true);
       return;
-    useEffect(() => {
-      const handleDetection = () => setIsNative(true);
-      const handleResize = () => {
-        if (isMobileDevice()) setIsNative(true);
-      };
+    }
+    
+    const handleDetection = () => setIsNative(true);
+    const handleResize = () => {
+      if (isMobileDevice()) setIsNative(true);
+    };
 
-      window.addEventListener('alfajr_native_detected', handleDetection);
-      window.addEventListener('resize', handleResize);
+    window.addEventListener('alfajr_native_detected', handleDetection);
+    window.addEventListener('resize', handleResize);
 
-      // Final check after hydration to catch late injection
-      if (!isNative && (isMobileDevice() || getIsNativeApp())) setIsNative(true);
+    // Final check after hydration to catch late injection
+    if (!isNative && (isMobileDevice() || getIsNativeApp())) setIsNative(true);
 
-      return () => {
-        window.removeEventListener('alfajr_native_detected', handleDetection);
-        window.removeEventListener('resize', handleResize);
-      };
-    }, [isNative]);
+    return () => {
+      window.removeEventListener('alfajr_native_detected', handleDetection);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [isNative]);
 
   const [isBlurred, setIsBlurred] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
