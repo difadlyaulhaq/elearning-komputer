@@ -47,6 +47,21 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `
+              (function() {
+                try {
+                  var ua = navigator.userAgent;
+                  var isNative = (window.Capacitor && window.Capacitor.isNativePlatform()) ||
+                                 ua.indexOf('AlfajrApp') > -1 ||
+                                 ua.indexOf('capacitor') > -1 ||
+                                 ua.indexOf('wv') > -1 ||
+                                 localStorage.getItem('alfajr_is_native') === 'true';
+                  window.__ALFAJR_NATIVE_APP = !!isNative;
+                  if (isNative) window.__isNativeApp = true;
+                } catch(e) {
+                  window.__ALFAJR_NATIVE_APP = false;
+                }
+              })();
+
               function isMobileDevice() {
                 const ua = navigator.userAgent;
                 const platform = navigator.platform || '';

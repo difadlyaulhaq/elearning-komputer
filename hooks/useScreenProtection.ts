@@ -12,6 +12,7 @@ interface ScreenProtectionOptions {
   enableContextMenuBlock?: boolean;
   enableDevToolsDetection?: boolean;
   enableDragBlock?: boolean;
+  forceDisableAllProtections?: boolean; // New prop
   watermarkText?: string;
   contentTitle?: string; // New: To identify which content is being protected
   onScreenshotAttempt?: () => void;
@@ -27,11 +28,25 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
     enableContextMenuBlock = true,
     enableDevToolsDetection = true,
     enableDragBlock = true,
+    forceDisableAllProtections = false,
     contentTitle = '',
     onScreenshotAttempt,
     videoElementRef,
     authFetch,
   } = options;
+
+  // 0. IMMEDIATE EXIT if all protections are forced off (e.g., Native APK Video Page)
+  if (forceDisableAllProtections) {
+    return {
+      isBlurred: false,
+      isRecording: false,
+      isDevToolsOpen: false,
+      isViolation: false,
+      isCoolDownActive: false,
+      countdown: 0,
+      violationType: null,
+    };
+  }
 
   // Differentiate between Native App and Mobile Browser
   const [isNativeApp, setIsNativeApp] = useState(() => {
@@ -142,6 +157,15 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
       }
     }, 1000);
   }, [pauseVideo, showVideoSynchronously]);
+
+  // Clear blur if protection is disabled
+  useEffect(() => {
+    if (!enableBlurOnFocusLoss && isBlurred && violationType === 'blur') {
+      setIsBlurred(false);
+      setViolationType(null);
+      showVideoSynchronously();
+    }
+  }, [enableBlurOnFocusLoss, isBlurred, violationType, showVideoSynchronously]);
 
   const handleBlur = useCallback(() => {
     if (!enableBlurOnFocusLoss) return;

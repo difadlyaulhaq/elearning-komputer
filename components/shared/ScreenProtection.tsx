@@ -43,7 +43,10 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
   className = '',
 }) => {
   const pathname = usePathname();
-  const [isNativeApp, setIsNativeApp] = useState(false);
+  const [isNativeApp, setIsNativeApp] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return getIsNativeApp();
+  });
 
   useEffect(() => {
     const isNative = getIsNativeApp();
@@ -70,11 +73,14 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
   const isLessonPath = pathname?.includes('/lesson/');
   const isVideoInApp = isNativeApp && (isVideoPage || !!videoElementRef || isLessonPath);
   
-  const finalEnableBlur = isVideoInApp ? false : enableBlurOnFocusLoss;
-  const finalEnableKeyboard = isVideoInApp ? false : enableKeyboardBlock;
-  const finalEnableContextMenu = isVideoInApp ? false : enableContextMenuBlock;
-  const finalEnableDevTools = isVideoInApp ? false : enableDevToolsDetection;
-  const finalEnableDrag = isVideoInApp ? false : enableDragBlock;
+  // SOLUSI: Guard utama untuk mematikan semua proteksi web di APK
+  const forceDisableAllProtections = isVideoInApp;
+  
+  const finalEnableBlur = forceDisableAllProtections ? false : enableBlurOnFocusLoss;
+  const finalEnableKeyboard = forceDisableAllProtections ? false : enableKeyboardBlock;
+  const finalEnableContextMenu = forceDisableAllProtections ? false : enableContextMenuBlock;
+  const finalEnableDevTools = forceDisableAllProtections ? false : enableDevToolsDetection;
+  const finalEnableDrag = forceDisableAllProtections ? false : enableDragBlock;
 
   const [showWarning, setShowWarning] = useState(false);
   const [warningMessage, setWarningMessage] = useState('');
@@ -114,6 +120,7 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
     enableContextMenuBlock: finalEnableContextMenu,
     enableDevToolsDetection: finalEnableDevTools,
     enableDragBlock: finalEnableDrag,
+    forceDisableAllProtections, // Pass the guard to the hook
     watermarkText,
     contentTitle,
     videoElementRef,
@@ -137,7 +144,7 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
   });
 
   useEffect(() => {
-    if (!finalEnableWatermark) return;
+    if (!finalEnableWatermark || forceDisableAllProtections) return;
     const generatePositions = () => {
       const positions = [];
       for (let i = 0; i < 4; i++) {
@@ -153,7 +160,7 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
     generatePositions();
     const interval = setInterval(generatePositions, 20000);
     return () => clearInterval(interval);
-  }, [finalEnableWatermark]);
+  }, [finalEnableWatermark, forceDisableAllProtections]);
 
   const displayWatermark = useMemo(() => {
     return userEmail ? `${watermarkText} • ${userEmail}` : watermarkText;
@@ -180,7 +187,7 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
         }
       `}</style>
 
-      {finalEnableWatermark && watermarkPositions.length > 0 && (
+      {!forceDisableAllProtections && finalEnableWatermark && watermarkPositions.length > 0 && (
         <div className="fixed inset-0 pointer-events-none z-[999996] overflow-hidden">
           {watermarkPositions.map((pos, index) => (
             <div
@@ -199,7 +206,7 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
         </div>
       )}
 
-      {(isViolation || (finalEnableBlur && (isBlurred || isCoolDownActive)) || (finalEnableDevTools && violationType === 'devtools')) && ( 
+      {!forceDisableAllProtections && (isViolation || (finalEnableBlur && (isBlurred || isCoolDownActive)) || (finalEnableDevTools && violationType === 'devtools')) && ( 
         <div className="fixed inset-0 z-[999999] bg-black flex items-center justify-center text-white p-4 text-center">
           <div className="max-w-xl">
             <Shield size={64} className="mx-auto text-red-500 mb-4" />
@@ -216,7 +223,7 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
         </div>
       )}
 
-      {showWarning && (
+      {!forceDisableAllProtections && showWarning && (
         <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[999999] bg-red-600 text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 font-bold">
           <Shield size={20} />
           <span>{warningMessage}</span>

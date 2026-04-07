@@ -1,4 +1,5 @@
 // lib/security/mobileProtection.ts - Enhanced Version
+import { getIsNativeApp } from '../native-detection';
 
 export interface GestureConfig {
   minMultiTouchCount: number;
@@ -81,14 +82,7 @@ export const initializeMobileProtection = (
   if (typeof window === 'undefined') return () => {};
   
   // CRITICAL: Skip if running inside a Native App to avoid interference with Capacitor/OS level protection
-  const uaLower = navigator.userAgent.toLowerCase();
-  const isApp = 
-    uaLower.includes('alfajrapp') || 
-    uaLower.includes('capacitor') || 
-    (window as any).Capacitor || 
-    (window as any).__isNativeApp;
-    
-  if (isApp) {
+  if (getIsNativeApp()) {
     console.log('Mobile Protection: Native app detected, skipping web-layer mobile protection listeners.');
     return () => {};
   }
@@ -404,7 +398,7 @@ export const initializeMobileProtection = (
   // Detect task switcher (Android)
   const handleBlur = () => {
     // Only apply for mobile WEB (not native app which has OS level protection)
-    if (isMobileDevice() && !isApp) {
+    if (isMobileDevice() && !getIsNativeApp()) {
       onViolation?.({ 
         type: 'mobile_blur_event', 
         timestamp: Date.now() 
