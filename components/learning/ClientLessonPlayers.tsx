@@ -44,8 +44,7 @@ export function ClientLessonPlayers({
 
   return (
     <>
-      {/* Mobile View - Now forced on mobile devices regardless of width */}
-      <div className={isMobileDevice ? "block" : "md:hidden"}>
+      {isMobileDevice ? (
         <LessonPlayerMobile
           courseId={courseId}
           courseTitle={courseTitle}
@@ -55,10 +54,7 @@ export function ClientLessonPlayers({
           completedLessons={completedLessons}
           isCompleted={isCompleted}
         />
-      </div>
-
-      {/* Desktop View - Hidden on mobile devices regardless of width */}
-      <div className={isMobileDevice ? "hidden" : "hidden md:block"}>
+      ) : (
         <LessonPlayerDesktop
           courseId={courseId}
           courseTitle={courseTitle}
@@ -68,7 +64,7 @@ export function ClientLessonPlayers({
           completedLessons={completedLessons}
           isCompleted={isCompleted}
         />
-      </div>
+      )}
     </>
   );
 }

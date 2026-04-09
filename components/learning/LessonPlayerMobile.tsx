@@ -25,6 +25,7 @@ import {
 import toast from "react-hot-toast";
 import { MarkdownRenderer } from "@/components/shared/MarkdownRenderer";
 import UniversalPlayer from "./UniversalPlayer";
+import { LessonSkeleton } from "./LessonSkeleton";
 
 interface LessonPlayerMobileProps {
   courseId: string;
@@ -120,14 +121,7 @@ export function LessonPlayerMobile({
   };
 
   if (authLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-white">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-10 h-10 text-[#C5A059] animate-spin" />
-          <p className="text-sm text-gray-400">Memuat materi...</p>
-        </div>
-      </div>
-    );
+    return <LessonSkeleton />;
   }
 
   return (

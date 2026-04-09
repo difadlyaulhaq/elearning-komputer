@@ -3,35 +3,33 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { useScreenProtection } from '@/hooks/useScreenProtection';
-import { requestDeviceMotionPermission, isMobileDevice } from '@/lib/security/mobileProtection';
-import { Shield, Eye, Smartphone } from 'lucide-react';
-import { Capacitor } from '@capacitor/core';
+import { Shield } from 'lucide-react';
 import { PrivacyScreen } from '@capacitor-community/privacy-screen';
-import DownloadAppButton from '@/components/shared/DownloadAppButton';
 import { useAuth } from '@/context/AuthContext';
+import { getIsNativeApp } from '@/lib/native-detection';
+import { usePathname } from 'next/navigation';
 
 interface ScreenProtectionProps {
-  children: React.ReactNode; // The content to be protected.
-  watermarkText?: string; // Custom text for the watermark.
-  userEmail?: string; // User's email to be included in the watermark for personalization.
-  enableWatermark?: boolean; // Controls rendering of dynamic watermarks.
-  enableBlurOnFocusLoss?: boolean; // Passed to useScreenProtection, controls blur effect.
-  enableKeyboardBlock?: boolean; // Passed to useScreenProtection, controls keyboard shortcut blocking.
-  enableContextMenuBlock?: boolean; // Passed to useScreenProtection, controls context menu blocking.
-  enableDevToolsDetection?: boolean; // Passed to useScreenProtection, controls dev tools detection.
-  enableDragBlock?: boolean; // Passed to useScreenProtection, controls drag blocking.
-  contentTitle?: string; // New: To identify which content is being protected
-  showWarningOnAttempt?: boolean; // Controls visibility of the toast warning on screenshot attempts.
-  videoElementRef?: React.RefObject<HTMLVideoElement | null>; // Reference to a video element for specific protection.
-  className?: string; // Additional CSS classes for the main wrapper.
+  children: React.ReactNode;
+  watermarkText?: string;
+  userEmail?: string;
+  enableWatermark?: boolean;
+  enableBlurOnFocusLoss?: boolean;
+  enableKeyboardBlock?: boolean;
+  enableContextMenuBlock?: boolean;
+  enableDevToolsDetection?: boolean;
+  enableDragBlock?: boolean;
+  contentTitle?: string;
+  showWarningOnAttempt?: boolean;
+  videoElementRef?: React.RefObject<HTMLVideoElement | null>;
+  isVideoPage?: boolean;
+  className?: string;
 }
 
 export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
   children,
-  watermarkText = 'ALFAJR E-LEARNING', // Default watermark text.
+  watermarkText = 'ALFAJR E-LEARNING',
   userEmail,
-  // These props control the enabling/disabling of various protection features.
-  // Set them to `false` in the component's usage to disable a specific feature.
   enableWatermark = true,
   enableBlurOnFocusLoss = true,
   enableKeyboardBlock = true,
@@ -39,18 +37,59 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
   enableDevToolsDetection = true,
   enableDragBlock = true,
   contentTitle = '',
-  showWarningOnAttempt = true, // Set to `false` to disable the warning toast.
+  showWarningOnAttempt = true,
   videoElementRef,
+  isVideoPage = false,
   className = '',
 }) => {
-  const [showWarning, setShowWarning] = useState(false); // State for the warning toast.
-  const [warningMessage, setWarningMessage] = useState(''); // Message for the warning toast.
+  const pathname = usePathname();
+  const [isNativeApp, setIsNativeApp] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return getIsNativeApp();
+  });
+
+  useEffect(() => {
+    const isNative = getIsNativeApp();
+    setIsNativeApp(isNative);
+    
+    const handleDetection = () => setIsNativeApp(true);
+    window.addEventListener('alfajr_native_detected', handleDetection);
+
+    if (isNative) {
+      PrivacyScreen.enable().catch(console.warn);
+    }
+
+    return () => {
+      window.removeEventListener('alfajr_native_detected', handleDetection);
+    };
+  }, []);
+
+  // Force disable protections based on User Requirements
+  // 1. In Native App, Watermark is ALWAYS GONE
+  const finalEnableWatermark = isNativeApp ? false : enableWatermark;
+
+  // 2. In Native App on Video Page, Hide Content (Blur/Violation Overlays) is GONE
+  // Detection: explicit prop, video element ref, OR lesson path
+  const isLessonPath = pathname?.includes('/lesson/');
+  const isVideoInApp = isNativeApp && (isVideoPage || !!videoElementRef || isLessonPath);
+  
+  // SOLUSI: Guard utama untuk mematikan semua proteksi web di APK
+  const forceDisableAllProtections = isVideoInApp;
+  
+  const finalEnableBlur = forceDisableAllProtections ? false : enableBlurOnFocusLoss;
+  const finalEnableKeyboard = forceDisableAllProtections ? false : enableKeyboardBlock;
+  const finalEnableContextMenu = forceDisableAllProtections ? false : enableContextMenuBlock;
+  const finalEnableDevTools = forceDisableAllProtections ? false : enableDevToolsDetection;
+  const finalEnableDrag = forceDisableAllProtections ? false : enableDragBlock;
+
+  const [showWarning, setShowWarning] = useState(false);
+  const [warningMessage, setWarningMessage] = useState('');
   const [watermarkPositions, setWatermarkPositions] = useState<
     Array<{ top: number; left: number; rotation: number; opacity: number }>
-  >([]); // Positions for dynamic watermarks.
+  >([]);
   const [fullscreenElement, setFullscreenElement] = useState<Element | null>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // Monitor fullscreen changes to ensure protection stays on top
   useEffect(() => {
     const handleFullscreenChange = async () => {
       const fsElement = document.fullscreenElement || 
@@ -59,93 +98,56 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
                        (document as any).msFullscreenElement;
       
       setFullscreenElement(fsElement);
-
-      // In native platforms, re-verify PrivacyScreen is enabled on fullscreen
-      if (fsElement && Capacitor.isNativePlatform()) {
-        try {
-          // Explicitly re-enable to ensure FLAG_SECURE is active in the fullscreen context
-          await PrivacyScreen.enable();
-        } catch (e) {
-          console.warn('PrivacyScreen.enable failed during fullscreen transition:', e);
-        }
+      if (fsElement && isNativeApp) {
+        PrivacyScreen.enable().catch(() => {});
       }
     };
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
-    document.addEventListener('msfullscreenchange', handleFullscreenChange);
-
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
-      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
-      document.removeEventListener('msfullscreenchange', handleFullscreenChange);
     };
-  }, []);
+  }, [isNativeApp]);
 
   const { authFetch } = useAuth();
 
-  // Use the `useScreenProtection` hook to get the current security state.
-  const { isBlurred, isRecording, isDevToolsOpen, isViolation, isCoolDownActive, countdown, violationType } = useScreenProtection({
-    enableWatermark,
-    enableBlurOnFocusLoss,
-    enableKeyboardBlock,
-    enableContextMenuBlock,
-    enableDevToolsDetection,
-    enableDragBlock,
+  const { isBlurred, isViolation, isCoolDownActive, countdown, violationType } = useScreenProtection({
+    enableWatermark: finalEnableWatermark,
+    enableBlurOnFocusLoss: finalEnableBlur,
+    enableKeyboardBlock: finalEnableKeyboard,
+    enableContextMenuBlock: finalEnableContextMenu,
+    enableDevToolsDetection: finalEnableDevTools,
+    enableDragBlock: finalEnableDrag,
+    forceDisableAllProtections, // Pass the guard to the hook
     watermarkText,
-    contentTitle, // Pass content title
+    contentTitle,
     videoElementRef,
-    authFetch, // Pass authFetch to the hook
+    authFetch,
     onScreenshotAttempt: () => {
       if (showWarningOnAttempt) {
         setWarningMessage('⚠️ Screenshot tidak diperbolehkan!');
         setShowWarning(true);
         setTimeout(() => setShowWarning(false), 3000);
       }
-      authFetch('/api/security/log', {
+      authFetch?.('/api/security/log', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'screenshot_attempt',
           page: window.location.pathname,
-          details: { 
-            userAgent: navigator.userAgent, 
-            fullscreen: !!document.fullscreenElement,
-            contentTitle: contentTitle // Include content title in log
-          },
+          details: { userAgent: navigator.userAgent, contentTitle },
         }),
-      }).catch(console.error);
-    },
-    onRecordingDetected: () => {
-      if (showWarningOnAttempt) {
-        setWarningMessage('⚠️ Screen recording terdeteksi!');
-        setShowWarning(true);
-      }
-      authFetch('/api/security/log', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'recording_detected',
-          page: window.location.pathname,
-          details: { 
-            userAgent: navigator.userAgent, 
-            fullscreen: !!document.fullscreenElement,
-            contentTitle: contentTitle // Include content title in log
-          },
-        }),
-      }).catch(console.error);
+      }).catch(() => {});
     },
   });
 
-  // Dynamic watermark positions
   useEffect(() => {
-    if (!enableWatermark) return;
-
+    if (!finalEnableWatermark || forceDisableAllProtections) return;
     const generatePositions = () => {
       const positions = [];
-      for (let i = 0; i < 4; i++) { // Generate 4 watermarks for better coverage
+      for (let i = 0; i < 4; i++) {
         positions.push({
           top: Math.random() * 80 + 10,
           left: Math.random() * 80 + 10,
@@ -155,39 +157,18 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
       }
       setWatermarkPositions(positions);
     };
-
     generatePositions();
     const interval = setInterval(generatePositions, 60000); // Less frequent updates for performance
     return () => clearInterval(interval);
-  }, [enableWatermark]);
+  }, [finalEnableWatermark, forceDisableAllProtections]);
 
   const displayWatermark = useMemo(() => {
-    if (userEmail) {
-      return `${watermarkText} • ${userEmail}`;
-    }
-    return watermarkText;
+    return userEmail ? `${watermarkText} • ${userEmail}` : watermarkText;
   }, [watermarkText, userEmail]);
-
-  useEffect(() => {
-    const handleUserInteraction = async () => {
-      await requestDeviceMotionPermission();
-      document.removeEventListener('click', handleUserInteraction);
-      document.removeEventListener('touchstart', handleUserInteraction);
-    };
-
-    document.addEventListener('click', handleUserInteraction);
-    document.addEventListener('touchstart', handleUserInteraction);
-
-    return () => {
-      document.removeEventListener('click', handleUserInteraction);
-      document.removeEventListener('touchstart', handleUserInteraction);
-    };
-  }, []);
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
 
-  // Overlay content to be portaled
   const renderOverlays = () => (
     <>
       <style jsx global>{`
@@ -219,13 +200,9 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
           z-index: 999998;
           text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
         }
-        /* CSS to hide elements during screenshot on some browsers */
-        @media print {
-          body { display: none !important; }
-        }
       `}</style>
 
-      {enableWatermark && watermarkPositions.length > 0 && (
+      {!forceDisableAllProtections && finalEnableWatermark && watermarkPositions.length > 0 && (
         <div 
           className="fixed inset-0 pointer-events-none z-[999996] overflow-hidden select-none touch-none"
           onContextMenu={(e) => e.preventDefault()}
@@ -248,58 +225,26 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
         </div>
       )}
 
-      {(isViolation || isDevToolsOpen || isBlurred || isCoolDownActive) && ( 
-        <div 
-          className="fixed inset-0 z-[999999] bg-black flex items-center justify-center text-white p-4 text-center pointer-events-auto transition-opacity duration-200" 
-          style={{ opacity: 1 }}
-        >
+      {!forceDisableAllProtections && (isViolation || (finalEnableBlur && (isBlurred || isCoolDownActive)) || (finalEnableDevTools && violationType === 'devtools')) && ( 
+        <div className="fixed inset-0 z-[999999] bg-black flex items-center justify-center text-white p-4 text-center">
           <div className="max-w-xl">
-            {isViolation && (
-              <>
-                <Shield size={64} className="mx-auto text-red-500 mb-4" />
-                <h2 className="text-2xl md:text-3xl font-bold mb-3 uppercase">Keamanan Terdeteksi</h2>
-                <p className="text-base md:text-lg text-gray-300">
-                  Percobaan screenshot atau rekam layar terdeteksi. Konten telah diamankan.
-                </p>
-                {countdown > 0 && (
-                  <div className="mt-6">
-                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full border-4 border-red-500 mb-3">
-                      <span className="text-4xl font-bold">{countdown}</span>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-            {isDevToolsOpen && !isViolation && (
-              <>
-                <Shield size={64} className="mx-auto text-red-500 mb-4" />
-                <h2 className="text-2xl md:text-3xl font-bold mb-3">DevTools Terdeteksi</h2>
-                <p className="text-base md:text-lg text-gray-300">Harap tutup Developer Tools.</p>
-              </>
-            )}
-            {(isBlurred || isCoolDownActive) && !isViolation && !isDevToolsOpen && (
-              <>
-                <Shield size={64} className="mx-auto text-[#C5A059] mb-4" />
-                <h2 className="text-2xl md:text-3xl font-bold mb-3">Konten Terlindungi</h2>
-                <p className="text-base md:text-lg text-gray-300">
-                  {isCoolDownActive ? 'Menyiapkan konten dengan aman...' : 'Halaman tidak aktif. Kembali untuk melihat.'}
-                </p>
-                {countdown > 0 && isCoolDownActive && (
-                  <div className="mt-6">
-                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full border-4 border-[#C5A059] mb-3">
-                      <span className="text-4xl font-bold">{countdown}</span>
-                    </div>
-                  </div>
-                )}
-              </>
+            <Shield size={64} className="mx-auto text-red-500 mb-4" />
+            <h2 className="text-2xl font-bold mb-3 uppercase">Keamanan Terdeteksi</h2>
+            <p className="text-gray-300">Konten diamankan untuk perlindungan hak cipta.</p>
+            {countdown > 0 && (
+              <div className="mt-6">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full border-4 border-red-500">
+                  <span className="text-3xl font-bold">{countdown}</span>
+                </div>
+              </div>
             )}
           </div>
         </div>
       )}
 
-      {showWarning && (
-        <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[999999] bg-red-600 text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 font-bold animate-bounce">
-          <Shield size={24} />
+      {!forceDisableAllProtections && showWarning && (
+        <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[999999] bg-red-600 text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 font-bold">
+          <Shield size={20} />
           <span>{warningMessage}</span>
         </div>
       )}
@@ -307,7 +252,7 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
   );
 
   return (
-    <div className={`screen-protected ${className}`}>
+    <div className={`screen-protected ${className} relative`} ref={wrapperRef} id="alfajr-screen-protection-wrapper">
       {children}
       {mounted && ReactDOM.createPortal(renderOverlays(), fullscreenElement || document.body)}
     </div>

@@ -22,6 +22,7 @@ import {
 import toast from "react-hot-toast";
 import { MarkdownRenderer } from "@/components/shared/MarkdownRenderer";
 import UniversalPlayer from "./UniversalPlayer";
+import { LessonSkeleton } from "./LessonSkeleton";
 
 interface LessonPlayerDesktopProps {
   courseId: string;
@@ -96,14 +97,7 @@ export function LessonPlayerDesktop({
   };
 
   if (authLoading) {
-    return (
-      <div className="flex items-center justify-center h-full min-h-screen bg-[#0F0F0F]">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-12 h-12 text-[#C5A059] animate-spin" />
-          <p className="text-sm text-gray-400">Memuat materi...</p>
-        </div>
-      </div>
-    );
+    return <LessonSkeleton />;
   }
 
   const isVideoContent = !['text', 'image-upload', 'file-upload'].includes(lesson.contentType);
