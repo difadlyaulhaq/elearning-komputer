@@ -214,9 +214,20 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
       clearInterval(countdownIntervalRef.current);
       countdownIntervalRef.current = null;
     }
-    setCountdown(0);
-    showVideoSynchronously();
-  }, [enableBlurOnFocusLoss, isViolation, isBlurred, violationType, startCountdown, showVideoSynchronously]);
+    
+    blurDebounceRef.current = setTimeout(() => {
+      // Hanya blur jika document benar-benar hidden atau window blur
+      if (document.hidden || !document.hasFocus()) {
+        setIsBlurred(true);
+        setViolationType('blur');
+        setCountdown(5);
+        startCountdown(5);
+      } else {
+        setCountdown(0);
+        showVideoSynchronously();
+      }
+    }, 500); 
+  }, [enableBlurOnFocusLoss, startCountdown, pauseVideo, isViolation, isBlurred, violationType, showVideoSynchronously]);
 
   // Mobile gestures detection
   useEffect(() => {
@@ -284,10 +295,7 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
   }, [skipWebListeners, enableKeyboardBlock, enableDevToolsDetection, onScreenshotAttempt, hideVideoSynchronously, startCountdown, polluteClipboard]);
 
   // Blur & Focus detection (Always enable even in app if we want hide content to work)
-  // Wait, the user said "pastikan protection yang ilang cuma watermark".
-  // But they also said "hide content ... dimatiin aja ketika di mobile mode" on video pages.
   useEffect(() => {
-    // We allow blur detection in the app UNLESS disabled by options
     const handleVisibilityChange = () => {
       if (document.hidden) handleBlur();
       else handleFocus();

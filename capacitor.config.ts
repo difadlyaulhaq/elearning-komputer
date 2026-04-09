@@ -9,6 +9,7 @@ const config: CapacitorConfig = {
     url: 'https://alfajr-elearning.vercel.app', 
     cleartext: true,
     allowNavigation: [
+      "10.0.2.2",
       "alfajr-elearning.vercel.app",
       "*.alfajr-elearning.vercel.app",
       "alfajr-elearning-*.vercel.app",

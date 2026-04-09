@@ -1,16 +1,10 @@
 "use client";
 
-import React, { useEffect, useRef, useMemo, useState } from 'react';
-import { Plyr, APITypes } from 'plyr-react';
-import 'plyr/dist/plyr.css';
+import React, { useEffect, useRef } from 'react';
+import videojs from 'video.js';
+import 'video.js/dist/video-js.css';
 import { useAuth } from '@/context/AuthContext';
-import Hls from 'hls.js';
-
-import { Capacitor } from '@capacitor/core';
-import { PrivacyScreen } from '@capacitor-community/privacy-screen';
-
-import { getIsNativeApp } from '@/lib/native-detection';
-import { isMobileDevice } from '@/lib/security/mobileProtection';
+import toast from 'react-hot-toast';
 
 interface UniversalPlayerProps {
   src: string;
@@ -21,7 +15,7 @@ interface UniversalPlayerProps {
   disableSeeking?: boolean;
 }
 
-const UniversalPlayer = React.forwardRef<APITypes, UniversalPlayerProps>(({
+const UniversalPlayer = React.forwardRef<any, UniversalPlayerProps>(({
   src,
   contentType,
   onEnded,
@@ -30,245 +24,292 @@ const UniversalPlayer = React.forwardRef<APITypes, UniversalPlayerProps>(({
   disableSeeking = false
 }, ref) => {
   const { user } = useAuth();
-  const internalPlyrRef = useRef<APITypes>(null);
-  const nativeVideoRef = useRef<HTMLVideoElement>(null);
-  const [, setHlsInstance] = useState<Hls | null>(null);
-  
-  // Synchronous app detection using single source of truth
-  const [isApp, setIsApp] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return isMobileDevice() || getIsNativeApp();
-  });
-
-  useEffect(() => {
-    if (isMobileDevice()) {
-      setIsApp(true);
-      return;
-    }
-    const handleDetection = () => setIsApp(true);
-    window.addEventListener('alfajr_native_detected', handleDetection);
-    if (!isApp && getIsNativeApp()) setIsApp(true);
-    return () => window.removeEventListener('alfajr_native_detected', handleDetection);
-  }, [isApp]);
-  
-  const plyrRef = (ref as React.RefObject<APITypes>) || internalPlyrRef;
-
-  const lastTimeRef = useRef(0);
+  const videoRef = useRef<HTMLDivElement>(null);
+  const playerRef = useRef<any>(null);
   const maxTimeReachedRef = useRef(0);
 
-  // Sync ref for external components (like ScreenProtection)
-  React.useImperativeHandle(ref, () => ({
-    get plyr() {
-      const plyrInstance = internalPlyrRef.current?.plyr as any;
-      return {
-        media: nativeVideoRef.current || plyrInstance?.media,
-        currentTime: nativeVideoRef.current?.currentTime || plyrInstance?.currentTime,
-        duration: nativeVideoRef.current?.duration || plyrInstance?.duration,
-      };
-    }
-  } as any), [contentType, src]);
+  useEffect(() => {
+    if (!videoRef.current) return;
 
-  const getYouTubeId = (url: string) => {
-    if (!url) return null;
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : null;
-  };
+    const videoEl = videoRef.current.querySelector('video');
+    if (!videoEl) return;
 
-  const plyrSource: any = useMemo(() => {
-    if (contentType === 'youtube') {
-      const videoId = getYouTubeId(src);
-      return {
-        type: 'video',
-        sources: [{ src: videoId || src, provider: 'youtube' }],
-      };
-    } else {
-      return {
-        type: 'video',
-        sources: [{ src: src, type: 'video/mp4', size: 720 }],
-        crossOrigin: 'anonymous',
-      };
+    const sources =
+      contentType === 'youtube'
+        ? [{ src, type: 'video/youtube' }]
+        : [{ src, type: 'video/mp4' }];
+
+    const player = videojs(videoEl, {
+      controls: true,
+      autoplay: false,
+      preload: 'metadata',
+      fluid: true,
+      playsinline: true,
+      sources,
+      controlBar: {
+        children: [
+          'playToggle',
+          'volumePanel',
+          'currentTimeDisplay',
+          'timeDivider',
+          'durationDisplay',
+          'progressControl',
+          'remainingTimeDisplay',
+          'fullscreenToggle',
+        ],
+      },
+    });
+
+    playerRef.current = player;
+
+    if (ref) {
+      if (typeof ref === 'function') ref(player);
+      else (ref as React.MutableRefObject<any>).current = player;
     }
+
+    player.on('ended', () => { if (onEnded) onEnded(); });
+
+    player.on('timeupdate', () => {
+      const current = player.currentTime() ?? 0;
+      const duration = player.duration() ?? 0;
+
+      if (disableSeeking) {
+        if (current > maxTimeReachedRef.current + 2) {
+          player.currentTime(maxTimeReachedRef.current);
+        } else if (current > maxTimeReachedRef.current) {
+          maxTimeReachedRef.current = current;
+        }
+      }
+
+      if (onTimeUpdate) onTimeUpdate(current, duration);
+    });
+
+    // Disable right-click on video
+    const vid = player.el().querySelector('video');
+    if (vid) vid.addEventListener('contextmenu', (e) => e.preventDefault());
+
+    return () => {
+      if (playerRef.current && !playerRef.current.isDisposed()) {
+        playerRef.current.dispose();
+        playerRef.current = null;
+      }
+    };
   }, [src, contentType]);
 
-  const plyrOptions = {
-    attributes: {
-      preload: 'auto',
-      crossorigin: 'anonymous',
-      playsinline: 'true',
-    },
-    controls: [
-      'play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 
-      'captions', 'settings', 'pip', 'airplay', 'fullscreen'
-    ],
-    settings: ['quality', 'speed', 'loop'],
-    youtube: { noCookie: true, rel: 0, showinfo: 0, iv_load_policy: 3, modestbranding: 1, autoplay: 0 },
-    ratio: '16:9',
-    fullscreen: { 
-      enabled: true, 
-      fallback: true, 
-      iosNative: true,
-    },
-    download: false,
-    keyboard: { focused: true, global: false },
-    tooltips: { controls: true, seek: true },
-    quality: { default: 720, options: [1080, 720, 480, 360] },
-    speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
-  };
-
-  // Logic for native video element
-  const handleNativeTimeUpdate = (e: React.SyntheticEvent<HTMLVideoElement>) => {
-    const video = e.currentTarget;
-    if (disableSeeking) {
-      if (video.currentTime > maxTimeReachedRef.current + 2) {
-        video.currentTime = maxTimeReachedRef.current;
-      } else if (video.currentTime > maxTimeReachedRef.current) {
-        maxTimeReachedRef.current = video.currentTime;
-      }
-    }
-    lastTimeRef.current = video.currentTime;
-    if (onTimeUpdate) onTimeUpdate(video.currentTime, video.duration);
-  };
-
-  // Logic for Native App HLS initialization
-  useEffect(() => {
-    let hls: Hls | null = null;
-    
-    // If we are using the native video element and it's an M3U8 source
-    if (nativeVideoRef.current && contentType === 'video-upload' && src.includes('.m3u8')) {
-      const videoElement = nativeVideoRef.current;
-      
-      if (Hls.isSupported()) {
-        hls = new Hls({
-          maxBufferLength: 30,
-          maxMaxBufferLength: 600,
-          enableWorker: false, // Important: Real Android WebView often crashes with WebWorker for HLS
-        });
-        hls.loadSource(src);
-        hls.attachMedia(videoElement);
-        setHlsInstance(hls);
-      } else {
-        // Fallback for native iOS OR Android devices where MediaSource API is missing/broken
-        // We skip canPlayType check because many Android WebViews falsely report false for m3u8
-        videoElement.src = src;
-      }
-    }
-
-    return () => {
-      if (hls) {
-        hls.destroy();
-      }
-    };
-  }, [src, contentType, isApp]); // Re-run when isApp changes to ensure nativeVideoRef is ready
-
-  // Logic for Plyr initialization (only for web desktop/browser)
-  useEffect(() => {
-    // Determine dynamically if we should use Plyr or Native
-    const useNative = (contentType === 'video-upload' && !src.includes('.m3u8')) || (isApp && contentType === 'video-upload');
-    if (useNative) return;
-
-    let player: any = null;
-    let isMounted = true;
-    let hls: Hls | null = null;
-
-    const handleEnded = () => { if (onEnded) onEnded(); };
-
-    const handleTimeUpdate = () => {
-      if (!player) return;
-      if (disableSeeking) {
-        if (player.currentTime > maxTimeReachedRef.current + 2) {
-          player.currentTime = maxTimeReachedRef.current;
-        } else if (player.currentTime > maxTimeReachedRef.current) {
-          maxTimeReachedRef.current = player.currentTime;
-        }
-      }
-      lastTimeRef.current = player.currentTime;
-      if (onTimeUpdate) onTimeUpdate(player.currentTime, player.duration);
-    };
-
-    const initPlayer = () => {
-      player = internalPlyrRef.current?.plyr;
-      if (player && typeof player.on === 'function' && isMounted) {
-        player.on('ended', handleEnded);
-        player.on('timeupdate', handleTimeUpdate);
-
-        if (contentType === 'video-upload') {
-          const videoElement = player.media;
-          if (src.includes('.m3u8')) {
-            if (Hls.isSupported()) {
-              hls = new Hls({
-                maxBufferLength: 30,
-                maxMaxBufferLength: 600,
-                enableWorker: true,
-              });
-              hls.loadSource(src);
-              hls.attachMedia(videoElement);
-              setHlsInstance(hls);
-            }
-          }
-        }
-        
-        // Dynamically set fullscreen container on desktop only (after DOM is ready)
-        const wrapper = document.getElementById('alfajr-screen-protection-wrapper');
-        if (wrapper && player.config) {
-          player.config.fullscreen = {
-            ...player.config.fullscreen,
-            container: '#alfajr-screen-protection-wrapper',
-          };
-        }
-
-        return true;
-      }
-      return false;
-    };
-
-    const intervalId = setInterval(() => { if (initPlayer()) clearInterval(intervalId); }, 500);
-
-    return () => {
-      isMounted = false;
-      clearInterval(intervalId);
-      if (hls) hls.destroy();
-      if (player && typeof player.off === 'function') {
-        player.off('ended', handleEnded);
-        player.off('timeupdate', handleTimeUpdate);
-      }
-    };
-  }, [onEnded, onTimeUpdate, disableSeeking, src, contentType, isApp]);
-
-  // Determine which player to render:
-  // We use the Native Video tag if:
-  // 1. It's a non-m3u8 video upload (existing fallback logic)
-  // 2. OR we are running inside the Android APK (isApp is true) and it's a video upload
-  const useNativePlayer = (contentType === 'video-upload' && !src.includes('.m3u8')) || (isApp && contentType === 'video-upload');
-
   return (
-    <div className="relative w-full overflow-hidden rounded-xl shadow-lg group bg-black">
-      {useNativePlayer ? (
+    <div
+      className="relative w-full select-none rounded-2xl overflow-hidden shadow-lg"
+      onContextMenu={(e) => {
+        e.preventDefault();
+        toast.error("Klik kanan dinonaktifkan untuk keamanan.");
+      }}
+    >
+      <style jsx global>{`
+        /* ── Base ── */
+        .vjs-alfajr.video-js {
+          width: 100%;
+          font-family: inherit;
+          background: #000;
+        }
+
+        /* ── Control bar: putih abu-abu terang ── */
+        .vjs-alfajr .vjs-control-bar {
+          background: #f0f0f0 !important;
+          border-top: 1px solid #ddd;
+          height: 44px;
+          display: flex;
+          align-items: center;
+          padding: 0 6px;
+        }
+
+        /* ── Semua icon: HITAM ── */
+        .vjs-alfajr .vjs-control-bar .vjs-button > .vjs-icon-placeholder::before,
+        .vjs-alfajr .vjs-control-bar .vjs-icon-placeholder::before {
+          color: #111 !important;
+          font-size: 20px;
+          line-height: 44px;
+        }
+
+        /* Play/pause */
+        .vjs-alfajr .vjs-play-control .vjs-icon-placeholder::before {
+          color: #111 !important;
+          font-size: 22px;
+        }
+
+        /* Volume/mute */
+        .vjs-alfajr .vjs-mute-control .vjs-icon-placeholder::before,
+        .vjs-alfajr .vjs-volume-panel .vjs-mute-control .vjs-icon-placeholder::before {
+          color: #111 !important;
+          font-size: 20px;
+        }
+
+        /* Fullscreen */
+        .vjs-alfajr .vjs-fullscreen-control .vjs-icon-placeholder::before {
+          color: #111 !important;
+          font-size: 20px;
+        }
+
+        /* ── Teks waktu ── */
+        .vjs-alfajr .vjs-current-time,
+        .vjs-alfajr .vjs-duration,
+        .vjs-alfajr .vjs-remaining-time,
+        .vjs-alfajr .vjs-time-divider {
+          color: #111 !important;
+          font-size: 12px;
+          font-weight: 600;
+          line-height: 44px;
+          padding: 0 3px;
+          display: flex;
+          align-items: center;
+        }
+
+        /* ── Progress bar ── */
+        .vjs-alfajr .vjs-progress-control {
+          flex: 1;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          cursor: pointer;
+        }
+
+        .vjs-alfajr .vjs-progress-holder {
+          height: 5px;
+          background: rgba(0,0,0,0.2) !important;
+          border-radius: 3px;
+          margin: 0 4px;
+        }
+
+        .vjs-alfajr .vjs-load-progress {
+          background: rgba(0,0,0,0.2) !important;
+          border-radius: 3px;
+        }
+
+        .vjs-alfajr .vjs-load-progress div {
+          background: rgba(0,0,0,0.15) !important;
+        }
+
+        /* Fill gold */
+        .vjs-alfajr .vjs-play-progress {
+          background: #C5A059 !important;
+          border-radius: 3px;
+        }
+
+        .vjs-alfajr .vjs-play-progress::before {
+          color: #C5A059 !important;
+          font-size: 13px;
+          top: -4px;
+        }
+
+        /* Tooltip waktu */
+        .vjs-alfajr .vjs-time-tooltip {
+          background: rgba(20,20,20,0.85) !important;
+          color: #fff !important;
+          font-size: 11px;
+          font-weight: 500;
+          border-radius: 5px;
+          padding: 3px 7px;
+        }
+
+        /* ── Volume slider ── */
+        .vjs-alfajr .vjs-volume-bar {
+          background: rgba(0,0,0,0.18) !important;
+          border-radius: 3px;
+        }
+
+        .vjs-alfajr .vjs-volume-level {
+          background: #C5A059 !important;
+          border-radius: 3px;
+        }
+
+        .vjs-alfajr .vjs-volume-level::before {
+          color: #C5A059 !important;
+        }
+
+        /* ── Hover button ── */
+        .vjs-alfajr .vjs-control-bar .vjs-button:hover {
+          background: rgba(0,0,0,0.08) !important;
+          border-radius: 6px;
+        }
+
+        /* ── Big play button — frosted white, bulat ── */
+        .vjs-alfajr .vjs-big-play-button {
+          background: rgba(255,255,255,0.85) !important;
+          backdrop-filter: blur(6px);
+          -webkit-backdrop-filter: blur(6px);
+          border: none !important;
+          border-radius: 50% !important;
+          width: 64px !important;
+          height: 64px !important;
+          line-height: 64px !important;
+          top: 50% !important;
+          left: 50% !important;
+          transform: translate(-50%, -50%) !important;
+          margin: 0 !important;
+          box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+          transition: all 0.22s ease;
+        }
+
+        .vjs-alfajr .vjs-big-play-button:hover {
+          background: rgba(255,255,255,0.97) !important;
+          transform: translate(-50%, -50%) scale(1.08) !important;
+          box-shadow: 0 6px 32px rgba(0,0,0,0.28);
+        }
+
+        /* Icon play di tengah — hitam */
+        .vjs-alfajr .vjs-big-play-button .vjs-icon-placeholder::before {
+          color: #111 !important;
+          font-size: 28px;
+          line-height: 64px;
+        }
+
+        /* ── Spinner ── */
+        .vjs-alfajr .vjs-loading-spinner {
+          border-color: #C5A059 !important;
+        }
+
+        /* ── No outline ── */
+        .vjs-alfajr:focus,
+        .vjs-alfajr *:focus {
+          outline: none !important;
+          box-shadow: none !important;
+        }
+      `}</style>
+
+      <div ref={videoRef} className="w-full">
         <video
-          ref={nativeVideoRef}
-          src={src.includes('.m3u8') ? undefined : src} // If M3U8, HLS.js will set the source via attachMedia
-          className="w-full aspect-video"
-          controls
-          preload="metadata"
-          controlsList="nodownload"
-          onEnded={onEnded}
-          onTimeUpdate={handleNativeTimeUpdate}
-          onContextMenu={(e) => e.preventDefault()}
+          className="video-js vjs-alfajr vjs-big-play-centered"
           playsInline
+          preload="metadata"
+          style={{ width: '100%' }}
         />
-      ) : (
-        <Plyr ref={internalPlyrRef} source={plyrSource} options={plyrOptions} />
-      )}
-      
-      {watermark && user && !isApp && (
-        <div className="absolute inset-0 pointer-events-none z-[1] overflow-hidden opacity-60">
-          <div className="absolute text-white/20 font-bold text-sm md:text-base whitespace-nowrap select-none" style={{ top: '10%', left: '5%', transform: 'rotate(-15deg)' }}>{user.email}</div>
-          <div className="absolute text-white/10 font-bold text-xs md:text-sm whitespace-nowrap select-none" style={{ bottom: '15%', right: '8%', transform: 'rotate(-10deg)' }}>PROPERTY OF ALFAJR • {user.name}</div>
-          <div className="absolute text-white/15 font-bold text-[10px] md:text-xs whitespace-nowrap select-none" style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(-45deg)' }}>{user.email} • {new Date().toLocaleDateString()}</div>
+      </div>
+
+      {/* Watermark */}
+      {watermark && user && (
+        <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden select-none touch-none">
+          <div
+            className="absolute text-white/10 font-bold text-sm md:text-base whitespace-nowrap select-none pointer-events-none mix-blend-overlay"
+            style={{ top: '12%', left: '8%', transform: 'rotate(-15deg)' }}
+          >
+            {user.email}
+          </div>
+          <div
+            className="absolute text-white/5 font-bold text-[10px] md:text-xs whitespace-nowrap select-none pointer-events-none mix-blend-overlay"
+            style={{ bottom: '20%', right: '10%', transform: 'rotate(-10deg)' }}
+          >
+            PROPERTY OF ALFAJR • {user.name}
+          </div>
+          <div
+            className="absolute text-white/8 font-bold text-xs md:text-sm whitespace-nowrap select-none pointer-events-none mix-blend-overlay"
+            style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(-45deg)' }}
+          >
+            {user.email}
+          </div>
         </div>
       )}
     </div>
   );
 });
 
+UniversalPlayer.displayName = 'UniversalPlayer';
 export default UniversalPlayer;

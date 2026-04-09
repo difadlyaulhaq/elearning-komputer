@@ -35,18 +35,16 @@ export function ClientLessonPlayers({
   completedLessons,
   isCompleted,
 }: ClientLessonPlayersProps) {
-  const [isMobile, setIsMobile] = React.useState(true);
+  const [isMobileDevice, setIsMobileDevice] = React.useState(false);
 
   React.useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    handleResize(); // Initial check
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    setIsMobileDevice(isMobile);
   }, []);
 
   return (
     <>
-      {isMobile ? (
+      {isMobileDevice ? (
         <LessonPlayerMobile
           courseId={courseId}
           courseTitle={courseTitle}

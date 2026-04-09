@@ -430,13 +430,21 @@ export const initializeMobileProtection = (
     }
     
     /* Exclude video player controls from touch blocking */
-    .plyr, .plyr *, .plyr__controls, .plyr__control,
-    .plyr__video-wrapper, video {
+    .vjs-control-bar, .vjs-control-bar *, .vjs-big-play-button, .vjs-big-play-button *,
+    .video-js, video {
       pointer-events: auto !important;
       touch-action: manipulation !important;
     }
     
     img, video, canvas {
+      -webkit-user-drag: none;
+      -khtml-user-drag: none;
+      -moz-user-drag: none;
+      -o-user-drag: none;
+      user-drag: none;
+    }
+    
+    video {
       -webkit-user-drag: none;
       -khtml-user-drag: none;
       -moz-user-drag: none;
