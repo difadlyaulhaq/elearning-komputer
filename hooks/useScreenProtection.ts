@@ -140,7 +140,7 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
         setCountdown(5);
         startCountdown(5);
       }
-    }, 100); // 100ms delay untuk menghindari false trigger
+    }, 500); // Increased from 100ms to 500ms for better stability
   }, [enableBlurOnFocusLoss, startCountdown, pauseVideo]);
 
   // Initialize mobile protection with gesture support

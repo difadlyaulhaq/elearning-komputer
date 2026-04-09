@@ -40,6 +40,7 @@
     "rehype-highlight": "^7.0.2",
     "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.1",
+    "video.js": "^8.23.7",
     "workbox-webpack-plugin": "^7.4.0"
   },
   "devDependencies": {
@@ -49,6 +50,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/video.js": "^7.3.58",
     "@types/youtube": "^0.1.2",
     "eslint": "^9",
     "eslint-config-next": "^16.0.7",

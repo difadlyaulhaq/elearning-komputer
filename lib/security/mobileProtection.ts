@@ -418,8 +418,16 @@ export const initializeMobileProtection = (
       -webkit-touch-callout: none !important;
     }
     
-    img, video, canvas {
+    img, canvas {
       pointer-events: none;
+      -webkit-user-drag: none;
+      -khtml-user-drag: none;
+      -moz-user-drag: none;
+      -o-user-drag: none;
+      user-drag: none;
+    }
+    
+    video {
       -webkit-user-drag: none;
       -khtml-user-drag: none;
       -moz-user-drag: none;

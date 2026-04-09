@@ -157,7 +157,7 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
     };
 
     generatePositions();
-    const interval = setInterval(generatePositions, 20000); // More frequent updates
+    const interval = setInterval(generatePositions, 60000); // Less frequent updates for performance
     return () => clearInterval(interval);
   }, [enableWatermark]);
 
@@ -192,26 +192,32 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
     <>
       <style jsx global>{`
         .screen-protected {
-          -webkit-user-select: none;
-          -moz-user-select: none;
-          -ms-user-select: none;
-          user-select: none;
-          -webkit-touch-callout: none;
+          -webkit-user-select: none !important;
+          -moz-user-select: none !important;
+          -ms-user-select: none !important;
+          user-select: none !important;
+          -webkit-touch-callout: none !important;
+          -webkit-user-drag: none !important;
         }
         @keyframes float-watermark {
           0%, 100% { transform: translate3d(0, 0, 0); }
-          25% { transform: translate3d(8px, -10px, 0); }
-          50% { transform: translate3d(-8px, 0, 0); }
-          75% { transform: translate3d(8px, 10px, 0); }
+          25% { transform: translate3d(15px, -15px, 0); }
+          50% { transform: translate3d(-15px, 0, 0); }
+          75% { transform: translate3d(15px, 15px, 0); }
+        }
+        @keyframes pulse-opacity {
+          0%, 100% { opacity: 0.2; }
+          50% { opacity: 0.5; }
         }
         .watermark-text {
-          animation: float-watermark 20s ease-in-out infinite;
+          animation: float-watermark 15s ease-in-out infinite, pulse-opacity 4s ease-in-out infinite;
           pointer-events: none;
           font-family: sans-serif;
-          font-weight: 600;
-          will-change: transform;
+          font-weight: 800;
+          will-change: transform, opacity;
           backface-visibility: hidden;
           z-index: 999998;
+          text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
         }
         /* CSS to hide elements during screenshot on some browsers */
         @media print {
@@ -220,17 +226,20 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
       `}</style>
 
       {enableWatermark && watermarkPositions.length > 0 && (
-        <div className="fixed inset-0 pointer-events-none z-[999996] overflow-hidden">
+        <div 
+          className="fixed inset-0 pointer-events-none z-[999996] overflow-hidden select-none touch-none"
+          onContextMenu={(e) => e.preventDefault()}
+        >
           {watermarkPositions.map((pos, index) => (
             <div
               key={index}
-              className="watermark-text absolute text-gray-500/30 whitespace-nowrap select-none"
+              className="watermark-text absolute text-gray-500/40 whitespace-nowrap select-none pointer-events-none"
               style={{
                 top: `${pos.top}%`,
                 left: `${pos.left}%`,
                 transform: `rotate(${pos.rotation}deg)`,
-                fontSize: 'clamp(12px, 2vw, 20px)',
-                animationDelay: `${index * 5}s`,
+                fontSize: 'clamp(14px, 2.5vw, 24px)',
+                animationDelay: `${index * 3.7}s`,
               }}
             >
               {displayWatermark}

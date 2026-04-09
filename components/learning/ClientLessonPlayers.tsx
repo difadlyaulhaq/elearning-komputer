@@ -35,10 +35,17 @@ export function ClientLessonPlayers({
   completedLessons,
   isCompleted,
 }: ClientLessonPlayersProps) {
+  const [isMobileDevice, setIsMobileDevice] = React.useState(false);
+
+  React.useEffect(() => {
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    setIsMobileDevice(isMobile);
+  }, []);
+
   return (
     <>
-      {/* Mobile View */}
-      <div className="md:hidden">
+      {/* Mobile View - Now forced on mobile devices regardless of width */}
+      <div className={isMobileDevice ? "block" : "md:hidden"}>
         <LessonPlayerMobile
           courseId={courseId}
           courseTitle={courseTitle}
@@ -50,8 +57,8 @@ export function ClientLessonPlayers({
         />
       </div>
 
-      {/* Desktop View */}
-      <div className="hidden md:block">
+      {/* Desktop View - Hidden on mobile devices regardless of width */}
+      <div className={isMobileDevice ? "hidden" : "hidden md:block"}>
         <LessonPlayerDesktop
           courseId={courseId}
           courseTitle={courseTitle}

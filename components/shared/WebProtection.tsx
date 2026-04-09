@@ -4,6 +4,14 @@ import { useEffect } from 'react';
 
 export const WebProtection = () => {
   useEffect(() => {
+    // Check if it's a mobile view
+    const isMobileView = window.innerWidth < 768;
+    
+    if (isMobileView) {
+      console.log("Web Protection is disabled in mobile view.");
+      return;
+    }
+
     // 1. Disable Right Click
     const handleContextMenu = (e: MouseEvent) => {
       e.preventDefault();
@@ -52,13 +60,13 @@ export const WebProtection = () => {
     document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('dragstart', handleDragStart);
 
-    // Periodic Console Clearing
+    // Periodic Console Clearing (Reduced frequency for better mobile performance)
     const consoleClearInterval = setInterval(() => {
       console.clear();
       console.log("%cPERINGATAN!%c\nArea ini diawasi secara ketat oleh sistem keamanan Alfajr. Segala upaya akses ilegal akan dicatat.", 
         "color: red; font-size: 24px; font-weight: bold;", 
         "color: black; font-size: 14px;");
-    }, 2000);
+    }, 10000);
 
     return () => {
       document.removeEventListener('contextmenu', handleContextMenu);
