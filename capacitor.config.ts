@@ -5,11 +5,9 @@ const config: CapacitorConfig = {
   appName: 'Alfajr E-Learning',
   webDir: 'public', // Set to public due to PWA build config
   server: {
-    // PRODUCTION MODE: Mengarah ke URL Vercel yang sudah dideploy
-    url: 'https://alfajr-elearning.vercel.app', 
-    cleartext: true,
+    // PRODUCTION MODE (Remote Hosting)
+    url: 'https://alfajr-elearning.vercel.app',
     allowNavigation: [
-      "10.0.2.2",
       "alfajr-elearning.vercel.app",
       "*.alfajr-elearning.vercel.app",
       "alfajr-elearning-*.vercel.app",

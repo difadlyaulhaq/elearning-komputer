@@ -3,7 +3,6 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { isMobileDevice, initializeMobileProtection } from '@/lib/security/mobileProtection';
-import { getIsNativeApp } from '@/lib/native-detection';
 
 interface ScreenProtectionOptions {
   enableWatermark?: boolean;
@@ -12,9 +11,9 @@ interface ScreenProtectionOptions {
   enableContextMenuBlock?: boolean;
   enableDevToolsDetection?: boolean;
   enableDragBlock?: boolean;
-  forceDisableAllProtections?: boolean; // New prop
+  forceDisableAllProtections?: boolean; 
   watermarkText?: string;
-  contentTitle?: string; // New: To identify which content is being protected
+  contentTitle?: string; 
   onScreenshotAttempt?: () => void;
   onRecordingDetected?: () => void;
   videoElementRef?: React.RefObject<HTMLVideoElement | null>;
@@ -35,42 +34,11 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
     authFetch,
   } = options;
 
-  // 0. IMMEDIATE EXIT if all protections are forced off (e.g., Native APK Video Page)
-  if (forceDisableAllProtections) {
-    return {
-      isBlurred: false,
-      isRecording: false,
-      isDevToolsOpen: false,
-      isViolation: false,
-      isCoolDownActive: false,
-      countdown: 0,
-      violationType: null,
-    };
-  }
+  // Simplified detection for mobile/tablet based on UA only
+  const isMobile = isMobileDevice();
 
-  // Differentiate between Native App and Mobile Browser
-  const [isNativeApp, setIsNativeApp] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return getIsNativeApp();
-  });
-
-  const [isMobile, setIsMobile] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return isMobileDevice();
-  });
-
-  useEffect(() => {
-    if (getIsNativeApp()) {
-      setIsNativeApp(true);
-    }
-    
-    const handleDetection = () => setIsNativeApp(true);
-    window.addEventListener('alfajr_native_detected', handleDetection);
-    return () => window.removeEventListener('alfajr_native_detected', handleDetection);
-  }, []);
-
-  // Web-layer listeners are skipped in Native App to avoid conflicts with OS/Capacitor features
-  const skipWebListeners = isNativeApp;
+  // Web-layer listeners are skipped if forceDisableAllProtections is true (which is set for mobile/tablet)
+  const skipWebListeners = forceDisableAllProtections;
 
   const [isBlurred, setIsBlurred] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -91,6 +59,7 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
   }, [authFetch]);
 
   const polluteClipboard = useCallback(() => {
+    if (forceDisableAllProtections) return;
     let attempts = 0;
     const intervalId = setInterval(() => {
       try {
@@ -102,7 +71,7 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
       attempts++;
       if (attempts >= 10) clearInterval(intervalId);
     }, 500);
-  }, []);
+  }, [forceDisableAllProtections]);
 
   const pauseVideo = useCallback(() => {
     if (videoElementRef?.current) {
@@ -111,6 +80,7 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
   }, [videoElementRef]);
 
   const hideVideoSynchronously = useCallback(() => {
+    if (forceDisableAllProtections) return;
     if (typeof document !== 'undefined') {
       if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
     }
@@ -121,7 +91,7 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
       videoElementRef.current.style.visibility = 'hidden';
       videoElementRef.current.style.filter = 'blur(100px)';
     }
-  }, [videoElementRef]);
+  }, [videoElementRef, forceDisableAllProtections]);
 
   const showVideoSynchronously = useCallback(() => {
     if (videoElementRef?.current) {
@@ -132,6 +102,7 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
   }, [videoElementRef]);
 
   const startCountdown = useCallback((seconds: number) => {
+    if (forceDisableAllProtections) return;
     pauseVideo();
     if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
     
@@ -156,19 +127,29 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
         showVideoSynchronously();
       }
     }, 1000);
-  }, [pauseVideo, showVideoSynchronously]);
+  }, [pauseVideo, showVideoSynchronously, forceDisableAllProtections]);
 
   // Clear blur if protection is disabled
   useEffect(() => {
+    if (forceDisableAllProtections) {
+      if (isBlurred || isViolation || isCoolDownActive) {
+        setIsBlurred(false);
+        setIsViolation(false);
+        setIsCoolDownActive(false);
+        setViolationType(null);
+        showVideoSynchronously();
+      }
+      return;
+    }
     if (!enableBlurOnFocusLoss && isBlurred && violationType === 'blur') {
       setIsBlurred(false);
       setViolationType(null);
       showVideoSynchronously();
     }
-  }, [enableBlurOnFocusLoss, isBlurred, violationType, showVideoSynchronously]);
+  }, [enableBlurOnFocusLoss, isBlurred, isViolation, isCoolDownActive, violationType, showVideoSynchronously, forceDisableAllProtections]);
 
   const handleBlur = useCallback(() => {
-    if (!enableBlurOnFocusLoss) return;
+    if (forceDisableAllProtections || !enableBlurOnFocusLoss) return;
     if (typeof window !== 'undefined' && (window.disableScreenProtection || window.isPickingFile)) return;
 
     if (document.hidden || !document.hasFocus()) {
@@ -178,10 +159,10 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
       setViolationType('blur');
       setCountdown(5);
     }
-  }, [enableBlurOnFocusLoss, hideVideoSynchronously]);
+  }, [enableBlurOnFocusLoss, hideVideoSynchronously, forceDisableAllProtections]);
 
   const handleFocus = useCallback(() => {
-    if (!enableBlurOnFocusLoss) return;
+    if (forceDisableAllProtections || !enableBlurOnFocusLoss) return;
     if (typeof window !== 'undefined' && window.disableScreenProtection) return;
 
     const wasPicking = typeof window !== 'undefined' && window.isPickingFile;
@@ -216,7 +197,6 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
     }
     
     blurDebounceRef.current = setTimeout(() => {
-      // Hanya blur jika document benar-benar hidden atau window blur
       if (document.hidden || !document.hasFocus()) {
         setIsBlurred(true);
         setViolationType('blur');
@@ -227,9 +207,9 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
         showVideoSynchronously();
       }
     }, 500); 
-  }, [enableBlurOnFocusLoss, startCountdown, pauseVideo, isViolation, isBlurred, violationType, showVideoSynchronously]);
+  }, [enableBlurOnFocusLoss, startCountdown, pauseVideo, isViolation, isBlurred, violationType, showVideoSynchronously, forceDisableAllProtections]);
 
-  // Mobile gestures detection
+  // Mobile gestures detection - Still registered for mobile web if not blocked by skipWebListeners
   useEffect(() => {
     if (skipWebListeners) return;
 
@@ -262,7 +242,7 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
     }
   }, [skipWebListeners, isMobile, startCountdown, onScreenshotAttempt, secureFetch, hideVideoSynchronously, polluteClipboard, contentTitle]);
 
-  // Keyboard detection
+  // Keyboard detection - CRITICAL for Desktop Warning
   useEffect(() => {
     if (skipWebListeners) return;
     
@@ -272,7 +252,14 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
       let isScreenshotAttempt = false;
       const isDevToolsShortcut = e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) || (e.metaKey && e.altKey && ['I', 'J', 'C'].includes(e.key.toUpperCase()));
 
-      if (e.key === 'PrintScreen' || e.keyCode === 44 || (e.key.toUpperCase() === 'S' && e.shiftKey && e.metaKey) || (isDevToolsShortcut && enableDevToolsDetection)) {
+      // Enhanced Screenshot Shortcuts: 
+      // 1. PrintScreen (Keyboard key)
+      // 2. Win + Shift + S (Windows Snipping Tool) - metaKey + shiftKey + S
+      // 3. Cmd + Shift + 4 or 3 or 5 (Mac Screenshot) - metaKey + shiftKey + Number
+      const isMacScreenshot = e.metaKey && e.shiftKey && ['3', '4', '5'].includes(e.key);
+      const isWinScreenshot = e.metaKey && e.shiftKey && e.key.toUpperCase() === 'S';
+
+      if (e.key === 'PrintScreen' || e.keyCode === 44 || isWinScreenshot || isMacScreenshot || (isDevToolsShortcut && enableDevToolsDetection)) {
         isScreenshotAttempt = true;
       }
 
@@ -284,7 +271,7 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
         setIsViolation(true);
         isViolationRef.current = true;
         setViolationType('screenshot');
-        startCountdown(10);
+        startCountdown(10); // Maintain 10 second countdown
         polluteClipboard();
         onScreenshotAttempt?.();
       }
@@ -294,8 +281,9 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
     return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, [skipWebListeners, enableKeyboardBlock, enableDevToolsDetection, onScreenshotAttempt, hideVideoSynchronously, startCountdown, polluteClipboard]);
 
-  // Blur & Focus detection (Always enable even in app if we want hide content to work)
+  // Blur & Focus detection
   useEffect(() => {
+    if (forceDisableAllProtections) return;
     const handleVisibilityChange = () => {
       if (document.hidden) handleBlur();
       else handleFocus();
@@ -310,7 +298,7 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
       window.removeEventListener('focus', handleFocus);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [handleBlur, handleFocus]);
+  }, [handleBlur, handleFocus, forceDisableAllProtections]);
 
   // Context menu & Drag block
   useEffect(() => {
@@ -344,7 +332,9 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
     const checkDevTools = () => {
       const isDevOpen = (window.outerWidth - window.innerWidth > threshold) || (window.outerHeight - window.innerHeight > threshold);
       setIsDevToolsOpen(isDevOpen);
-      if (isDevOpen) setViolationType('devtools');
+      if (isDevOpen) {
+        setViolationType('devtools');
+      }
     };
 
     const interval = setInterval(checkDevTools, 2000);
