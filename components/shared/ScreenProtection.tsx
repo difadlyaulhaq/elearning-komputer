@@ -6,8 +6,7 @@ import { useScreenProtection } from '@/hooks/useScreenProtection';
 import { Shield } from 'lucide-react';
 import { PrivacyScreen } from '@capacitor-community/privacy-screen';
 import { useAuth } from '@/context/AuthContext';
-import { getIsNativeApp } from '@/lib/native-detection';
-import { usePathname } from 'next/navigation';
+import { isMobileDevice } from '@/lib/security/mobileProtection';
 
 interface ScreenProtectionProps {
   children: React.ReactNode;
@@ -42,40 +41,18 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
   isVideoPage = false,
   className = '',
 }) => {
-  const pathname = usePathname();
-  const [isNativeApp, setIsNativeApp] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return getIsNativeApp();
-  });
+  // Force disable protections based on User Requirements: 
+  // Disable all web protections (watermark, blur, etc.) for all mobile/tablet views
+  const forceDisableAllProtections = isMobileDevice();
 
   useEffect(() => {
-    const isNative = getIsNativeApp();
-    setIsNativeApp(isNative);
-    
-    const handleDetection = () => setIsNativeApp(true);
-    window.addEventListener('alfajr_native_detected', handleDetection);
-
-    if (isNative) {
-      PrivacyScreen.enable().catch(console.warn);
+    // Still try to enable native PrivacyScreen if available (non-visible protection)
+    if (forceDisableAllProtections) {
+      PrivacyScreen.enable().catch(() => {});
     }
+  }, [forceDisableAllProtections]);
 
-    return () => {
-      window.removeEventListener('alfajr_native_detected', handleDetection);
-    };
-  }, []);
-
-  // Force disable protections based on User Requirements
-  // 1. In Native App, Watermark is ALWAYS GONE
-  const finalEnableWatermark = isNativeApp ? false : enableWatermark;
-
-  // 2. In Native App on Video Page, Hide Content (Blur/Violation Overlays) is GONE
-  // Detection: explicit prop, video element ref, OR lesson path
-  const isLessonPath = pathname?.includes('/lesson/');
-  const isVideoInApp = isNativeApp && (isVideoPage || !!videoElementRef || isLessonPath);
-  
-  // SOLUSI: Guard utama untuk mematikan semua proteksi web di APK
-  const forceDisableAllProtections = isVideoInApp;
-  
+  const finalEnableWatermark = forceDisableAllProtections ? false : enableWatermark;
   const finalEnableBlur = forceDisableAllProtections ? false : enableBlurOnFocusLoss;
   const finalEnableKeyboard = forceDisableAllProtections ? false : enableKeyboardBlock;
   const finalEnableContextMenu = forceDisableAllProtections ? false : enableContextMenuBlock;
@@ -98,9 +75,6 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
                        (document as any).msFullscreenElement;
       
       setFullscreenElement(fsElement);
-      if (fsElement && isNativeApp) {
-        PrivacyScreen.enable().catch(() => {});
-      }
     };
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
@@ -109,7 +83,7 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
     };
-  }, [isNativeApp]);
+  }, []);
 
   const { authFetch } = useAuth();
 

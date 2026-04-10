@@ -1,13 +1,12 @@
 'use client';
 
 import { useEffect } from 'react';
-import { getIsNativeApp } from '@/lib/native-detection';
+import { isMobileDevice } from '@/lib/security/mobileProtection';
 
 export const WebProtection = () => {
   useEffect(() => {
-    // Disable in native app or mobile view
-    const isMobileView = window.innerWidth < 768;
-    if (getIsNativeApp() || isMobileView) {
+    // Disable all web protections (right click, shortcuts, etc.) for all mobile/tablet views
+    if (isMobileDevice()) {
       return;
     }
 

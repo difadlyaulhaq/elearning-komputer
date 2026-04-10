@@ -28,23 +28,30 @@ const UniversalPlayer = React.forwardRef<any, UniversalPlayerProps>(({
   const playerRef = useRef<any>(null);
   const maxTimeReachedRef = useRef(0);
 
-  useEffect(() => {
+  // Function to initialize the player
+  const initPlayer = () => {
     if (!videoRef.current) return;
 
-    const videoEl = videoRef.current.querySelector('video');
-    if (!videoEl) return;
+    // Remove any existing video element to start fresh
+    videoRef.current.innerHTML = '';
+    const videoEl = document.createElement('video');
+    videoEl.className = 'video-js vjs-alfajr vjs-big-play-centered';
+    videoEl.setAttribute('playsinline', 'true');
+    videoRef.current.appendChild(videoEl);
 
     const sources =
       contentType === 'youtube'
         ? [{ src, type: 'video/youtube' }]
-        : [{ src, type: 'video/mp4' }];
+        : [{ src, type: src.includes('.m3u8') ? 'application/x-mpegURL' : 'video/mp4' }];
 
     const player = videojs(videoEl, {
       controls: true,
       autoplay: false,
       preload: 'metadata',
       fluid: true,
+      responsive: true,
       playsinline: true,
+      aspectRatio: '16:9',
       sources,
       controlBar: {
         children: [
@@ -58,14 +65,15 @@ const UniversalPlayer = React.forwardRef<any, UniversalPlayerProps>(({
           'fullscreenToggle',
         ],
       },
+    }, () => {
+      // Player ready
+      if (ref) {
+        if (typeof ref === 'function') ref(player);
+        else (ref as React.MutableRefObject<any>).current = player;
+      }
     });
 
     playerRef.current = player;
-
-    if (ref) {
-      if (typeof ref === 'function') ref(player);
-      else (ref as React.MutableRefObject<any>).current = player;
-    }
 
     player.on('ended', () => { if (onEnded) onEnded(); });
 
@@ -85,8 +93,16 @@ const UniversalPlayer = React.forwardRef<any, UniversalPlayerProps>(({
     });
 
     // Disable right-click on video
-    const vid = player.el().querySelector('video');
-    if (vid) vid.addEventListener('contextmenu', (e) => e.preventDefault());
+    player.on('loadedmetadata', () => {
+      try {
+        const vid = player.tech().el();
+        if (vid) vid.addEventListener('contextmenu', (e: Event) => e.preventDefault());
+      } catch (e) {}
+    });
+  };
+
+  useEffect(() => {
+    initPlayer();
 
     return () => {
       if (playerRef.current && !playerRef.current.isDisposed()) {
@@ -94,11 +110,11 @@ const UniversalPlayer = React.forwardRef<any, UniversalPlayerProps>(({
         playerRef.current = null;
       }
     };
-  }, [src, contentType]);
+  }, [src, contentType]); // Re-init if src or type changes
 
   return (
     <div
-      className="relative w-full select-none rounded-2xl overflow-hidden shadow-lg"
+      className="relative w-full aspect-video select-none rounded-2xl overflow-hidden shadow-lg bg-black"
       onContextMenu={(e) => {
         e.preventDefault();
         toast.error("Klik kanan dinonaktifkan untuk keamanan.");
@@ -107,7 +123,8 @@ const UniversalPlayer = React.forwardRef<any, UniversalPlayerProps>(({
       <style jsx global>{`
         /* ── Base ── */
         .vjs-alfajr.video-js {
-          width: 100%;
+          width: 100% !important;
+          height: 100% !important;
           font-family: inherit;
           background: #000;
         }
@@ -217,7 +234,7 @@ const UniversalPlayer = React.forwardRef<any, UniversalPlayerProps>(({
         }
 
         .vjs-alfajr .vjs-volume-level {
-          background: #C5A059 !important;
+          backgroun d: #C5A059 !important;
           border-radius: 3px;
         }
 
@@ -275,16 +292,9 @@ const UniversalPlayer = React.forwardRef<any, UniversalPlayerProps>(({
         }
       `}</style>
 
-      <div ref={videoRef} className="w-full">
-        <video
-          className="video-js vjs-alfajr vjs-big-play-centered"
-          playsInline
-          preload="metadata"
-          style={{ width: '100%' }}
-        />
-      </div>
+      <div ref={videoRef} className="w-full h-full" />
 
-      {/* Watermark */}
+      {/* Watermark Overlay */}
       {watermark && user && (
         <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden select-none touch-none">
           <div
