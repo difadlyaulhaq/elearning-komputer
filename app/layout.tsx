@@ -43,8 +43,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="preconnect" href="https://firebasestorage.googleapis.com" />
-        <link rel="preconnect" href="https://www.googleapis.com" />
+        <link rel="dns-prefetch" href="https://firebasestorage.googleapis.com" />
+        <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://www.googleapis.com" />
+        <link rel="preconnect" href="https://www.googleapis.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <script

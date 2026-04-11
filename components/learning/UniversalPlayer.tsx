@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
 import { useAuth } from '@/context/AuthContext';
@@ -28,6 +28,71 @@ const UniversalPlayer = React.forwardRef<any, UniversalPlayerProps>(({
   const videoRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
   const maxTimeReachedRef = useRef(0);
+  const retryCountRef = useRef(0);
+  const stalledTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const recoveryTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [isBuffering, setIsBuffering] = useState(false);
+  const [bufferProgress, setBufferProgress] = useState(0);
+
+  // Clear all recovery timers
+  const clearAllTimers = useCallback(() => {
+    if (stalledTimerRef.current) {
+      clearTimeout(stalledTimerRef.current);
+      stalledTimerRef.current = null;
+    }
+    if (recoveryTimerRef.current) {
+      clearTimeout(recoveryTimerRef.current);
+      recoveryTimerRef.current = null;
+    }
+  }, []);
+
+  // Recovery function with exponential backoff
+  const attemptRecovery = useCallback((player: any, sources: any[]) => {
+    if (!player || player.isDisposed()) return;
+
+    retryCountRef.current++;
+    const backoff = Math.min(1000 * Math.pow(1.5, retryCountRef.current - 1), 8000);
+
+    console.log(`[UniversalPlayer] Recovery attempt #${retryCountRef.current}, backoff: ${backoff}ms`);
+
+    recoveryTimerRef.current = setTimeout(() => {
+      if (!player || player.isDisposed()) return;
+
+      try {
+        const currentTime = player.currentTime() || 0;
+
+        // Strategy 1: If first 2 attempts, just try to play from current position
+        if (retryCountRef.current <= 2) {
+          player.pause();
+          player.currentTime(currentTime);
+          player.load();
+          const playPromise = player.play();
+          if (playPromise) playPromise.catch(() => {});
+        }
+        // Strategy 2: Reload the source entirely
+        else if (retryCountRef.current <= 4) {
+          player.src(sources);
+          player.one('loadedmetadata', () => {
+            if (currentTime > 0) {
+              player.currentTime(currentTime);
+            }
+            player.play()?.catch(() => {});
+          });
+          player.load();
+        }
+        // Strategy 3: Full re-init after max retries
+        else {
+          console.log('[UniversalPlayer] Max retries reached, full re-init');
+          retryCountRef.current = 0;
+          player.src(sources);
+          player.load();
+          player.play()?.catch(() => {});
+        }
+      } catch (err) {
+        console.error('[UniversalPlayer] Recovery error:', err);
+      }
+    }, backoff);
+  }, []);
 
   // Function to initialize the player
   const initPlayer = () => {
@@ -38,6 +103,7 @@ const UniversalPlayer = React.forwardRef<any, UniversalPlayerProps>(({
     const videoEl = document.createElement('video');
     videoEl.className = 'video-js vjs-alfajr vjs-big-play-centered';
     videoEl.setAttribute('playsinline', 'true');
+    videoEl.setAttribute('webkit-playsinline', 'true');
     videoRef.current.appendChild(videoEl);
 
     const isMobile = isMobileDevice();
@@ -47,23 +113,44 @@ const UniversalPlayer = React.forwardRef<any, UniversalPlayerProps>(({
         ? [{ src, type: 'video/youtube' }]
         : [{ src, type: isHls ? 'application/x-mpegURL' : 'video/mp4' }];
 
+    // ─── ULTIMATE MOBILE OPTIMIZATION ───
+    // On mobile, we need aggressive buffer settings to minimize buffering time.
+    // Firebase Storage supports Range requests, so we leverage that.
     const player = videojs(videoEl, {
       controls: true,
       autoplay: false,
-      preload: isMobile ? 'metadata' : 'auto',
+      // CRITICAL: Use 'auto' preload on mobile too — 'metadata' causes the
+      // long initial buffering because Video.js waits for data before playing.
+      // 'auto' tells the browser to start downloading immediately.
+      preload: 'auto',
       fluid: true,
       responsive: true,
       playsinline: true,
       aspectRatio: '16:9',
       html5: {
         vhs: {
+          // On mobile, let the native player handle HLS if available
           overrideNative: !isMobile,
-          enableLowInitialPlaylist: true,
+          // Start with the lowest quality playlist for fast initial load
+          enableLowInitialPlaylist: isMobile,
+          // Enable fast quality switching without re-buffering
           fastQualityChange: true,
-          goalBufferLength: isMobile ? 15 : 30, // Reduced for mobile
-          maxBufferLength: isMobile ? 30 : 60,  // Reduced for mobile
-          bufferLowWatermark: isMobile ? 3 : 5,
+          // ─── AGGRESSIVE MOBILE BUFFER SETTINGS ───
+          // goalBufferLength: How many seconds ahead to buffer
+          goalBufferLength: isMobile ? 10 : 30,
+          // maxBufferLength: Maximum buffer size in seconds
+          maxBufferLength: isMobile ? 30 : 60,
+          // handlePartialData: Process data as it arrives
+          handlePartialData: true,
+          // Lower bandwidth estimation for faster initial switch
+          bandwidth: isMobile ? 500000 : undefined, // 500kbps initial estimate for mobile
         },
+        nativeAudioTracks: isMobile,
+        nativeVideoTracks: isMobile,
+        // ─── CRITICAL: Native HLS support on mobile ───
+        // This ensures mobile Safari and Android Chrome use native HLS
+        // which is far more optimized than JavaScript-based HLS
+        nativeTextTracks: isMobile,
       },
       sources,
       controlBar: {
@@ -78,37 +165,134 @@ const UniversalPlayer = React.forwardRef<any, UniversalPlayerProps>(({
           'fullscreenToggle',
         ],
       },
-      // Error recovery logic
       retryOnError: true,
+      // ─── Faster loading behavior ───
+      liveui: false,
+      enableSourceset: true,
     }, () => {
       // Player ready
       if (ref) {
         if (typeof ref === 'function') ref(player);
         else (ref as React.MutableRefObject<any>).current = player;
       }
-    });
 
-    playerRef.current = player;
-
-    // Handle Network Errors & Auto-retry
-    player.on('error', () => {
-      const error = player.error();
-      if (error && (error.code === 2 || error.code === 4)) {
-        console.log('Network error detected, attempting to recover...');
-        setTimeout(() => {
-          if (playerRef.current && !playerRef.current.isDisposed()) {
-            playerRef.current.src(sources);
-            playerRef.current.load();
-            playerRef.current.play()?.catch(() => {});
-          }
-        }, 2000);
+      // ─── MOBILE: Force preload the video data on ready ───
+      if (isMobile && contentType !== 'youtube') {
+        const tech = player.tech({ IWillNotUseThisInPlugins: true });
+        if (tech && tech.el()) {
+          const videoElement = tech.el() as HTMLVideoElement;
+          // Force the browser to start buffering immediately
+          videoElement.preload = 'auto';
+          // Request initial data load
+          videoElement.load();
+        }
       }
     });
 
-    // Smart Buffering for MP4
-    if (contentType === 'video-upload' && !isHls) {
-      player.on('waiting', () => {
-        console.log('Video is buffering...');
+    playerRef.current = player;
+    retryCountRef.current = 0;
+
+    // ─── BUFFERING STATE TRACKING ───
+    player.on('waiting', () => {
+      console.log('[UniversalPlayer] Buffering started...');
+      setIsBuffering(true);
+
+      // If stalled for too long, attempt recovery
+      clearAllTimers();
+      stalledTimerRef.current = setTimeout(() => {
+        console.log('[UniversalPlayer] Stalled for too long, attempting recovery...');
+        attemptRecovery(player, sources);
+      }, isMobile ? 8000 : 15000); // 8s on mobile, 15s on desktop
+    });
+
+    player.on('playing', () => {
+      console.log('[UniversalPlayer] Playing, resetting recovery state');
+      setIsBuffering(false);
+      retryCountRef.current = 0;
+      clearAllTimers();
+    });
+
+    player.on('canplay', () => {
+      setIsBuffering(false);
+      clearAllTimers();
+    });
+
+    player.on('canplaythrough', () => {
+      setIsBuffering(false);
+      clearAllTimers();
+    });
+
+    // ─── STALLED EVENT: Video stopped receiving data ───
+    player.on('stalled', () => {
+      console.log('[UniversalPlayer] Download stalled');
+      // Only recover if we're supposed to be playing
+      if (!player.paused()) {
+        stalledTimerRef.current = setTimeout(() => {
+          attemptRecovery(player, sources);
+        }, isMobile ? 5000 : 10000);
+      }
+    });
+
+    // ─── BUFFER PROGRESS TRACKING ───
+    player.on('progress', () => {
+      try {
+        const buffered = player.buffered();
+        const duration = player.duration() ?? 0;
+        if (buffered && buffered.length > 0 && duration > 0) {
+          const end = buffered.end(buffered.length - 1);
+          setBufferProgress(Math.round((end / duration) * 100));
+        }
+      } catch (e) {}
+    });
+
+    // ─── ERROR HANDLING with smart recovery ───
+    player.on('error', () => {
+      const error = player.error();
+      if (error) {
+        console.error(`[UniversalPlayer] Error code ${error.code}: ${error.message}`);
+
+        // Network error (code 2) or media error (code 3) or source not found (code 4)
+        if (error.code === 2 || error.code === 3 || error.code === 4) {
+          // Clear the error state so Video.js doesn't block recovery
+          player.error(undefined as any);
+          attemptRecovery(player, sources);
+        }
+      }
+    });
+
+    // ─── MOBILE-SPECIFIC: Handle mobile network changes ───
+    if (isMobile && typeof window !== 'undefined') {
+      const handleOnline = () => {
+        console.log('[UniversalPlayer] Network reconnected, recovering...');
+        if (player && !player.isDisposed() && !player.paused()) {
+          const currentTime = player.currentTime() || 0;
+          player.src(sources);
+          player.one('loadedmetadata', () => {
+            if (currentTime > 0) player.currentTime(currentTime);
+            player.play()?.catch(() => {});
+          });
+          player.load();
+        }
+      };
+
+      window.addEventListener('online', handleOnline);
+      // Store for cleanup
+      (player as any).__handleOnline = handleOnline;
+    }
+
+    // ─── MOBILE-SPECIFIC: Touch to play optimization ───
+    // On mobile, the first play is usually gated by a user gesture.
+    // We pre-warm the video element to minimize the delay.
+    if (isMobile && contentType !== 'youtube') {
+      player.one('play', () => {
+        // Once user initiates play, ensure we're loading aggressively
+        try {
+          const tech = player.tech({ IWillNotUseThisInPlugins: true });
+          if (tech && tech.el()) {
+            const videoElement = tech.el() as HTMLVideoElement;
+            videoElement.preload = 'auto';
+          }
+        } catch (e) {}
       });
     }
 
@@ -142,7 +326,13 @@ const UniversalPlayer = React.forwardRef<any, UniversalPlayerProps>(({
     initPlayer();
 
     return () => {
+      clearAllTimers();
+
       if (playerRef.current && !playerRef.current.isDisposed()) {
+        // Clean up online listener
+        if ((playerRef.current as any).__handleOnline) {
+          window.removeEventListener('online', (playerRef.current as any).__handleOnline);
+        }
         playerRef.current.dispose();
         playerRef.current = null;
       }
@@ -314,9 +504,9 @@ const UniversalPlayer = React.forwardRef<any, UniversalPlayerProps>(({
           line-height: 64px;
         }
 
-        /* ── Spinner ── */
+        /* ── HIDE default spinner — we use our own ── */
         .vjs-alfajr .vjs-loading-spinner {
-          border-color: #C5A059 !important;
+          display: none !important;
         }
 
         /* ── No outline ── */
@@ -328,6 +518,40 @@ const UniversalPlayer = React.forwardRef<any, UniversalPlayerProps>(({
       `}</style>
 
       <div ref={videoRef} className="w-full h-full" />
+
+      {/* ── Custom Buffering Overlay ── */}
+      {isBuffering && (
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/40 pointer-events-none">
+          {/* Animated spinner ring */}
+          <div className="relative w-14 h-14">
+            <svg className="w-14 h-14 animate-spin" viewBox="0 0 56 56" fill="none">
+              <circle
+                cx="28" cy="28" r="24"
+                stroke="rgba(255,255,255,0.15)"
+                strokeWidth="4"
+              />
+              <circle
+                cx="28" cy="28" r="24"
+                stroke="#C5A059"
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeDasharray="100 50"
+              />
+            </svg>
+          </div>
+          {/* Buffer percentage */}
+          {bufferProgress > 0 && bufferProgress < 100 && (
+            <p className="mt-3 text-white/80 text-xs font-semibold tracking-wide">
+              Memuat {bufferProgress}%
+            </p>
+          )}
+          {bufferProgress === 0 && (
+            <p className="mt-3 text-white/60 text-[11px] font-medium">
+              Menghubungkan...
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Watermark Overlay */}
       {watermark && user && (
