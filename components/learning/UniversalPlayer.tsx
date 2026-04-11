@@ -4,6 +4,7 @@ import React, { useEffect, useRef } from 'react';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
 import { useAuth } from '@/context/AuthContext';
+import { isMobileDevice } from '@/lib/security/mobileProtection';
 import toast from 'react-hot-toast';
 
 interface UniversalPlayerProps {
@@ -39,19 +40,31 @@ const UniversalPlayer = React.forwardRef<any, UniversalPlayerProps>(({
     videoEl.setAttribute('playsinline', 'true');
     videoRef.current.appendChild(videoEl);
 
+    const isMobile = isMobileDevice();
+    const isHls = src.includes('.m3u8');
     const sources =
       contentType === 'youtube'
         ? [{ src, type: 'video/youtube' }]
-        : [{ src, type: src.includes('.m3u8') ? 'application/x-mpegURL' : 'video/mp4' }];
+        : [{ src, type: isHls ? 'application/x-mpegURL' : 'video/mp4' }];
 
     const player = videojs(videoEl, {
       controls: true,
       autoplay: false,
-      preload: 'metadata',
+      preload: isMobile ? 'metadata' : 'auto',
       fluid: true,
       responsive: true,
       playsinline: true,
       aspectRatio: '16:9',
+      html5: {
+        vhs: {
+          overrideNative: !isMobile,
+          enableLowInitialPlaylist: true,
+          fastQualityChange: true,
+          goalBufferLength: isMobile ? 15 : 30, // Reduced for mobile
+          maxBufferLength: isMobile ? 30 : 60,  // Reduced for mobile
+          bufferLowWatermark: isMobile ? 3 : 5,
+        },
+      },
       sources,
       controlBar: {
         children: [
@@ -65,6 +78,8 @@ const UniversalPlayer = React.forwardRef<any, UniversalPlayerProps>(({
           'fullscreenToggle',
         ],
       },
+      // Error recovery logic
+      retryOnError: true,
     }, () => {
       // Player ready
       if (ref) {
@@ -74,6 +89,28 @@ const UniversalPlayer = React.forwardRef<any, UniversalPlayerProps>(({
     });
 
     playerRef.current = player;
+
+    // Handle Network Errors & Auto-retry
+    player.on('error', () => {
+      const error = player.error();
+      if (error && (error.code === 2 || error.code === 4)) {
+        console.log('Network error detected, attempting to recover...');
+        setTimeout(() => {
+          if (playerRef.current && !playerRef.current.isDisposed()) {
+            playerRef.current.src(sources);
+            playerRef.current.load();
+            playerRef.current.play()?.catch(() => {});
+          }
+        }, 2000);
+      }
+    });
+
+    // Smart Buffering for MP4
+    if (contentType === 'video-upload' && !isHls) {
+      player.on('waiting', () => {
+        console.log('Video is buffering...');
+      });
+    }
 
     player.on('ended', () => { if (onEnded) onEnded(); });
 
@@ -234,7 +271,7 @@ const UniversalPlayer = React.forwardRef<any, UniversalPlayerProps>(({
         }
 
         .vjs-alfajr .vjs-volume-level {
-          backgroun d: #C5A059 !important;
+          background: #C5A059 !important;
           border-radius: 3px;
         }
 
@@ -250,9 +287,7 @@ const UniversalPlayer = React.forwardRef<any, UniversalPlayerProps>(({
 
         /* ── Big play button — frosted white, bulat ── */
         .vjs-alfajr .vjs-big-play-button {
-          background: rgba(255,255,255,0.85) !important;
-          backdrop-filter: blur(6px);
-          -webkit-backdrop-filter: blur(6px);
+          background: rgba(255,255,255,0.95) !important;
           border: none !important;
           border-radius: 50% !important;
           width: 64px !important;
