@@ -21,6 +21,9 @@ import {
   BookOpen,
   Play,
   Lock,
+  Maximize,
+  Minimize,
+  RotateCw,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { MarkdownRenderer } from "@/components/shared/MarkdownRenderer";
@@ -53,6 +56,26 @@ export function LessonPlayerMobile({
   const [isUpdating, setIsUpdating] = useState(false);
   const [showLessonMenu, setShowLessonMenu] = useState(false);
   const [isLandscape, setIsLandscape] = useState(false);
+
+  const toggleOrientation = async () => {
+    try {
+      if (typeof window !== "undefined" && (window.screen as any).orientation) {
+        if (window.innerWidth < window.innerHeight) {
+          // Current is portrait, try to lock landscape
+          await (window.screen as any).orientation.lock("landscape");
+        } else {
+          // Current is landscape, try to lock portrait
+          await (window.screen as any).orientation.lock("portrait");
+        }
+      } else {
+        // Fallback for browsers that don't support orientation lock
+        toast.error("Gunakan rotasi layar otomatis pada perangkat Anda.");
+      }
+    } catch (error) {
+      console.error("Orientation lock failed:", error);
+      toast.error("Putar perangkat Anda untuk mengubah tampilan.");
+    }
+  };
 
   useEffect(() => {
     if (
@@ -205,7 +228,7 @@ export function LessonPlayerMobile({
           </div>
         ) : (
           /* Video: padded so rounded shadow is visible */
-          <div className="w-full px-3 pt-3 pb-0">
+          <div className={`w-full relative ${isLandscape ? "h-screen" : "px-3 pt-3 pb-0"}`}>
             <UniversalPlayer
               src={lesson.url}
               contentType={lesson.contentType as any}
@@ -218,6 +241,65 @@ export function LessonPlayerMobile({
               watermark={lesson.watermark}
               disableSeeking={false}
             />
+
+            {/* Float Toggle Orientation Button */}
+            {(lesson.contentType === "youtube" || lesson.contentType === "video-upload") && (
+              <button
+                onClick={toggleOrientation}
+                className={`absolute z-30 flex items-center justify-center bg-black/40 hover:bg-black/60 backdrop-blur-sm text-white rounded-full transition-all border border-white/20 shadow-lg ${
+                  isLandscape 
+                    ? "top-4 right-4 w-10 h-10" 
+                    : "top-6 right-6 w-9 h-9"
+                }`}
+                title={isLandscape ? "Mode Potret" : "Mode Lanskap"}
+              >
+                {isLandscape ? <RotateCw size={18} /> : <RotateCw size={16} />}
+              </button>
+            )}
+
+            {/* Landscape Overlay Controls */}
+            {isLandscape && (
+              <div className="absolute inset-x-0 bottom-0 z-30 p-4 bg-gradient-to-t from-black/80 to-transparent flex items-center justify-between pointer-events-none">
+                <div className="flex items-center gap-4 pointer-events-auto">
+                   <button
+                    onClick={() => {
+                      if (prevLesson) router.push(`/learning/course/${courseId}/lesson/${prevLesson.id}`);
+                    }}
+                    disabled={!prevLesson}
+                    className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-white disabled:opacity-30"
+                  >
+                    <ChevronLeft size={24} />
+                  </button>
+                  <div className="text-white">
+                    <h4 className="text-xs font-bold line-clamp-1">{lesson.title}</h4>
+                    <p className="text-[10px] opacity-70">Sedang diputar</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 pointer-events-auto">
+                  <button
+                    onClick={handleMarkComplete}
+                    disabled={!isVideoCompleted || isUpdating}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                      isVideoCompleted && !isUpdating
+                        ? "bg-[#C5A059] text-white"
+                        : "bg-white/10 text-white/50 cursor-not-allowed"
+                    }`}
+                  >
+                    {isUpdating ? "..." : nextLesson ? "Lanjut →" : "Selesai ✓"}
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (nextLesson) router.push(`/learning/course/${courseId}/lesson/${nextLesson.id}`);
+                    }}
+                    disabled={!nextLesson}
+                    className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-white disabled:opacity-30"
+                  >
+                    <ChevronRight size={24} />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
