@@ -442,10 +442,13 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Matikan protection saat modal upload atau preview terbuka
+  // Matikan protection saat modal upload terbuka (untuk proses edit kurikulum)
+  // Namun tetap aktifkan saat Preview Mode (showPreview) agar konten tetap terlindungi
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      if (showModal || showPreview) {
+      // Hanya matikan protection jika showModal aktif (sedang edit kurikulum)
+      // Jika showPreview aktif, protection tetap menyala (false)
+      if (showModal) {
         window.disableScreenProtection = true;
       } else {
         window.disableScreenProtection = false;
