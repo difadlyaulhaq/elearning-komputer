@@ -79,9 +79,9 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
     }
   }, [videoElementRef]);
 
-  const hideVideoSynchronously = useCallback(() => {
+  const hideVideoSynchronously = useCallback((keepFullscreen: boolean = false) => {
     if (forceDisableAllProtections) return;
-    if (typeof document !== 'undefined') {
+    if (typeof document !== 'undefined' && !keepFullscreen) {
       if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
     }
 
@@ -152,12 +152,13 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
     if (forceDisableAllProtections || !enableBlurOnFocusLoss) return;
     if (typeof window !== 'undefined' && (window.disableScreenProtection || window.isPickingFile)) return;
 
+    // Immediately trigger protection on blur or hidden
     if (document.hidden || !document.hasFocus()) {
       if (isViolationRef.current) return;
       hideVideoSynchronously();
       setIsBlurred(true);
       setViolationType('blur');
-      setCountdown(5);
+      // No countdown yet while blurred, wait until focus returns
     }
   }, [enableBlurOnFocusLoss, hideVideoSynchronously, forceDisableAllProtections]);
 
@@ -181,33 +182,39 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
       coolDownTimerRef.current = null;
     }
 
+    // When returning from blur, ALWAYS start a countdown penalty
     if (isBlurred && violationType === 'blur') {
       setIsBlurred(false);
       setIsCoolDownActive(true);
-      startCountdown(5);
+      startCountdown(5); // 5 seconds delay as requested
       return;
     }
 
-    setIsBlurred(false);
-    setIsCoolDownActive(false);
-    setViolationType(null);
-    if (countdownIntervalRef.current) {
-      clearInterval(countdownIntervalRef.current);
-      countdownIntervalRef.current = null;
-    }
-    
+    // Aggressive re-check: even if focus seems to return, verify it
     blurDebounceRef.current = setTimeout(() => {
       if (document.hidden || !document.hasFocus()) {
         setIsBlurred(true);
         setViolationType('blur');
-        setCountdown(5);
+        setIsCoolDownActive(true);
         startCountdown(5);
-      } else {
-        setCountdown(0);
-        showVideoSynchronously();
       }
-    }, 500); 
+    }, 100); 
   }, [enableBlurOnFocusLoss, startCountdown, pauseVideo, isViolation, isBlurred, violationType, showVideoSynchronously, forceDisableAllProtections]);
+
+  // Aggressive Looping Check
+  useEffect(() => {
+    if (forceDisableAllProtections || !enableBlurOnFocusLoss) return;
+
+    const interval = setInterval(() => {
+      if (document.hidden || !document.hasFocus()) {
+        if (!isBlurred && !isViolation && !isCoolDownActive) {
+          handleBlur();
+        }
+      }
+    }, 500); // Check every 500ms
+
+    return () => clearInterval(interval);
+  }, [handleBlur, isBlurred, isViolation, isCoolDownActive, forceDisableAllProtections, enableBlurOnFocusLoss]);
 
   // Mobile gestures detection - Still registered for mobile web if not blocked by skipWebListeners
   useEffect(() => {
@@ -242,44 +249,229 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
     }
   }, [skipWebListeners, isMobile, startCountdown, onScreenshotAttempt, secureFetch, hideVideoSynchronously, polluteClipboard, contentTitle]);
 
-  // Keyboard detection - CRITICAL for Desktop Warning
+  // === AGGRESSIVE KEYBOARD SCREENSHOT DETECTION (Desktop) ===
+  // Intercepts ALL known screenshot shortcuts across Windows/Mac/Linux
+  // Triggers IMMEDIATELY: hide video -> block event -> violation -> log -> pollute clipboard
   useEffect(() => {
     if (skipWebListeners) return;
     
+    // Aggressive continuous clipboard pollution during violation
+    let clipboardPollutionInterval: NodeJS.Timeout | null = null;
+    const startAggressiveClipboardPollution = () => {
+      if (clipboardPollutionInterval) clearInterval(clipboardPollutionInterval);
+      // Immediately pollute
+      polluteClipboard();
+      // Then keep polluting every 200ms for 12 seconds (covers 10s countdown + buffer)
+      let pollCount = 0;
+      clipboardPollutionInterval = setInterval(() => {
+        try {
+          if (typeof navigator !== 'undefined' && navigator.clipboard) {
+            navigator.clipboard.writeText('⚠️ ALFAJR SECURITY: Pelanggaran terdeteksi! Konten ini dilindungi hak cipta eksklusif. Screenshot/rekaman layar DILARANG KERAS.');
+          }
+          // Also try to clear via execCommand as fallback
+          const textarea = document.createElement('textarea');
+          textarea.value = '⚠️ KONTEN DILINDUNGI - ALFAJR E-LEARNING';
+          textarea.style.position = 'fixed';
+          textarea.style.left = '-9999px';
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textarea);
+        } catch (e) {}
+        pollCount++;
+        if (pollCount >= 60) { // 60 * 200ms = 12 seconds
+          if (clipboardPollutionInterval) clearInterval(clipboardPollutionInterval);
+        }
+      }, 200);
+    };
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!enableKeyboardBlock || (typeof window !== 'undefined' && window.disableScreenProtection)) return;
 
       let isScreenshotAttempt = false;
-      const isDevToolsShortcut = e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) || (e.metaKey && e.altKey && ['I', 'J', 'C'].includes(e.key.toUpperCase()));
+      let detectedShortcut = '';
+      
+      const key = e.key.toUpperCase();
+      const code = e.code || '';
 
-      // Enhanced Screenshot Shortcuts: 
-      // 1. PrintScreen (Keyboard key)
-      // 2. Win + Shift + S (Windows Snipping Tool) - metaKey + shiftKey + S
-      // 3. Cmd + Shift + 4 or 3 or 5 (Mac Screenshot) - metaKey + shiftKey + Number
-      const isMacScreenshot = e.metaKey && e.shiftKey && ['3', '4', '5'].includes(e.key);
-      const isWinScreenshot = e.metaKey && e.shiftKey && e.key.toUpperCase() === 'S';
-
-      if (e.key === 'PrintScreen' || e.keyCode === 44 || isWinScreenshot || isMacScreenshot || (isDevToolsShortcut && enableDevToolsDetection)) {
+      // ─── PrintScreen variants (ALL platforms) ───
+      const isPrintScreen = e.key === 'PrintScreen' || e.keyCode === 44 || code === 'PrintScreen';
+      if (isPrintScreen) {
         isScreenshotAttempt = true;
+        detectedShortcut = e.altKey ? 'Alt+PrintScreen' : e.metaKey ? 'Win+PrintScreen' : e.ctrlKey ? 'Ctrl+PrintScreen' : 'PrintScreen';
       }
 
+      // ─── Windows Screenshot Shortcuts ───
+      // Win+Shift+S (Snipping Tool / Snip & Sketch)
+      if ((e.metaKey || e.getModifierState?.('OS') || e.getModifierState?.('Meta')) && e.shiftKey && key === 'S') {
+        isScreenshotAttempt = true;
+        detectedShortcut = 'Win+Shift+S (Snipping Tool)';
+      }
+      // Win+Shift+R (possible screen recording / Xbox Game Bar)
+      if ((e.metaKey || e.getModifierState?.('OS')) && e.shiftKey && key === 'R') {
+        isScreenshotAttempt = true;
+        detectedShortcut = 'Win+Shift+R (Recording)';
+      }
+      // Ctrl+Shift+S (various snipping tools)
+      if (e.ctrlKey && e.shiftKey && key === 'S') {
+        isScreenshotAttempt = true;
+        detectedShortcut = 'Ctrl+Shift+S (Snipping)';
+      }
+      // Win+G (Xbox Game Bar)
+      if ((e.metaKey || e.getModifierState?.('OS')) && key === 'G') {
+        isScreenshotAttempt = true;
+        detectedShortcut = 'Win+G (Xbox Game Bar)';
+      }
+      // Win+Alt+PrintScreen (Xbox Game Bar Screenshot)
+      if ((e.metaKey || e.getModifierState?.('OS')) && e.altKey && isPrintScreen) {
+        isScreenshotAttempt = true;
+        detectedShortcut = 'Win+Alt+PrintScreen (Game Bar)';
+      }
+      // Win+Alt+R (Xbox Game Bar Record)
+      if ((e.metaKey || e.getModifierState?.('OS')) && e.altKey && key === 'R') {
+        isScreenshotAttempt = true;
+        detectedShortcut = 'Win+Alt+R (Game Bar Record)';
+      }
+
+      // ─── macOS Screenshot Shortcuts ───
+      // Cmd+Shift+3 (full screen), Cmd+Shift+4 (selection), Cmd+Shift+5 (screenshot panel)
+      if (e.metaKey && e.shiftKey && ['3', '4', '5'].includes(e.key)) {
+        isScreenshotAttempt = true;
+        detectedShortcut = `Cmd+Shift+${e.key} (macOS Screenshot)`;
+      }
+      // Cmd+Shift+6 (Touch Bar screenshot)
+      if (e.metaKey && e.shiftKey && e.key === '6') {
+        isScreenshotAttempt = true;
+        detectedShortcut = 'Cmd+Shift+6 (Touch Bar)';
+      }
+      // Cmd+Ctrl+Shift+3/4 (screenshot to clipboard on mac)
+      if (e.metaKey && e.ctrlKey && e.shiftKey && ['3', '4'].includes(e.key)) {
+        isScreenshotAttempt = true;
+        detectedShortcut = `Cmd+Ctrl+Shift+${e.key} (macOS clipboard)`;
+      }
+
+      // ─── Linux Screenshot Shortcuts ───
+      // Ctrl+Shift+Print (common in GNOME)
+      if (e.ctrlKey && e.shiftKey && isPrintScreen) {
+        isScreenshotAttempt = true;
+        detectedShortcut = 'Ctrl+Shift+PrintScreen (Linux)';
+      }
+
+      // ─── DevTools Shortcuts (if enabled) ───
+      if (enableDevToolsDetection) {
+        const isDevToolsShortcut = e.key === 'F12' || 
+          (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(key)) || 
+          (e.metaKey && e.altKey && ['I', 'J', 'C'].includes(key));
+        if (isDevToolsShortcut) {
+          isScreenshotAttempt = true;
+          detectedShortcut = `DevTools (${e.key})`;
+        }
+      }
+
+      // ─── TRIGGER AGGRESSIVE PROTECTION ───
       if (isScreenshotAttempt) {
-        hideVideoSynchronously();
+        // STEP 1: IMMEDIATELY hide video content (synchronous, fastest possible)
+        // Pass true to keep the browser in fullscreen mode so the overlay shows ON TOP
+        hideVideoSynchronously(true);
+        
+        // STEP 2: Block the event completely
         e.preventDefault();
         e.stopPropagation();
+        e.stopImmediatePropagation();
+        
+        // STEP 3: Set violation state
+        setIsViolation(true);
+        isViolationRef.current = true;
+        setViolationType('screenshot');
+        
+        // STEP 4: Clear any existing countdowns and start a fresh 10s penalty
+        if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+        startCountdown(10);
+        
+        // STEP 5: Start aggressive continuous clipboard pollution
+        startAggressiveClipboardPollution();
+        
+        // STEP 5.5: Dispatch custom event for in-player overlay (works even in fullscreen)
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('alfajr-screenshot-violation', { detail: { countdown: 10 } }));
+        }
+        
+        // STEP 6: Fire the callback (for UI warning banner)
+        onScreenshotAttempt?.();
+        
+        // STEP 7: DIRECTLY send security log to API (guaranteed logging, not relying only on callback)
+        secureFetch('/api/security/log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'screenshot_attempt',
+            page: typeof window !== 'undefined' ? window.location.pathname : '',
+            details: {
+              userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+              contentTitle,
+              shortcut: detectedShortcut,
+              platform: typeof navigator !== 'undefined' ? navigator.platform : '',
+              timestamp: new Date().toISOString(),
+            },
+          }),
+        }).catch(() => {});
+      }
+    };
+
+    // Also intercept keyup for PrintScreen (some browsers fire it on keyup only)
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (!enableKeyboardBlock || (typeof window !== 'undefined' && window.disableScreenProtection)) return;
+      
+      const isPrintScreen = e.key === 'PrintScreen' || e.keyCode === 44 || (e.code || '') === 'PrintScreen';
+      if (isPrintScreen && !isViolationRef.current) {
+        hideVideoSynchronously(true);
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
         
         setIsViolation(true);
         isViolationRef.current = true;
         setViolationType('screenshot');
-        startCountdown(10); // Maintain 10 second countdown
-        polluteClipboard();
+        
+        if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+        startCountdown(10);
+        startAggressiveClipboardPollution();
+        
+        // Dispatch custom event for in-player overlay 
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('alfajr-screenshot-violation', { detail: { countdown: 10 } }));
+        }
+        
         onScreenshotAttempt?.();
+        
+        secureFetch('/api/security/log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'screenshot_attempt',
+            page: typeof window !== 'undefined' ? window.location.pathname : '',
+            details: {
+              userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+              contentTitle,
+              shortcut: 'PrintScreen (keyup)',
+              platform: typeof navigator !== 'undefined' ? navigator.platform : '',
+              timestamp: new Date().toISOString(),
+            },
+          }),
+        }).catch(() => {});
       }
     };
 
+    // Register with capture phase (true) to intercept BEFORE anything else
     window.addEventListener('keydown', handleKeyDown, true);
-    return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [skipWebListeners, enableKeyboardBlock, enableDevToolsDetection, onScreenshotAttempt, hideVideoSynchronously, startCountdown, polluteClipboard]);
+    window.addEventListener('keyup', handleKeyUp, true);
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown, true);
+      window.removeEventListener('keyup', handleKeyUp, true);
+      if (clipboardPollutionInterval) clearInterval(clipboardPollutionInterval);
+    };
+  }, [skipWebListeners, enableKeyboardBlock, enableDevToolsDetection, onScreenshotAttempt, hideVideoSynchronously, startCountdown, polluteClipboard, secureFetch, contentTitle]);
 
   // Blur & Focus detection
   useEffect(() => {

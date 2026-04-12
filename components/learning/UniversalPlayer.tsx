@@ -98,6 +98,151 @@ const FullscreenWatermark: React.FC<{ user: any }> = ({ user }) => {
   );
 };
 
+// ─── Desktop In-Player Screenshot Violation Overlay ───────────────────────
+// This overlay renders INSIDE the video container div, ensuring it works
+// even when the video is in fullscreen mode. It listens for the custom
+// 'alfajr-screenshot-violation' event dispatched by useScreenProtection.
+const DesktopViolationOverlay: React.FC = () => {
+  const [isActive, setIsActive] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const countdownRef = useRef<NodeJS.Timeout | null>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const isMobile = isMobileDevice();
+
+  useEffect(() => {
+    // Only on desktop
+    if (isMobile) return;
+
+    const handleViolation = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      const seconds = detail?.countdown || 10;
+
+      // Activate overlay
+      setIsActive(true);
+      setCountdown(seconds);
+
+      // Clear any existing countdown
+      if (countdownRef.current) clearInterval(countdownRef.current);
+
+      let timeLeft = seconds;
+      countdownRef.current = setInterval(() => {
+        timeLeft -= 1;
+        setCountdown(timeLeft);
+        if (timeLeft <= 0) {
+          if (countdownRef.current) clearInterval(countdownRef.current);
+          countdownRef.current = null;
+          setIsActive(false);
+        }
+      }, 1000);
+    };
+
+    window.addEventListener('alfajr-screenshot-violation', handleViolation);
+    return () => {
+      window.removeEventListener('alfajr-screenshot-violation', handleViolation);
+      if (countdownRef.current) clearInterval(countdownRef.current);
+    };
+  }, [isMobile]);
+
+  useEffect(() => {
+    if (isActive && dialogRef.current && !dialogRef.current.open) {
+      dialogRef.current.showModal();
+    } else if (!isActive && dialogRef.current && dialogRef.current.open) {
+      dialogRef.current.close();
+    }
+  }, [isActive]);
+
+  return (
+    <dialog
+      ref={dialogRef}
+      className={`m-0 p-0 w-screen h-screen max-w-none max-h-none border-none bg-black flex-col items-center justify-center text-white select-none backdrop:bg-black backdrop-blur-3xl ${isActive ? 'flex' : 'hidden'}`}
+      style={{ zIndex: 2147483647 }}
+      onCancel={(e) => e.preventDefault()} // prevent dismissing with Escape
+    >
+      {/* Top Warning Banner */}
+      <div 
+        className="absolute top-6 left-1/2 -translate-x-1/2 px-5 py-2 rounded-xl flex items-center gap-2.5 font-bold text-sm select-none"
+        style={{
+          background: '#DC2626',
+          boxShadow: '0 0 25px rgba(220, 38, 38, 0.6)',
+          animation: 'alfajr-bounce-short 2s ease-in-out infinite',
+        }}
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+        <span>⚠️ Screenshot tidak diperbolehkan!</span>
+      </div>
+
+      {/* Center Content */}
+      <div className="flex flex-col items-center text-center px-4">
+        {/* Shield Icon */}
+        <svg 
+          width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
+          style={{ marginBottom: '20px', filter: 'drop-shadow(0 0 15px rgba(239, 68, 68, 0.4))' }}
+        >
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+
+        <h2 
+          className="font-bold tracking-tight uppercase text-white select-none"
+          style={{ fontSize: 'clamp(18px, 4vw, 30px)', marginBottom: '8px' }}
+        >
+          KEAMANAN TERDETEKSI
+        </h2>
+
+        <p 
+          className="text-gray-400 select-none"
+          style={{ fontSize: 'clamp(12px, 2vw, 16px)', marginBottom: '28px', maxWidth: '400px' }}
+        >
+          Percobaan screenshot atau rekam layar terdeteksi. Konten telah diamankan.
+        </p>
+
+        {/* Countdown Circle */}
+        <div className="relative flex items-center justify-center">
+          <div 
+            className="rounded-full flex items-center justify-center"
+            style={{
+              width: 'clamp(64px, 12vw, 96px)',
+              height: 'clamp(64px, 12vw, 96px)',
+              border: '3px solid rgba(239, 68, 68, 0.2)',
+            }}
+          >
+            {/* Spinning border */}
+            <div
+              className="absolute rounded-full"
+              style={{
+                inset: 0,
+                border: '3px solid #EF4444',
+                borderTopColor: 'transparent',
+                animation: 'alfajr-spin-slow 2s linear infinite',
+                borderRadius: '9999px',
+              }}
+            />
+            <span 
+              className="font-bold text-white select-none"
+              style={{ fontSize: 'clamp(24px, 5vw, 40px)' }}
+            >
+              {countdown > 0 ? countdown : '!'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Inline keyframes for fullscreen isolation */}
+      <style>{`
+        @keyframes alfajr-spin-slow {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        @keyframes alfajr-bounce-short {
+          0%, 100% { transform: translateX(-50%) translateY(0); }
+          50% { transform: translateX(-50%) translateY(-5px); }
+        }
+      `}</style>
+    </dialog>
+  );
+};
+
 // ─── YouTube Iframe Player ────────────────────────────────────────────────────
 const YouTubePlayer: React.FC<{
   src: string;
@@ -155,6 +300,9 @@ const YouTubePlayer: React.FC<{
           </div>
         </div>
       )}
+
+      {/* ── Desktop Screenshot Violation Overlay (works in fullscreen too) ── */}
+      <DesktopViolationOverlay />
     </div>
   );
 };
@@ -447,6 +595,9 @@ const NativeVideoPlayer: React.FC<{
           </div>
         </div>
       )}
+
+      {/* ── Desktop Screenshot Violation Overlay (works in fullscreen too) ── */}
+      <DesktopViolationOverlay />
     </div>
   );
 };

@@ -17,6 +17,8 @@ interface LogEntry {
     contentTitle?: string;
     userAgent?: string;
     fullscreen?: boolean;
+    shortcut?: string;
+    platform?: string;
     [key: string]: any;
   };
 }
@@ -106,6 +108,16 @@ const SecurityLogPage = () => {
         };
         return <span>{labels[log.action] || log.action}</span>;
       }
+    },
+    {
+      header: 'Shortcut',
+      accessor: 'shortcut',
+      icon: AlertCircle,
+      render: (log: LogEntry) => (
+        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+          {log.details?.shortcut || '-'}
+        </span>
+      )
     },
     { 
       header: 'Konten/Video', 

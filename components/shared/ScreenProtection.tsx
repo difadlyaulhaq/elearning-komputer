@@ -100,20 +100,12 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
     videoElementRef,
     authFetch,
     onScreenshotAttempt: () => {
+      // UI warning only — security logging is handled directly in the hook
       if (showWarningOnAttempt) {
         setWarningMessage('⚠️ Screenshot tidak diperbolehkan!');
         setShowWarning(true);
         setTimeout(() => setShowWarning(false), 3000);
       }
-      authFetch?.('/api/security/log', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'screenshot_attempt',
-          page: window.location.pathname,
-          details: { userAgent: navigator.userAgent, contentTitle },
-        }),
-      }).catch(() => {});
     },
   });
 
@@ -164,6 +156,13 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
           0%, 100% { opacity: 0.2; }
           50% { opacity: 0.5; }
         }
+        @keyframes spin-slow {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .animate-spin-slow {
+          animation: spin-slow 2s linear infinite;
+        }
         .watermark-text {
           animation: float-watermark 15s ease-in-out infinite, pulse-opacity 4s ease-in-out infinite;
           pointer-events: none;
@@ -200,21 +199,59 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
       )}
 
       {!forceDisableAllProtections && (isViolation || (finalEnableBlur && (isBlurred || isCoolDownActive)) || (finalEnableDevTools && violationType === 'devtools')) && ( 
-        <div className="fixed inset-0 z-[999999] bg-black flex items-center justify-center text-white p-4 text-center">
-          <div className="max-w-xl">
-            <Shield size={64} className="mx-auto text-red-500 mb-4" />
-            <h2 className="text-2xl font-bold mb-3 uppercase">Keamanan Terdeteksi</h2>
-            <p className="text-gray-300">Konten diamankan untuk perlindungan hak cipta.</p>
-            {countdown > 0 && (
-              <div className="mt-6">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full border-4 border-red-500">
-                  <span className="text-3xl font-bold">{countdown}</span>
-                </div>
+        <div className="fixed inset-0 z-[999999] bg-black flex flex-col items-center justify-center text-white p-4 text-center select-none">
+          {/* Top Warning Banner for Screenshot Violation */}
+          {violationType === 'screenshot' && (
+            <div className="absolute top-8 bg-red-600 px-6 py-2.5 rounded-xl shadow-[0_0_20px_rgba(220,38,38,0.5)] flex items-center gap-3 font-bold animate-bounce-short">
+              <Shield size={20} className="text-white" fill="white" />
+              <span className="flex items-center gap-2">
+                <span className="text-xl">⚠️</span> Screenshot tidak diperbolehkan!
+              </span>
+            </div>
+          )}
+
+          <div className="max-w-xl flex flex-col items-center">
+            <Shield 
+              size={80} 
+              className={violationType === 'screenshot' ? "text-red-500 mb-6 drop-shadow-[0_0_15px_rgba(239,68,68,0.4)]" : "text-[#d4af37] mb-6 drop-shadow-[0_0_15px_rgba(212,175,55,0.3)]"} 
+              strokeWidth={1.5} 
+            />
+            
+            <h2 className="text-3xl font-bold mb-2 tracking-tight uppercase">
+              {violationType === 'screenshot' ? "Keamanan Terdeteksi" : "Konten Terlindungi"}
+            </h2>
+            
+            <p className="text-gray-400 text-lg mb-8 max-w-md">
+              {violationType === 'screenshot' 
+                ? "Percobaan screenshot atau rekam layar terdeteksi. Konten telah diamankan." 
+                : "Menyiapkan konten dengan aman..."}
+            </p>
+            
+            <div className="relative flex items-center justify-center">
+              <div className={`w-24 h-24 rounded-full border-[3px] flex items-center justify-center ${
+                violationType === 'screenshot' ? "border-red-500/20" : "border-[#d4af37]/20"
+              }`}>
+                <div className={`absolute inset-0 rounded-full border-[3px] border-t-transparent animate-spin-slow ${
+                  violationType === 'screenshot' ? "border-red-500" : "border-[#d4af37]"
+                }`}></div>
+                <span className={`text-4xl font-bold ${violationType === 'screenshot' ? "text-white" : "text-white"}`}>
+                  {countdown > 0 ? countdown : "!"}
+                </span>
               </div>
-            )}
+            </div>
           </div>
         </div>
       )}
+
+      <style jsx global>{`
+        @keyframes bounce-short {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-5px); }
+        }
+        .animate-bounce-short {
+          animation: bounce-short 2s ease-in-out infinite;
+        }
+      `}</style>
 
       {!forceDisableAllProtections && showWarning && (
         <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[999999] bg-red-600 text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 font-bold">
