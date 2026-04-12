@@ -9,6 +9,7 @@ import { Course, Section, Lesson, Category, User, Division } from '@/types';
 import UniversalPlayer from '../learning/UniversalPlayer';
 
 import { FileUploader } from '@/components/admin/FileUploader';
+import { VideoCompressorUploader } from '@/components/admin/VideoCompressorUploader';
 
 // Helper for YouTube ID
 const getYouTubeId = (url: string) => {
@@ -54,6 +55,7 @@ export const CoursePreviewModal: React.FC<{
                src={previewData.coverImage || "/logo-alfajr.png"} 
                className="w-full h-full object-cover"
                alt="Cover"
+               crossOrigin="anonymous"
                onError={(e) => { e.currentTarget.src = "/logo-alfajr.png"; }}
              />
              
@@ -64,6 +66,7 @@ export const CoursePreviewModal: React.FC<{
                    src={previewData.thumbnail} 
                    className="w-full h-full object-cover"
                    alt="Thumbnail"
+                   crossOrigin="anonymous"
                  />
                  <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
                     <span className="text-[8px] text-white font-bold bg-black/50 px-1 rounded">Thumbnail</span>
@@ -946,6 +949,8 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                   src={course.thumbnail || course.coverImage || '/logo-alfajr.png'} 
                   alt={course.title} 
                   className="w-full h-full object-cover" 
+                  crossOrigin="anonymous"
+                  onError={(e) => { e.currentTarget.src = "/logo-alfajr.png"; }}
                 />
                 <span className={`absolute top-3 left-3 px-2 py-1 rounded text-xs font-bold ${course.status === 'active' ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'}`}>
                   {course.status === 'active' ? 'Aktif' : 'Draft'}
@@ -1347,13 +1352,21 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                                                                                                                       onChange={e => setTempLesson({...tempLesson, duration: e.target.value})}
                                                                                                                       disabled={isLoading}
                                                                                                                     />
-                                                                                                                    <FileUploader 
-                                                                                                                      folder={tempLesson.contentType === 'video-upload' ? 'videos' : tempLesson.contentType === 'image-upload' ? 'images' : 'files'}
-                                                                                                                      accept={tempLesson.contentType === 'video-upload' ? 'video/*' : tempLesson.contentType === 'image-upload' ? 'image/*' : '*/*'}
-                                                                                                                      label={`Upload ${tempLesson.contentType === 'video-upload' ? 'Video' : tempLesson.contentType === 'image-upload' ? 'Gambar' : 'File'}`}
-                                                                                                                      onIsUploadingChange={setIsUploadingLesson}
-                                                                                                                      onUploadSuccess={(url) => setTempLesson(prev => ({ ...prev, url }))}
-                                                                                                                    />
+                                                                                                                    {tempLesson.contentType === 'video-upload' ? (
+                                                                                                                      <VideoCompressorUploader 
+                                                                                                                        folder="videos"
+                                                                                                                        onIsUploadingChange={setIsUploadingLesson}
+                                                                                                                        onUploadSuccess={(url) => setTempLesson(prev => ({ ...prev, url }))}
+                                                                                                                      />
+                                                                                                                    ) : (
+                                                                                                                      <FileUploader 
+                                                                                                                        folder={tempLesson.contentType === 'image-upload' ? 'images' : 'files'}
+                                                                                                                        accept={tempLesson.contentType === 'image-upload' ? 'image/*' : '*/*'}
+                                                                                                                        label={`Upload ${tempLesson.contentType === 'image-upload' ? 'Gambar' : 'File'}`}
+                                                                                                                        onIsUploadingChange={setIsUploadingLesson}
+                                                                                                                        onUploadSuccess={(url) => setTempLesson(prev => ({ ...prev, url }))}
+                                                                                                                      />
+                                                                                                                    )}
                                                                                                                     {tempLesson.url && (
                                                                                                                       <div className="p-2 bg-green-50 rounded-lg border border-green-200">
                                                                                                                         <p className="text-xs text-green-700 font-medium">Berhasil diunggah!</p>

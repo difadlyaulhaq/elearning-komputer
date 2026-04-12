@@ -125,7 +125,7 @@ export function LessonPlayerMobile({
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F5F5] flex flex-col">
+    <div className="min-h-screen bg-[#F8F9FA] flex flex-col">
       {/* Header */}
       {!isLandscape && (
         <header className="bg-white border-b border-gray-100 px-4 py-3 sticky top-0 z-20 flex items-center gap-3">
@@ -154,7 +154,7 @@ export function LessonPlayerMobile({
 
       {/* Video / Content Area */}
       <div
-        className={`bg-[#F5F5F5] w-full ${
+        className={`bg-[#F8F9FA] w-full ${
           isLandscape ? "flex-1 flex items-center justify-center" : ""
         }`}
       >
