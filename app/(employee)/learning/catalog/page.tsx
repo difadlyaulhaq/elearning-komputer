@@ -15,7 +15,13 @@ const CourseCard: React.FC<{ course: Course; progress?: Progress }> = ({ course,
     <Link href={`/learning/course/${course.id}`} key={course.id}>
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow group h-full flex flex-col">
         <div className="h-40 bg-gray-200 relative">
-          <img src={course.thumbnail || course.coverImage || '/logo-alfajr.png'} alt={course.title} className="w-full h-full object-cover" />
+          <img 
+            src={course.thumbnail || course.coverImage || '/logo-alfajr.png'} 
+            alt={course.title} 
+            className="w-full h-full object-cover" 
+            crossOrigin="anonymous"
+            onError={(e) => { e.currentTarget.src = "/logo-alfajr.png"; }}
+          />
           <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-[#C5A059] shadow-sm">
             {course.categoryName}
           </div>
