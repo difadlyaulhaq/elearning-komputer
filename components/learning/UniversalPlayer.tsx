@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import ReactDOM from 'react-dom';
 import { useAuth } from '@/context/AuthContext';
 import { isMobileDevice } from '@/lib/security/mobileProtection';
 import toast from 'react-hot-toast';
@@ -50,6 +51,52 @@ interface UniversalPlayerProps {
   watermark?: boolean;
   disableSeeking?: boolean;
 }
+
+// ─── Fullscreen Portal Watermark ──────────────────────────────────────────
+const FullscreenWatermark: React.FC<{ user: any }> = ({ user }) => {
+  const [fullscreenElement, setFullscreenElement] = useState<Element | null>(null);
+
+  useEffect(() => {
+    const handleFsChange = () => {
+      setFullscreenElement(document.fullscreenElement || (document as any).webkitFullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    document.addEventListener('webkitfullscreenchange', handleFsChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFsChange);
+      document.removeEventListener('webkitfullscreenchange', handleFsChange);
+    };
+  }, []);
+
+  if (!fullscreenElement || !user) return null;
+
+  // We portal the watermark into the fullscreen element (if it's not the video tag, 
+  // as video tags can't have children. But if it's the div, it works).
+  // If it's the video tag, we can't easily show overlays on top in some browsers.
+  return ReactDOM.createPortal(
+    <div className="absolute inset-0 pointer-events-none z-[9999] overflow-hidden select-none touch-none">
+       <div
+        className="absolute text-white/10 font-bold text-sm whitespace-nowrap mix-blend-overlay"
+        style={{ top: '15%', left: '10%', transform: 'rotate(-15deg)' }}
+      >
+        {user.email}
+      </div>
+      <div
+        className="absolute text-white/8 font-bold text-xs whitespace-nowrap mix-blend-overlay"
+        style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(-45deg)' }}
+      >
+        {user.email}
+      </div>
+      <div
+        className="absolute text-white/5 font-bold text-[10px] whitespace-nowrap mix-blend-overlay"
+        style={{ bottom: '15%', right: '10%', transform: 'rotate(-10deg)' }}
+      >
+        PROPERTY OF ALFAJR • {user.name}
+      </div>
+    </div>,
+    fullscreenElement
+  );
+};
 
 // ─── YouTube Iframe Player ────────────────────────────────────────────────────
 const YouTubePlayer: React.FC<{
@@ -428,14 +475,17 @@ const UniversalPlayer = React.forwardRef<any, UniversalPlayerProps>(({
   }
 
   return (
-    <NativeVideoPlayer
-      src={src}
-      onEnded={onEnded}
-      onTimeUpdate={onTimeUpdate}
-      watermark={watermark}
-      disableSeeking={disableSeeking}
-      user={user}
-    />
+    <>
+      {watermark && <FullscreenWatermark user={user} />}
+      <NativeVideoPlayer
+        src={src}
+        onEnded={onEnded}
+        onTimeUpdate={onTimeUpdate}
+        watermark={watermark}
+        disableSeeking={disableSeeking}
+        user={user}
+      />
+    </>
   );
 });
 

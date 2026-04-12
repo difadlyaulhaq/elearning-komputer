@@ -26,7 +26,7 @@ import {
   Smartphone,
   Monitor,
 } from "lucide-react";
-import toast from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 import { MarkdownRenderer } from "@/components/shared/MarkdownRenderer";
 import UniversalPlayer from "./UniversalPlayer";
 import { LessonSkeleton } from "./LessonSkeleton";
@@ -318,6 +318,9 @@ export function LessonPlayerMobile({
                   : "px-3 pt-3 pb-0"
             }`}
           >
+            {/* Local Toaster for Fullscreen notifications */}
+            <Toaster position="top-center" />
+            
             <UniversalPlayer
               src={lesson.url}
               contentType={lesson.contentType as any}
