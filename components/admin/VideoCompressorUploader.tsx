@@ -263,9 +263,7 @@ export const VideoCompressorUploader: React.FC<VideoCompressorUploaderProps> = (
                 <span className="px-2 py-1 bg-blue-50 text-blue-600 text-[10px] font-bold rounded uppercase tracking-wider border border-blue-100 flex items-center gap-1">
                   <Sparkles size={10} /> Auto Compress
                 </span>
-                <span className="px-2 py-1 bg-green-50 text-green-600 text-[10px] font-bold rounded uppercase tracking-wider border border-green-100 flex items-center gap-1">
-                  <CheckCircle2 size={10} /> Fast Start Ready
-                </span>
+                
               </div>
             </>
           )}

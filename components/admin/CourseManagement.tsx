@@ -352,6 +352,16 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
   const [previewData, setPreviewData] = useState<Course | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
 
+  // Sync courses state with props when router.refresh() is called
+  useEffect(() => {
+    setCourses(initialCourses);
+  }, [initialCourses]);
+
+  // Sync categories state with props
+  useEffect(() => {
+    setCategories(initialCategories);
+  }, [initialCategories]);
+
   // Ref for filter dropdown
   const filterRef = useRef<HTMLDivElement>(null);
 
@@ -582,6 +592,32 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
     setIsLoading(true);
     const loadingToast = toast.loading('Menyimpan perubahan...');
     
+    // Auto-save pending lesson if any
+    let latestFormData = { ...formData };
+    if (activeSectionId) {
+      if (tempLesson.title) {
+        const lessonData = { ...tempLesson, id: editingLessonId || Date.now().toString() } as Lesson;
+        const newSections = (latestFormData.sections || []).map(s => {
+          if (s.id === activeSectionId) {
+            const newLessons = editingLessonId 
+              ? s.lessons.map(l => l.id === editingLessonId ? lessonData : l) 
+              : [...s.lessons, lessonData];
+            return { ...s, lessons: newLessons };
+          }
+          return s;
+        });
+        latestFormData.sections = newSections;
+        setFormData(latestFormData);
+        handleCancelEditLesson();
+      } else if (editingLessonId) {
+         // If editing but title is empty, maybe they wanted to cancel? 
+         // For safety, let's just ask them to finish.
+         setIsLoading(false);
+         toast.dismiss(loadingToast);
+         return toast.error('Selesaikan atau batalkan edit materi sebelum melanjutkan');
+      }
+    }
+
     const url = isEditing ? `/api/admin/courses/${editId}` : '/api/admin/courses';
     const method = isEditing ? 'PATCH' : 'POST';
 
@@ -589,7 +625,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
       const res = await fetch(url, { 
         method, 
         headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify(formData) 
+        body: JSON.stringify(latestFormData) 
       });
       const result = await res.json();
 
@@ -631,20 +667,38 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
   };
 
   const handleSaveCourse = async () => {
-    setIsLoading(true);
     if (!formData.title || !formData.categoryId) {
       toast.error('Judul dan Kategori wajib diisi', { duration: 3000 });
-      setIsLoading(false);
       return;
     }
 
     if (!formData.coverImage || !formData.thumbnail) {
       toast.error('Cover Image dan Thumbnail wajib diunggah', { duration: 3000 });
-      setIsLoading(false);
       return;
     }
 
+    setIsLoading(true);
     const loadingToast = toast.loading('Menyimpan kursus...');
+
+    // Auto-save pending lesson if any
+    let latestFormData = { ...formData };
+    if (activeSectionId) {
+      if (tempLesson.title) {
+        const lessonData = { ...tempLesson, id: editingLessonId || Date.now().toString() } as Lesson;
+        const newSections = (latestFormData.sections || []).map(s => {
+          if (s.id === activeSectionId) {
+            const newLessons = editingLessonId 
+              ? s.lessons.map(l => l.id === editingLessonId ? lessonData : l) 
+              : [...s.lessons, lessonData];
+            return { ...s, lessons: newLessons };
+          }
+          return s;
+        });
+        latestFormData.sections = newSections;
+        setFormData(latestFormData);
+        handleCancelEditLesson();
+      }
+    }
     
     try {
       const url = isEditing ? `/api/admin/courses/${editId}` : '/api/admin/courses';
@@ -652,7 +706,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
       const res = await fetch(url, { 
         method, 
         headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify(formData) 
+        body: JSON.stringify(latestFormData) 
       });
       const result = await res.json();
       
@@ -685,9 +739,13 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
   }));
 
   const updateSectionTitle = (index: number, title: string) => { 
-    const newSections = [...(formData.sections || [])]; 
-    newSections[index].title = title; 
-    setFormData(prev => ({ ...prev, sections: newSections })); 
+    setFormData(prev => {
+      const newSections = [...(prev.sections || [])];
+      if (newSections[index]) {
+        newSections[index] = { ...newSections[index], title };
+      }
+      return { ...prev, sections: newSections };
+    });
   };
 
   const deleteSection = (index: number) => setFormData(prev => ({ 
@@ -721,10 +779,12 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
     const confirmMessage = 'Anda yakin ingin menghapus materi ini dari daftar?';
     
     const performDelete = () => {
-      const newSections = (formData.sections || []).map(s => 
-        s.id === sectionId ? { ...s, lessons: s.lessons.filter(l => l.id !== lessonId) } : s
-      );
-      setFormData(prev => ({ ...prev, sections: newSections }));
+      setFormData(prev => {
+        const newSections = (prev.sections || []).map(s => 
+          s.id === sectionId ? { ...s, lessons: s.lessons.filter(l => l.id !== lessonId) } : s
+        );
+        return { ...prev, sections: newSections };
+      });
       toast.success('Materi dihapus dari daftar.', { duration: 3000 });
     };
 
@@ -736,16 +796,20 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
     if (tempLesson.contentType === 'text' && !tempLesson.textContent) return toast.error('Konten artikel wajib diisi', { duration: 3000 });
 
     const lessonData = { ...tempLesson, id: editingLessonId || Date.now().toString() } as Lesson;
-    const newSections = (formData.sections || []).map(s => {
-      if (s.id === sectionId) {
-        const newLessons = editingLessonId 
-          ? s.lessons.map(l => l.id === editingLessonId ? lessonData : l) 
-          : [...s.lessons, lessonData];
-        return { ...s, lessons: newLessons };
-      }
-      return s;
+    
+    setFormData(prev => {
+      const newSections = (prev.sections || []).map(s => {
+        if (s.id === sectionId) {
+          const newLessons = editingLessonId 
+            ? s.lessons.map(l => l.id === editingLessonId ? lessonData : l) 
+            : [...s.lessons, lessonData];
+          return { ...s, lessons: newLessons };
+        }
+        return s;
+      });
+      return { ...prev, sections: newSections };
     });
-    setFormData(prev => ({ ...prev, sections: newSections }));
+    
     handleCancelEditLesson();
     toast.success('Materi berhasil disimpan sementara!', { duration: 3000 });
   };
@@ -1136,12 +1200,12 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                           accept="image/*" 
                           label="Upload Cover" 
                           onIsUploadingChange={setIsUploadingLesson}
-                          onUploadSuccess={(url) => setFormData({...formData, coverImage: url})} 
+                          onUploadSuccess={(url) => setFormData(prev => ({...prev, coverImage: url}))} 
                         />
                         <input 
                           type="text" 
                           value={formData.coverImage} 
-                          onChange={e => setFormData({...formData, coverImage: e.target.value})}
+                          onChange={e => setFormData(prev => ({...prev, coverImage: e.target.value}))}
                           className="w-full px-3 py-2 border rounded-lg text-xs outline-none text-black"
                           placeholder="Atau masukkan URL Cover..."
                           disabled={isLoading}
@@ -1154,12 +1218,12 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                           accept="image/*" 
                           label="Upload Thumbnail" 
                           onIsUploadingChange={setIsUploadingLesson}
-                          onUploadSuccess={(url) => setFormData({...formData, thumbnail: url})} 
+                          onUploadSuccess={(url) => setFormData(prev => ({...prev, thumbnail: url}))} 
                         />
                         <input 
                           type="text" 
                           value={formData.thumbnail} 
-                          onChange={e => setFormData({...formData, thumbnail: e.target.value})}
+                          onChange={e => setFormData(prev => ({...prev, thumbnail: e.target.value}))}
                           className="w-full px-3 py-2 border rounded-lg text-xs outline-none text-black"
                           placeholder="Atau masukkan URL Thumbnail..."
                           disabled={isLoading}
