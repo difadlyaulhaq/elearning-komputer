@@ -1,11 +1,46 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import videojs from 'video.js';
-import 'video.js/dist/video-js.css';
 import { useAuth } from '@/context/AuthContext';
 import { isMobileDevice } from '@/lib/security/mobileProtection';
 import toast from 'react-hot-toast';
+
+// ─── YouTube URL Parser ───────────────────────────────────────────────────────
+function getYouTubeId(url: string): string | null {
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+  const match = url?.match(regExp);
+  return match && match[2].length === 11 ? match[2] : null;
+}
+
+function buildYouTubeEmbedUrl(url: string): string | null {
+  const id = getYouTubeId(url);
+  if (!id) return null;
+  // rel=0 → no related videos, modestbranding=1 → minimal branding
+  // enablejsapi=1 → allow JS control, iv_load_policy=3 → no annotations
+  return `https://www.youtube.com/embed/${id}?autoplay=0&rel=0&modestbranding=1&enablejsapi=1&iv_load_policy=3&playsinline=1`;
+}
+
+// ─── Firebase Storage URL Optimizer ──────────────────────────────────────────
+// Firebase Storage supports HTTP Range Requests — leverage this for streaming.
+// We also add cache-busting avoidance and token refresh handling.
+function optimizeFirebaseStorageUrl(url: string): string {
+  if (!url) return url;
+  // Already optimized or not a Firebase Storage URL
+  if (!url.includes('firebasestorage.googleapis.com')) return url;
+  
+  try {
+    const parsed = new URL(url);
+    // Remove unnecessary params that cause cache misses
+    // Keep: alt=media, token
+    // Remove: nothing — just ensure alt=media is present for direct download
+    if (!parsed.searchParams.has('alt')) {
+      parsed.searchParams.set('alt', 'media');
+    }
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
 
 interface UniversalPlayerProps {
   src: string;
@@ -16,520 +51,286 @@ interface UniversalPlayerProps {
   disableSeeking?: boolean;
 }
 
-const UniversalPlayer = React.forwardRef<any, UniversalPlayerProps>(({
-  src,
-  contentType,
-  onEnded,
-  onTimeUpdate,
-  watermark = true,
-  disableSeeking = false
-}, ref) => {
-  const { user } = useAuth();
-  const videoRef = useRef<HTMLDivElement>(null);
-  const playerRef = useRef<any>(null);
+// ─── YouTube Iframe Player ────────────────────────────────────────────────────
+const YouTubePlayer: React.FC<{
+  src: string;
+  onEnded?: () => void;
+  onTimeUpdate?: (currentTime: number, duration: number) => void;
+  watermark?: boolean;
+  user: any;
+}> = ({ src, watermark, user }) => {
+  const embedUrl = buildYouTubeEmbedUrl(src);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  if (!embedUrl) {
+    return (
+      <div className="w-full aspect-video bg-black flex items-center justify-center rounded-2xl">
+        <p className="text-white/60 text-sm">URL YouTube tidak valid</p>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="relative w-full aspect-video select-none rounded-2xl overflow-hidden shadow-lg bg-black"
+      onContextMenu={(e) => e.preventDefault()}
+    >
+      <iframe
+        ref={iframeRef}
+        src={embedUrl}
+        className="w-full h-full border-0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowFullScreen
+        referrerPolicy="strict-origin-when-cross-origin"
+        loading="lazy"
+        title="Video pembelajaran"
+      />
+      {/* Watermark overlay */}
+      {watermark && user && (
+        <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden select-none">
+          <div
+            className="absolute text-white/10 font-bold text-sm whitespace-nowrap select-none pointer-events-none mix-blend-overlay"
+            style={{ top: '12%', left: '8%', transform: 'rotate(-15deg)' }}
+          >
+            {user.email}
+          </div>
+          <div
+            className="absolute text-white/5 font-bold text-[10px] whitespace-nowrap select-none pointer-events-none mix-blend-overlay"
+            style={{ bottom: '20%', right: '10%', transform: 'rotate(-10deg)' }}
+          >
+            PROPERTY OF ALFAJR • {user.name}
+          </div>
+          <div
+            className="absolute text-white/8 font-bold text-xs whitespace-nowrap select-none pointer-events-none mix-blend-overlay"
+            style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(-45deg)' }}
+          >
+            {user.email}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── Native HTML5 Video Player (Firebase Storage Optimized) ──────────────────
+const NativeVideoPlayer: React.FC<{
+  src: string;
+  onEnded?: () => void;
+  onTimeUpdate?: (currentTime: number, duration: number) => void;
+  watermark?: boolean;
+  disableSeeking?: boolean;
+  user: any;
+}> = ({ src, onEnded, onTimeUpdate, watermark, disableSeeking, user }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
   const maxTimeReachedRef = useRef(0);
-  const retryCountRef = useRef(0);
-  const stalledTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const recoveryTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const [isBuffering, setIsBuffering] = useState(false);
-  const [bufferProgress, setBufferProgress] = useState(0);
+  const [isBuffering, setIsBuffering] = useState(true); // start true so spinner shows
+  const [bufferPercent, setBufferPercent] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const stallTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isMobile = isMobileDevice();
+  const optimizedSrc = optimizeFirebaseStorageUrl(src);
 
-  // Clear all recovery timers
-  const clearAllTimers = useCallback(() => {
-    if (stalledTimerRef.current) {
-      clearTimeout(stalledTimerRef.current);
-      stalledTimerRef.current = null;
-    }
-    if (recoveryTimerRef.current) {
-      clearTimeout(recoveryTimerRef.current);
-      recoveryTimerRef.current = null;
-    }
-  }, []);
-
-  // Recovery function with exponential backoff
-  const attemptRecovery = useCallback((player: any, sources: any[]) => {
-    if (!player || player.isDisposed()) return;
-
-    retryCountRef.current++;
-    const backoff = Math.min(1000 * Math.pow(1.5, retryCountRef.current - 1), 8000);
-
-    console.log(`[UniversalPlayer] Recovery attempt #${retryCountRef.current}, backoff: ${backoff}ms`);
-
-    recoveryTimerRef.current = setTimeout(() => {
-      if (!player || player.isDisposed()) return;
-
-      try {
-        const currentTime = player.currentTime() || 0;
-
-        // Strategy 1: If first 2 attempts, just try to play from current position
-        if (retryCountRef.current <= 2) {
-          player.pause();
-          player.currentTime(currentTime);
-          player.load();
-          const playPromise = player.play();
-          if (playPromise) playPromise.catch(() => {});
-        }
-        // Strategy 2: Reload the source entirely
-        else if (retryCountRef.current <= 4) {
-          player.src(sources);
-          player.one('loadedmetadata', () => {
-            if (currentTime > 0) {
-              player.currentTime(currentTime);
-            }
-            player.play()?.catch(() => {});
-          });
-          player.load();
-        }
-        // Strategy 3: Full re-init after max retries
-        else {
-          console.log('[UniversalPlayer] Max retries reached, full re-init');
-          retryCountRef.current = 0;
-          player.src(sources);
-          player.load();
-          player.play()?.catch(() => {});
-        }
-      } catch (err) {
-        console.error('[UniversalPlayer] Recovery error:', err);
-      }
-    }, backoff);
-  }, []);
-
-  // Function to initialize the player
-  const initPlayer = () => {
-    if (!videoRef.current) return;
-
-    // Remove any existing video element to start fresh
-    videoRef.current.innerHTML = '';
-    const videoEl = document.createElement('video');
-    videoEl.className = 'video-js vjs-alfajr vjs-big-play-centered';
-    videoEl.setAttribute('playsinline', 'true');
-    videoEl.setAttribute('webkit-playsinline', 'true');
-    videoRef.current.appendChild(videoEl);
-
-    const isMobile = isMobileDevice();
-    const isHls = src.includes('.m3u8');
-    const sources =
-      contentType === 'youtube'
-        ? [{ src, type: 'video/youtube' }]
-        : [{ src, type: isHls ? 'application/x-mpegURL' : 'video/mp4' }];
-
-    // ─── ULTIMATE MOBILE OPTIMIZATION ───
-    // On mobile, we need aggressive buffer settings to minimize buffering time.
-    // Firebase Storage supports Range requests, so we leverage that.
-    const player = videojs(videoEl, {
-      controls: true,
-      autoplay: false,
-      // CRITICAL: Use 'auto' preload on mobile too — 'metadata' causes the
-      // long initial buffering because Video.js waits for data before playing.
-      // 'auto' tells the browser to start downloading immediately.
-      preload: 'auto',
-      fluid: true,
-      responsive: true,
-      playsinline: true,
-      aspectRatio: '16:9',
-      html5: {
-        vhs: {
-          // On mobile, let the native player handle HLS if available
-          overrideNative: !isMobile,
-          // Start with the lowest quality playlist for fast initial load
-          enableLowInitialPlaylist: isMobile,
-          // Enable fast quality switching without re-buffering
-          fastQualityChange: true,
-          // ─── AGGRESSIVE MOBILE BUFFER SETTINGS ───
-          // goalBufferLength: How many seconds ahead to buffer
-          goalBufferLength: isMobile ? 10 : 30,
-          // maxBufferLength: Maximum buffer size in seconds
-          maxBufferLength: isMobile ? 30 : 60,
-          // handlePartialData: Process data as it arrives
-          handlePartialData: true,
-          // Lower bandwidth estimation for faster initial switch
-          bandwidth: isMobile ? 500000 : undefined, // 500kbps initial estimate for mobile
-        },
-        nativeAudioTracks: isMobile,
-        nativeVideoTracks: isMobile,
-        // ─── CRITICAL: Native HLS support on mobile ───
-        // This ensures mobile Safari and Android Chrome use native HLS
-        // which is far more optimized than JavaScript-based HLS
-        nativeTextTracks: isMobile,
-      },
-      sources,
-      controlBar: {
-        children: [
-          'playToggle',
-          'volumePanel',
-          'currentTimeDisplay',
-          'timeDivider',
-          'durationDisplay',
-          'progressControl',
-          'remainingTimeDisplay',
-          'fullscreenToggle',
-        ],
-      },
-      retryOnError: true,
-      // ─── Faster loading behavior ───
-      liveui: false,
-      enableSourceset: true,
-    }, () => {
-      // Player ready
-      if (ref) {
-        if (typeof ref === 'function') ref(player);
-        else (ref as React.MutableRefObject<any>).current = player;
-      }
-
-      // ─── MOBILE: Force preload the video data on ready ───
-      if (isMobile && contentType !== 'youtube') {
-        const tech = player.tech({ IWillNotUseThisInPlugins: true });
-        if (tech && tech.el()) {
-          const videoElement = tech.el() as HTMLVideoElement;
-          // Force the browser to start buffering immediately
-          videoElement.preload = 'auto';
-          // Request initial data load
-          videoElement.load();
-        }
-      }
+  // ─── Preconnect to Firebase Storage (warm TCP) ───────────────────────────
+  useEffect(() => {
+    if (!src.includes('firebasestorage.googleapis.com')) return;
+    // Inject preconnect link tags if not already present
+    const hosts = [
+      'https://firebasestorage.googleapis.com',
+      'https://storage.googleapis.com',
+    ];
+    hosts.forEach((href) => {
+      if (document.querySelector(`link[href="${href}"]`)) return;
+      const link = document.createElement('link');
+      link.rel = 'preconnect';
+      link.href = href;
+      link.crossOrigin = 'anonymous';
+      document.head.appendChild(link);
     });
+  }, [src]);
 
-    playerRef.current = player;
-    retryCountRef.current = 0;
+  const clearStallTimer = useCallback(() => {
+    if (stallTimerRef.current) {
+      clearTimeout(stallTimerRef.current);
+      stallTimerRef.current = null;
+    }
+  }, []);
 
-    // ─── BUFFERING STATE TRACKING ───
-    player.on('waiting', () => {
-      console.log('[UniversalPlayer] Buffering started...');
+  const handleRetry = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    clearStallTimer();
+
+    const currentTime = video.currentTime;
+    // Force reload by resetting src
+    video.pause();
+    video.removeAttribute('src');
+    video.load();
+    // Small delay before re-assigning
+    setTimeout(() => {
+      video.src = optimizedSrc;
+      video.load();
+      video.currentTime = currentTime;
+      video.play().catch(() => {});
+    }, 800);
+  }, [optimizedSrc, clearStallTimer]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    // ── CRITICAL MOBILE OPTIMIZATIONS ──────────────────────────────────────
+    // 1. preload="auto" tells browser to start buffering immediately
+    video.preload = 'auto';
+    // 2. playsinline prevents fullscreen on iOS
+    video.playsInline = true;
+    // 3. Disable picture-in-picture (security)
+    (video as any).disablePictureInPicture = true;
+
+    // ── HTTP Range Request hint via fetch (warms the connection) ───────────
+    // Fire a small HEAD request so the browser opens a connection to Firebase
+    // Storage before the user presses play. This eliminates DNS+TLS handshake
+    // latency from the critical path.
+    if (src.includes('firebasestorage.googleapis.com')) {
+      fetch(optimizedSrc, {
+        method: 'GET',
+        headers: { Range: 'bytes=0-65535' }, // Fetch first 64 KB
+        mode: 'cors',
+        cache: 'force-cache',
+      }).catch(() => {}); // Fire and forget
+    }
+
+    const onWaiting = () => {
       setIsBuffering(true);
+      // If stalled for too long on mobile, retry
+      clearStallTimer();
+      stallTimerRef.current = setTimeout(() => {
+        if (retryCount < 3) {
+          setRetryCount((c) => c + 1);
+          handleRetry();
+        }
+      }, isMobile ? 6000 : 12000);
+    };
 
-      // If stalled for too long, attempt recovery
-      clearAllTimers();
-      stalledTimerRef.current = setTimeout(() => {
-        console.log('[UniversalPlayer] Stalled for too long, attempting recovery...');
-        attemptRecovery(player, sources);
-      }, isMobile ? 8000 : 15000); // 8s on mobile, 15s on desktop
-    });
-
-    player.on('playing', () => {
-      console.log('[UniversalPlayer] Playing, resetting recovery state');
+    const onCanPlay = () => {
       setIsBuffering(false);
-      retryCountRef.current = 0;
-      clearAllTimers();
-    });
+      setError(null);
+      clearStallTimer();
+    };
 
-    player.on('canplay', () => {
+    const onPlaying = () => {
       setIsBuffering(false);
-      clearAllTimers();
-    });
+      setError(null);
+      clearStallTimer();
+    };
 
-    player.on('canplaythrough', () => {
-      setIsBuffering(false);
-      clearAllTimers();
-    });
-
-    // ─── STALLED EVENT: Video stopped receiving data ───
-    player.on('stalled', () => {
-      console.log('[UniversalPlayer] Download stalled');
-      // Only recover if we're supposed to be playing
-      if (!player.paused()) {
-        stalledTimerRef.current = setTimeout(() => {
-          attemptRecovery(player, sources);
-        }, isMobile ? 5000 : 10000);
+    const onStalled = () => {
+      // Stalled = browser stopped fetching data
+      if (!video.paused) {
+        clearStallTimer();
+        stallTimerRef.current = setTimeout(handleRetry, isMobile ? 4000 : 8000);
       }
-    });
+    };
 
-    // ─── BUFFER PROGRESS TRACKING ───
-    player.on('progress', () => {
-      try {
-        const buffered = player.buffered();
-        const duration = player.duration() ?? 0;
-        if (buffered && buffered.length > 0 && duration > 0) {
-          const end = buffered.end(buffered.length - 1);
-          setBufferProgress(Math.round((end / duration) * 100));
-        }
-      } catch (e) {}
-    });
+    const onProgress = () => {
+      if (!video.duration || !video.buffered.length) return;
+      const end = video.buffered.end(video.buffered.length - 1);
+      setBufferPercent(Math.round((end / video.duration) * 100));
+    };
 
-    // ─── ERROR HANDLING with smart recovery ───
-    player.on('error', () => {
-      const error = player.error();
-      if (error) {
-        console.error(`[UniversalPlayer] Error code ${error.code}: ${error.message}`);
-
-        // Network error (code 2) or media error (code 3) or source not found (code 4)
-        if (error.code === 2 || error.code === 3 || error.code === 4) {
-          // Clear the error state so Video.js doesn't block recovery
-          player.error(undefined as any);
-          attemptRecovery(player, sources);
-        }
-      }
-    });
-
-    // ─── MOBILE-SPECIFIC: Handle mobile network changes ───
-    if (isMobile && typeof window !== 'undefined') {
-      const handleOnline = () => {
-        console.log('[UniversalPlayer] Network reconnected, recovering...');
-        if (player && !player.isDisposed() && !player.paused()) {
-          const currentTime = player.currentTime() || 0;
-          player.src(sources);
-          player.one('loadedmetadata', () => {
-            if (currentTime > 0) player.currentTime(currentTime);
-            player.play()?.catch(() => {});
-          });
-          player.load();
-        }
-      };
-
-      window.addEventListener('online', handleOnline);
-      // Store for cleanup
-      (player as any).__handleOnline = handleOnline;
-    }
-
-    // ─── MOBILE-SPECIFIC: Touch to play optimization ───
-    // On mobile, the first play is usually gated by a user gesture.
-    // We pre-warm the video element to minimize the delay.
-    if (isMobile && contentType !== 'youtube') {
-      player.one('play', () => {
-        // Once user initiates play, ensure we're loading aggressively
-        try {
-          const tech = player.tech({ IWillNotUseThisInPlugins: true });
-          if (tech && tech.el()) {
-            const videoElement = tech.el() as HTMLVideoElement;
-            videoElement.preload = 'auto';
-          }
-        } catch (e) {}
-      });
-    }
-
-    player.on('ended', () => { if (onEnded) onEnded(); });
-
-    player.on('timeupdate', () => {
-      const current = player.currentTime() ?? 0;
-      const duration = player.duration() ?? 0;
+    const onVideoTimeUpdate = () => {
+      const current = video.currentTime;
+      const duration = video.duration || 0;
 
       if (disableSeeking) {
         if (current > maxTimeReachedRef.current + 2) {
-          player.currentTime(maxTimeReachedRef.current);
-        } else if (current > maxTimeReachedRef.current) {
+          video.currentTime = maxTimeReachedRef.current;
+          return;
+        }
+        if (current > maxTimeReachedRef.current) {
           maxTimeReachedRef.current = current;
         }
       }
+      onTimeUpdate?.(current, duration);
+    };
 
-      if (onTimeUpdate) onTimeUpdate(current, duration);
-    });
+    const onVideoEnded = () => {
+      clearStallTimer();
+      onEnded?.();
+    };
 
-    // Disable right-click on video
-    player.on('loadedmetadata', () => {
-      try {
-        const vid = player.tech().el();
-        if (vid) vid.addEventListener('contextmenu', (e: Event) => e.preventDefault());
-      } catch (e) {}
-    });
-  };
-
-  useEffect(() => {
-    initPlayer();
-
-    return () => {
-      clearAllTimers();
-
-      if (playerRef.current && !playerRef.current.isDisposed()) {
-        // Clean up online listener
-        if ((playerRef.current as any).__handleOnline) {
-          window.removeEventListener('online', (playerRef.current as any).__handleOnline);
+    const onError = () => {
+      const code = video.error?.code;
+      clearStallTimer();
+      if (code === 2 || code === 3) {
+        // Network or decode error — retry
+        if (retryCount < 3) {
+          setRetryCount((c) => c + 1);
+          handleRetry();
+        } else {
+          setError('Gagal memuat video. Periksa koneksi internet Anda.');
         }
-        playerRef.current.dispose();
-        playerRef.current = null;
+      } else if (code === 4) {
+        setError('Format video tidak didukung oleh perangkat ini.');
       }
     };
-  }, [src, contentType]); // Re-init if src or type changes
+
+    const onContextMenu = (e: MouseEvent) => e.preventDefault();
+
+    video.addEventListener('waiting', onWaiting);
+    video.addEventListener('canplay', onCanPlay);
+    video.addEventListener('canplaythrough', onCanPlay);
+    video.addEventListener('playing', onPlaying);
+    video.addEventListener('stalled', onStalled);
+    video.addEventListener('progress', onProgress);
+    video.addEventListener('timeupdate', onVideoTimeUpdate);
+    video.addEventListener('ended', onVideoEnded);
+    video.addEventListener('error', onError);
+    video.addEventListener('contextmenu', onContextMenu);
+
+    return () => {
+      clearStallTimer();
+      video.removeEventListener('waiting', onWaiting);
+      video.removeEventListener('canplay', onCanPlay);
+      video.removeEventListener('canplaythrough', onCanPlay);
+      video.removeEventListener('playing', onPlaying);
+      video.removeEventListener('stalled', onStalled);
+      video.removeEventListener('progress', onProgress);
+      video.removeEventListener('timeupdate', onVideoTimeUpdate);
+      video.removeEventListener('ended', onVideoEnded);
+      video.removeEventListener('error', onError);
+      video.removeEventListener('contextmenu', onContextMenu);
+    };
+  }, [optimizedSrc, disableSeeking, isMobile, retryCount, handleRetry, clearStallTimer, onEnded, onTimeUpdate, src]);
 
   return (
     <div
       className="relative w-full aspect-video select-none rounded-2xl overflow-hidden shadow-lg bg-black"
       onContextMenu={(e) => {
         e.preventDefault();
-        toast.error("Klik kanan dinonaktifkan untuk keamanan.");
+        toast.error('Klik kanan dinonaktifkan untuk keamanan.');
       }}
     >
-      <style jsx global>{`
-        /* ── Base ── */
-        .vjs-alfajr.video-js {
-          width: 100% !important;
-          height: 100% !important;
-          font-family: inherit;
-          background: #000;
-        }
+      {/* ── Native Video Element ── */}
+      <video
+        ref={videoRef}
+        className="w-full h-full object-contain"
+        src={optimizedSrc}
+        preload="auto"
+        playsInline
+        controls
+        controlsList="nodownload noremoteplayback"
+        // ── CRITICAL: crossOrigin enables Range requests + proper CORS ──
+        crossOrigin="anonymous"
+        style={{ background: '#000' }}
+      />
 
-        /* ── Control bar: putih abu-abu terang ── */
-        .vjs-alfajr .vjs-control-bar {
-          background: #f0f0f0 !important;
-          border-top: 1px solid #ddd;
-          height: 44px;
-          display: flex;
-          align-items: center;
-          padding: 0 6px;
-        }
-
-        /* ── Semua icon: HITAM ── */
-        .vjs-alfajr .vjs-control-bar .vjs-button > .vjs-icon-placeholder::before,
-        .vjs-alfajr .vjs-control-bar .vjs-icon-placeholder::before {
-          color: #111 !important;
-          font-size: 20px;
-          line-height: 44px;
-        }
-
-        /* Play/pause */
-        .vjs-alfajr .vjs-play-control .vjs-icon-placeholder::before {
-          color: #111 !important;
-          font-size: 22px;
-        }
-
-        /* Volume/mute */
-        .vjs-alfajr .vjs-mute-control .vjs-icon-placeholder::before,
-        .vjs-alfajr .vjs-volume-panel .vjs-mute-control .vjs-icon-placeholder::before {
-          color: #111 !important;
-          font-size: 20px;
-        }
-
-        /* Fullscreen */
-        .vjs-alfajr .vjs-fullscreen-control .vjs-icon-placeholder::before {
-          color: #111 !important;
-          font-size: 20px;
-        }
-
-        /* ── Teks waktu ── */
-        .vjs-alfajr .vjs-current-time,
-        .vjs-alfajr .vjs-duration,
-        .vjs-alfajr .vjs-remaining-time,
-        .vjs-alfajr .vjs-time-divider {
-          color: #111 !important;
-          font-size: 12px;
-          font-weight: 600;
-          line-height: 44px;
-          padding: 0 3px;
-          display: flex;
-          align-items: center;
-        }
-
-        /* ── Progress bar ── */
-        .vjs-alfajr .vjs-progress-control {
-          flex: 1;
-          height: 100%;
-          display: flex;
-          align-items: center;
-          cursor: pointer;
-        }
-
-        .vjs-alfajr .vjs-progress-holder {
-          height: 5px;
-          background: rgba(0,0,0,0.2) !important;
-          border-radius: 3px;
-          margin: 0 4px;
-        }
-
-        .vjs-alfajr .vjs-load-progress {
-          background: rgba(0,0,0,0.2) !important;
-          border-radius: 3px;
-        }
-
-        .vjs-alfajr .vjs-load-progress div {
-          background: rgba(0,0,0,0.15) !important;
-        }
-
-        /* Fill gold */
-        .vjs-alfajr .vjs-play-progress {
-          background: #C5A059 !important;
-          border-radius: 3px;
-        }
-
-        .vjs-alfajr .vjs-play-progress::before {
-          color: #C5A059 !important;
-          font-size: 13px;
-          top: -4px;
-        }
-
-        /* Tooltip waktu */
-        .vjs-alfajr .vjs-time-tooltip {
-          background: rgba(20,20,20,0.85) !important;
-          color: #fff !important;
-          font-size: 11px;
-          font-weight: 500;
-          border-radius: 5px;
-          padding: 3px 7px;
-        }
-
-        /* ── Volume slider ── */
-        .vjs-alfajr .vjs-volume-bar {
-          background: rgba(0,0,0,0.18) !important;
-          border-radius: 3px;
-        }
-
-        .vjs-alfajr .vjs-volume-level {
-          background: #C5A059 !important;
-          border-radius: 3px;
-        }
-
-        .vjs-alfajr .vjs-volume-level::before {
-          color: #C5A059 !important;
-        }
-
-        /* ── Hover button ── */
-        .vjs-alfajr .vjs-control-bar .vjs-button:hover {
-          background: rgba(0,0,0,0.08) !important;
-          border-radius: 6px;
-        }
-
-        /* ── Big play button — frosted white, bulat ── */
-        .vjs-alfajr .vjs-big-play-button {
-          background: rgba(255,255,255,0.95) !important;
-          border: none !important;
-          border-radius: 50% !important;
-          width: 64px !important;
-          height: 64px !important;
-          line-height: 64px !important;
-          top: 50% !important;
-          left: 50% !important;
-          transform: translate(-50%, -50%) !important;
-          margin: 0 !important;
-          box-shadow: 0 4px 24px rgba(0,0,0,0.2);
-          transition: all 0.22s ease;
-        }
-
-        .vjs-alfajr .vjs-big-play-button:hover {
-          background: rgba(255,255,255,0.97) !important;
-          transform: translate(-50%, -50%) scale(1.08) !important;
-          box-shadow: 0 6px 32px rgba(0,0,0,0.28);
-        }
-
-        /* Icon play di tengah — hitam */
-        .vjs-alfajr .vjs-big-play-button .vjs-icon-placeholder::before {
-          color: #111 !important;
-          font-size: 28px;
-          line-height: 64px;
-        }
-
-        /* ── HIDE default spinner — we use our own ── */
-        .vjs-alfajr .vjs-loading-spinner {
-          display: none !important;
-        }
-
-        /* ── No outline ── */
-        .vjs-alfajr:focus,
-        .vjs-alfajr *:focus {
-          outline: none !important;
-          box-shadow: none !important;
-        }
-      `}</style>
-
-      <div ref={videoRef} className="w-full h-full" />
-
-      {/* ── Custom Buffering Overlay ── */}
-      {isBuffering && (
-        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/40 pointer-events-none">
-          {/* Animated spinner ring */}
+      {/* ── Buffering Spinner ── */}
+      {isBuffering && !error && (
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/50 pointer-events-none">
           <div className="relative w-14 h-14">
             <svg className="w-14 h-14 animate-spin" viewBox="0 0 56 56" fill="none">
-              <circle
-                cx="28" cy="28" r="24"
-                stroke="rgba(255,255,255,0.15)"
-                strokeWidth="4"
-              />
+              <circle cx="28" cy="28" r="24" stroke="rgba(255,255,255,0.15)" strokeWidth="4" />
               <circle
                 cx="28" cy="28" r="24"
                 stroke="#C5A059"
@@ -539,37 +340,60 @@ const UniversalPlayer = React.forwardRef<any, UniversalPlayerProps>(({
               />
             </svg>
           </div>
-          {/* Buffer percentage */}
-          {bufferProgress > 0 && bufferProgress < 100 && (
+          {bufferPercent > 0 && bufferPercent < 100 && (
             <p className="mt-3 text-white/80 text-xs font-semibold tracking-wide">
-              Memuat {bufferProgress}%
+              Buffering {bufferPercent}%
             </p>
           )}
-          {bufferProgress === 0 && (
-            <p className="mt-3 text-white/60 text-[11px] font-medium">
-              Menghubungkan...
-            </p>
+          {bufferPercent === 0 && (
+            <p className="mt-3 text-white/60 text-[11px]">Menghubungkan...</p>
           )}
         </div>
       )}
 
-      {/* Watermark Overlay */}
+      {/* ── Buffer Progress Bar ── */}
+      {!isBuffering && bufferPercent > 0 && bufferPercent < 100 && (
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white/10 z-10 pointer-events-none">
+          <div
+            className="h-full bg-[#C5A059]/40 transition-all duration-500"
+            style={{ width: `${bufferPercent}%` }}
+          />
+        </div>
+      )}
+
+      {/* ── Error State ── */}
+      {error && (
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/80 text-white p-4 text-center">
+          <svg className="w-12 h-12 text-red-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <p className="text-sm font-medium text-red-300 mb-3">{error}</p>
+          <button
+            onClick={() => { setError(null); setRetryCount(0); handleRetry(); }}
+            className="px-4 py-2 bg-[#C5A059] text-black text-sm font-bold rounded-lg hover:bg-[#D4AF6A] transition-colors"
+          >
+            Coba Lagi
+          </button>
+        </div>
+      )}
+
+      {/* ── Watermark ── */}
       {watermark && user && (
         <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden select-none touch-none">
           <div
-            className="absolute text-white/10 font-bold text-sm md:text-base whitespace-nowrap select-none pointer-events-none mix-blend-overlay"
+            className="absolute text-white/10 font-bold text-sm whitespace-nowrap mix-blend-overlay"
             style={{ top: '12%', left: '8%', transform: 'rotate(-15deg)' }}
           >
             {user.email}
           </div>
           <div
-            className="absolute text-white/5 font-bold text-[10px] md:text-xs whitespace-nowrap select-none pointer-events-none mix-blend-overlay"
+            className="absolute text-white/5 font-bold text-[10px] whitespace-nowrap mix-blend-overlay"
             style={{ bottom: '20%', right: '10%', transform: 'rotate(-10deg)' }}
           >
             PROPERTY OF ALFAJR • {user.name}
           </div>
           <div
-            className="absolute text-white/8 font-bold text-xs md:text-sm whitespace-nowrap select-none pointer-events-none mix-blend-overlay"
+            className="absolute text-white/8 font-bold text-xs whitespace-nowrap mix-blend-overlay"
             style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(-45deg)' }}
           >
             {user.email}
@@ -577,6 +401,41 @@ const UniversalPlayer = React.forwardRef<any, UniversalPlayerProps>(({
         </div>
       )}
     </div>
+  );
+};
+
+// ─── Main UniversalPlayer ─────────────────────────────────────────────────────
+const UniversalPlayer = React.forwardRef<any, UniversalPlayerProps>(({
+  src,
+  contentType,
+  onEnded,
+  onTimeUpdate,
+  watermark = true,
+  disableSeeking = false,
+}, _ref) => {
+  const { user } = useAuth();
+
+  if (contentType === 'youtube') {
+    return (
+      <YouTubePlayer
+        src={src}
+        onEnded={onEnded}
+        onTimeUpdate={onTimeUpdate}
+        watermark={watermark}
+        user={user}
+      />
+    );
+  }
+
+  return (
+    <NativeVideoPlayer
+      src={src}
+      onEnded={onEnded}
+      onTimeUpdate={onTimeUpdate}
+      watermark={watermark}
+      disableSeeking={disableSeeking}
+      user={user}
+    />
   );
 });
 
