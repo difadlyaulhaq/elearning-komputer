@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
@@ -21,9 +21,10 @@ import {
   BookOpen,
   Play,
   Lock,
-  Maximize,
-  Minimize,
-  RotateCw,
+  Maximize2,
+  Minimize2,
+  Smartphone,
+  Monitor,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { MarkdownRenderer } from "@/components/shared/MarkdownRenderer";
@@ -56,26 +57,105 @@ export function LessonPlayerMobile({
   const [isUpdating, setIsUpdating] = useState(false);
   const [showLessonMenu, setShowLessonMenu] = useState(false);
   const [isLandscape, setIsLandscape] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isFullscreenLandscape, setIsFullscreenLandscape] = useState(true);
+  const videoContainerRef = useRef<HTMLDivElement>(null);
 
-  const toggleOrientation = async () => {
+  // ─── Fullscreen Management ──────────────────────────────────────────
+  const enterFullscreen = useCallback(async () => {
+    const container = videoContainerRef.current;
+    if (!container) return;
+
     try {
-      if (typeof window !== "undefined" && (window.screen as any).orientation) {
-        if (window.innerWidth < window.innerHeight) {
-          // Current is portrait, try to lock landscape
+      if (container.requestFullscreen) {
+        await container.requestFullscreen();
+      } else if ((container as any).webkitRequestFullscreen) {
+        await (container as any).webkitRequestFullscreen();
+      }
+
+      // Try to lock to landscape by default when entering fullscreen
+      try {
+        if ((window.screen as any).orientation?.lock) {
           await (window.screen as any).orientation.lock("landscape");
-        } else {
-          // Current is landscape, try to lock portrait
+          setIsFullscreenLandscape(true);
+        }
+      } catch {
+        // Orientation lock may not be supported; that's ok
+      }
+
+      setIsFullscreen(true);
+    } catch (error) {
+      console.error("Fullscreen failed:", error);
+    }
+  }, []);
+
+  const exitFullscreen = useCallback(async () => {
+    try {
+      if (document.exitFullscreen) {
+        await document.exitFullscreen();
+      } else if ((document as any).webkitExitFullscreen) {
+        await (document as any).webkitExitFullscreen();
+      }
+
+      // Unlock orientation when exiting
+      try {
+        if ((window.screen as any).orientation?.unlock) {
+          (window.screen as any).orientation.unlock();
+        }
+      } catch {
+        // Ignore
+      }
+
+      setIsFullscreen(false);
+      setIsFullscreenLandscape(true);
+    } catch (error) {
+      console.error("Exit fullscreen failed:", error);
+    }
+  }, []);
+
+  const toggleFullscreenOrientation = useCallback(async () => {
+    try {
+      if ((window.screen as any).orientation?.lock) {
+        if (isFullscreenLandscape) {
           await (window.screen as any).orientation.lock("portrait");
+          setIsFullscreenLandscape(false);
+        } else {
+          await (window.screen as any).orientation.lock("landscape");
+          setIsFullscreenLandscape(true);
         }
       } else {
-        // Fallback for browsers that don't support orientation lock
-        toast.error("Gunakan rotasi layar otomatis pada perangkat Anda.");
+        toast.error("Putar perangkat Anda untuk mengubah tampilan.");
       }
     } catch (error) {
-      console.error("Orientation lock failed:", error);
+      console.error("Orientation toggle failed:", error);
       toast.error("Putar perangkat Anda untuk mengubah tampilan.");
     }
-  };
+  }, [isFullscreenLandscape]);
+
+  // Listen for fullscreen change events (e.g. user presses back button)
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const isCurrentlyFullscreen = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
+      setIsFullscreen(isCurrentlyFullscreen);
+      if (!isCurrentlyFullscreen) {
+        setIsFullscreenLandscape(true);
+        try {
+          if ((window.screen as any).orientation?.unlock) {
+            (window.screen as any).orientation.unlock();
+          }
+        } catch {
+          // Ignore
+        }
+      }
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      document.removeEventListener("webkitfullscreenchange", handleFullscreenChange);
+    };
+  }, []);
 
   useEffect(() => {
     if (
@@ -150,7 +230,7 @@ export function LessonPlayerMobile({
   return (
     <div className="min-h-screen bg-[#F8F9FA] flex flex-col">
       {/* Header */}
-      {!isLandscape && (
+      {!isLandscape && !isFullscreen && (
         <header className="bg-white border-b border-gray-100 px-4 py-3 sticky top-0 z-20 flex items-center gap-3">
           <Link
             href={`/learning/course/${courseId}`}
@@ -228,7 +308,16 @@ export function LessonPlayerMobile({
           </div>
         ) : (
           /* Video: padded so rounded shadow is visible */
-          <div className={`w-full relative ${isLandscape ? "h-screen" : "px-3 pt-3 pb-0"}`}>
+          <div
+            ref={videoContainerRef}
+            className={`w-full relative ${
+              isLandscape
+                ? "h-screen"
+                : isFullscreen
+                  ? "h-screen bg-black flex items-center justify-center"
+                  : "px-3 pt-3 pb-0"
+            }`}
+          >
             <UniversalPlayer
               src={lesson.url}
               contentType={lesson.contentType as any}
@@ -242,23 +331,97 @@ export function LessonPlayerMobile({
               disableSeeking={false}
             />
 
-            {/* Float Toggle Orientation Button */}
-            {(lesson.contentType === "youtube" || lesson.contentType === "video-upload") && (
+            {/* ── Portrait non-fullscreen: Fullscreen button ── */}
+            {!isLandscape && !isFullscreen && (lesson.contentType === "youtube" || lesson.contentType === "video-upload") && (
               <button
-                onClick={toggleOrientation}
-                className={`absolute z-30 flex items-center justify-center bg-black/40 hover:bg-black/60 backdrop-blur-sm text-white rounded-full transition-all border border-white/20 shadow-lg ${
-                  isLandscape 
-                    ? "top-4 right-4 w-10 h-10" 
-                    : "top-6 right-6 w-9 h-9"
-                }`}
-                title={isLandscape ? "Mode Potret" : "Mode Lanskap"}
+                onClick={enterFullscreen}
+                className="absolute z-30 top-6 right-6 w-9 h-9 flex items-center justify-center bg-black/50 hover:bg-black/70 backdrop-blur-sm text-white rounded-full transition-all border border-white/20 shadow-lg"
+                title="Fullscreen"
               >
-                {isLandscape ? <RotateCw size={18} /> : <RotateCw size={16} />}
+                <Maximize2 size={16} />
               </button>
             )}
 
-            {/* Landscape Overlay Controls */}
-            {isLandscape && (
+            {/* ── Fullscreen overlay controls ── */}
+            {isFullscreen && (
+              <>
+                {/* Top-right controls: orientation toggle + exit fullscreen */}
+                <div className="absolute top-4 right-4 z-40 flex items-center gap-2">
+                  {/* Orientation toggle */}
+                  <button
+                    onClick={toggleFullscreenOrientation}
+                    className="flex items-center gap-2 px-3 py-2 bg-black/50 hover:bg-black/70 backdrop-blur-md text-white rounded-xl transition-all border border-white/20 shadow-lg"
+                    title={isFullscreenLandscape ? "Mode Potret" : "Mode Lanskap"}
+                  >
+                    {isFullscreenLandscape ? (
+                      <>
+                        <Smartphone size={16} />
+                        <span className="text-xs font-semibold">Potret</span>
+                      </>
+                    ) : (
+                      <>
+                        <Monitor size={16} />
+                        <span className="text-xs font-semibold">Lanskap</span>
+                      </>
+                    )}
+                  </button>
+
+                  {/* Exit fullscreen */}
+                  <button
+                    onClick={exitFullscreen}
+                    className="w-10 h-10 flex items-center justify-center bg-black/50 hover:bg-black/70 backdrop-blur-md text-white rounded-xl transition-all border border-white/20 shadow-lg"
+                    title="Keluar Fullscreen"
+                  >
+                    <Minimize2 size={18} />
+                  </button>
+                </div>
+
+                {/* Bottom controls bar */}
+                <div className="absolute inset-x-0 bottom-0 z-40 p-4 bg-gradient-to-t from-black/80 to-transparent flex items-center justify-between pointer-events-none">
+                  <div className="flex items-center gap-4 pointer-events-auto">
+                    <button
+                      onClick={() => {
+                        if (prevLesson) router.push(`/learning/course/${courseId}/lesson/${prevLesson.id}`);
+                      }}
+                      disabled={!prevLesson}
+                      className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-white disabled:opacity-30"
+                    >
+                      <ChevronLeft size={24} />
+                    </button>
+                    <div className="text-white">
+                      <h4 className="text-xs font-bold line-clamp-1">{lesson.title}</h4>
+                      <p className="text-[10px] opacity-70">Sedang diputar</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 pointer-events-auto">
+                    <button
+                      onClick={handleMarkComplete}
+                      disabled={!isVideoCompleted || isUpdating}
+                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                        isVideoCompleted && !isUpdating
+                          ? "bg-[#C5A059] text-white"
+                          : "bg-white/10 text-white/50 cursor-not-allowed"
+                      }`}
+                    >
+                      {isUpdating ? "..." : nextLesson ? "Lanjut →" : "Selesai ✓"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (nextLesson) router.push(`/learning/course/${courseId}/lesson/${nextLesson.id}`);
+                      }}
+                      disabled={!nextLesson}
+                      className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-white disabled:opacity-30"
+                    >
+                      <ChevronRight size={24} />
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* ── Auto landscape (no fullscreen API) overlay controls ── */}
+            {isLandscape && !isFullscreen && (
               <div className="absolute inset-x-0 bottom-0 z-30 p-4 bg-gradient-to-t from-black/80 to-transparent flex items-center justify-between pointer-events-none">
                 <div className="flex items-center gap-4 pointer-events-auto">
                    <button
@@ -305,7 +468,7 @@ export function LessonPlayerMobile({
       </div>
 
       {/* Below Player — Light Card */}
-      {!isLandscape && (
+      {!isLandscape && !isFullscreen && (
         <div className="flex-1 flex flex-col pb-28">
           {/* Lesson Info */}
           <div className="bg-white mx-3 mt-3 rounded-2xl border border-gray-100 shadow-sm p-4">
@@ -418,7 +581,7 @@ export function LessonPlayerMobile({
       )}
 
       {/* Sticky Bottom Action Bar */}
-      {!isLandscape && (
+      {!isLandscape && !isFullscreen && (
         <div className="fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-100 px-4 py-3 shadow-lg">
           <button
             onClick={handleMarkComplete}
