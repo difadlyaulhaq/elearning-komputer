@@ -57,10 +57,14 @@ const DashboardCourseCard: React.FC<{ course: Course; progress?: { status?: stri
   const isCompleted = progress?.status === 'completed';
   const isInProgress = progress?.status === 'in-progress';
   
-  const thumbnailUrl = course.thumbnail || course.coverImage || '/logo-alfajr.png';
-  const displayThumbnail = (thumbnailUrl.includes('firebasestorage.googleapis.com'))
-    ? `/api/video/stream?url=${encodeURIComponent(thumbnailUrl)}`
-    : thumbnailUrl;
+  // Ambil URL thumbnail atau cover
+  const rawThumbnail = course.thumbnail || course.coverImage;
+  
+  // Gunakan proxy hanya jika URL berasal dari Firebase untuk stabilitas, 
+  // atau langsung gunakan URL asli jika bukan.
+  const displayThumbnail = (rawThumbnail && rawThumbnail.includes('firebasestorage.googleapis.com'))
+    ? `/api/video/stream?url=${encodeURIComponent(rawThumbnail)}`
+    : (rawThumbnail || '/logo-alfajr.png');
 
   return (
     <Link href={`/learning/course/${course.id}`}>
@@ -70,9 +74,9 @@ const DashboardCourseCard: React.FC<{ course: Course; progress?: { status?: stri
             src={displayThumbnail}
             alt={course.title}
             className="w-full h-full object-cover"
-            crossOrigin="anonymous"
+            // Hapus crossOrigin untuk menghindari pemblokiran CORS yang terlalu ketat pada gambar dashboard
             onError={(e) => { 
-              if (!e.currentTarget.src.includes('logo-alfajr.png')) {
+              if (e.currentTarget.src !== window.location.origin + "/logo-alfajr.png") {
                 e.currentTarget.src = "/logo-alfajr.png"; 
               }
             }}
