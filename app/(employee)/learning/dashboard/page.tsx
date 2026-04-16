@@ -265,13 +265,16 @@ const EmployeeDashboardPage = () => {
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-                  {courses.slice(0, 8).map((course) => {
-                    const progressData = progress[course.id] || {
-                      status: 'not-started',
-                      progress: 0,
-                    };
-                    return <DashboardCourseCard key={course.id} course={course} progress={progressData} />;
-                  })}
+                  {courses
+                    .filter(c => !ongoingCourses.some(oc => oc.id === c.id))
+                    .slice(0, 8)
+                    .map((course) => {
+                      const progressData = progress[course.id] || {
+                        status: 'not-started',
+                        progress: 0,
+                      };
+                      return <DashboardCourseCard key={course.id} course={course} progress={progressData} />;
+                    })}
                 </div>
                 <div className="text-center mt-6">
                   <Link
