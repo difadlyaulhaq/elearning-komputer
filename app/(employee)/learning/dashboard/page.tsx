@@ -56,26 +56,17 @@ const SecurityWarningPopup = ({
 const DashboardCourseCard: React.FC<{ course: Course; progress?: { status?: string; progress?: number } }> = ({ course, progress }) => {
   const isCompleted = progress?.status === 'completed';
   const isInProgress = progress?.status === 'in-progress';
-  
-  const thumbnailUrl = course.thumbnail || course.coverImage || '/logo-alfajr.png';
-  const displayThumbnail = (thumbnailUrl.includes('firebasestorage.googleapis.com'))
-    ? `/api/video/stream?url=${encodeURIComponent(thumbnailUrl)}`
-    : thumbnailUrl;
 
   return (
     <Link href={`/learning/course/${course.id}`}>
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow group h-full flex flex-col">
         <div className="h-40 bg-gray-200 relative">
           <img
-            src={displayThumbnail}
+            src={course.thumbnail || course.coverImage || '/logo-alfajr.png'}
             alt={course.title}
             className="w-full h-full object-cover"
             crossOrigin="anonymous"
-            onError={(e) => { 
-              if (!e.currentTarget.src.includes('logo-alfajr.png')) {
-                e.currentTarget.src = "/logo-alfajr.png"; 
-              }
-            }}
+            onError={(e) => { e.currentTarget.src = "/logo-alfajr.png"; }}
           />
           <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-[#C5A059] shadow-sm">
             {course.categoryName}
