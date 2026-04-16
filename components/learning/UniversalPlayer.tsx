@@ -322,9 +322,14 @@ const NativeVideoPlayer: React.FC<{
   const [bufferPercent, setBufferPercent] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [useProxy, setUseProxy] = useState(false);
   const stallTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMobile = isMobileDevice();
-  const optimizedSrc = optimizeFirebaseStorageUrl(src);
+  
+  // Use proxy if direct access fails (CORS/Network issues)
+  const optimizedSrc = useProxy 
+    ? `/api/video/stream?url=${encodeURIComponent(src)}`
+    : optimizeFirebaseStorageUrl(src);
 
   // ─── Preconnect to Firebase Storage (warm TCP) ───────────────────────────
   useEffect(() => {
@@ -457,6 +462,15 @@ const NativeVideoPlayer: React.FC<{
     const onError = () => {
       const code = video.error?.code;
       clearStallTimer();
+
+      // If direct access fails and we haven't tried proxy yet, try proxy
+      if (!useProxy && src.includes('firebasestorage.googleapis.com')) {
+        console.warn('[VIDEO PLAYER] Direct access failed, trying proxy fallback...');
+        setUseProxy(true);
+        setRetryCount(0);
+        return;
+      }
+
       if (code === 2 || code === 3) {
         // Network or decode error — retry
         if (retryCount < 3) {
