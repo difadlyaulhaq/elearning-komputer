@@ -11,6 +11,7 @@ export async function GET() {
     }
 
     const enrolledCourses = await getMyEnrolledCourses(user.id);
+    console.log(`[MY-COURSES API] Found ${enrolledCourses.length} courses for user ${user.id}`);
 
     return NextResponse.json({ 
       success: true, 

@@ -50,9 +50,12 @@ export async function getMyEnrolledCourses(userId: string): Promise<CourseWithPr
 
   if (user.role === 'admin') {
     // Admins see everything
+    console.log(`[GET_MY_COURSES] Admin detected, fetching all courses...`);
     const allCoursesSnapshot = await coursesRef.get();
     enrolledCourses = allCoursesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course));
+    console.log(`[GET_MY_COURSES] Admin found ${enrolledCourses.length} courses total`);
   } else {
+    console.log(`[GET_MY_COURSES] Fetching for user: ${userId}, divisionId: ${divisionId}`);
     const queries = [
       coursesRef.where('enrolledUserIds', 'array-contains', userId).get(),
     ];
@@ -65,7 +68,8 @@ export async function getMyEnrolledCourses(userId: string): Promise<CourseWithPr
     const results = await Promise.all(queries);
     const coursesMap = new Map<string, Course>();
 
-    results.forEach(snapshot => {
+    results.forEach((snapshot, idx) => {
+      console.log(`[GET_MY_COURSES] Query ${idx} returned ${snapshot.size} docs`);
       snapshot.forEach(doc => {
         if (!coursesMap.has(doc.id)) {
           coursesMap.set(doc.id, { id: doc.id, ...doc.data() } as Course);
@@ -74,6 +78,7 @@ export async function getMyEnrolledCourses(userId: string): Promise<CourseWithPr
     });
     
     enrolledCourses = Array.from(coursesMap.values());
+    console.log(`[GET_MY_COURSES] Total merged courses: ${enrolledCourses.length}`);
   }
 
   if (enrolledCourses.length === 0) return [];
