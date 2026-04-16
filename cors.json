@@ -2,11 +2,14 @@
   {
     "origin": [
       "https://alfajr-elearning.vercel.app",
+      "https://elearningalfajrumroh.com/",
       "https://*.vercel.app",
+      "https://*.alfajrumroh.com",
+      "https://alfajrumroh.com",
       "http://localhost:3000",
       "http://localhost:3001"
     ],
-    "method": ["GET", "HEAD"],
+    "method": ["GET", "HEAD", "OPTIONS"],
     "responseHeader": [
       "Content-Type",
       "Content-Length",
@@ -18,7 +21,8 @@
       "Cache-Control",
       "Access-Control-Allow-Origin",
       "Access-Control-Allow-Methods",
-      "Access-Control-Allow-Headers"
+      "Access-Control-Allow-Headers",
+      "Authorization"
     ],
     "maxAgeSeconds": 86400
   }

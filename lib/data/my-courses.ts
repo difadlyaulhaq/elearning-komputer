@@ -45,32 +45,42 @@ export async function getMyEnrolledCourses(userId: string): Promise<CourseWithPr
 
   // 3. Build queries
   const coursesRef = adminDb.collection('courses');
-  const queries = [
-    coursesRef.where('enrolledUserIds', 'array-contains', userId).get(),
-  ];
-
-  if (divisionId) {
-    queries.push(coursesRef.where('enrolledDivisionIds', 'array-contains', divisionId).get());
-  }
   
-  // 4. Execute queries and merge results
-  const results = await Promise.all(queries);
-  const coursesMap = new Map<string, Course>();
+  let enrolledCourses: Course[] = [];
 
-  results.forEach(snapshot => {
-    snapshot.forEach(doc => {
-      if (!coursesMap.has(doc.id)) {
-        coursesMap.set(doc.id, { id: doc.id, ...doc.data() } as Course);
-      }
+  if (user.role === 'admin') {
+    // Admins see everything
+    const allCoursesSnapshot = await coursesRef.get();
+    enrolledCourses = allCoursesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course));
+  } else {
+    const queries = [
+      coursesRef.where('enrolledUserIds', 'array-contains', userId).get(),
+    ];
+
+    if (divisionId) {
+      queries.push(coursesRef.where('enrolledDivisionIds', 'array-contains', divisionId).get());
+    }
+    
+    // 4. Execute queries and merge results
+    const results = await Promise.all(queries);
+    const coursesMap = new Map<string, Course>();
+
+    results.forEach(snapshot => {
+      snapshot.forEach(doc => {
+        if (!coursesMap.has(doc.id)) {
+          coursesMap.set(doc.id, { id: doc.id, ...doc.data() } as Course);
+        }
+      });
     });
-  });
-  
-  const enrolledCourses = Array.from(coursesMap.values());
+    
+    enrolledCourses = Array.from(coursesMap.values());
+  }
+
   if (enrolledCourses.length === 0) return [];
 
-  // 5. Get progress for each enrolled course
+  // 5. Get progress for each enrolled course from the 'progress' root collection
   const progressPromises = enrolledCourses.map(course => 
-    adminDb.collection('users').doc(userId).collection('courses').doc(course.id).get()
+    adminDb.collection('progress').doc(`${userId}_${course.id}`).get()
   );
   
   const progressResults = await Promise.all(progressPromises);
