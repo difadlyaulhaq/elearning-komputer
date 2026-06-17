@@ -12,6 +12,7 @@ const config: CapacitorConfig = {
       "*.elearningalfajrumroh.com",
       "alfajr-elearning.vercel.app",
       "*.alfajr-elearning.vercel.app",
+      "alfajr-elearning-*.vercel.app",
       "firebasestorage.googleapis.com",
       "*.googleapis.com",
       "*.firebaseapp.com",

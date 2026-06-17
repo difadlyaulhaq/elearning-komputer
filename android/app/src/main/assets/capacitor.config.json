@@ -5,18 +5,15 @@
 	"server": {
 		"url": "https://elearningalfajrumroh.com",
 		"allowNavigation": [
-<<<<<<< HEAD
 			"elearningalfajrumroh.com",
 			"*.elearningalfajrumroh.com",
-			"*"
-=======
 			"alfajr-elearning.vercel.app",
 			"*.alfajr-elearning.vercel.app",
 			"alfajr-elearning-*.vercel.app",
 			"firebasestorage.googleapis.com",
 			"*.googleapis.com",
-			"*.firebaseapp.com"
->>>>>>> 00871de9c1c7b3024771dd8cc18acba8eebead82
+			"*.firebaseapp.com",
+			"*"
 		]
 	},
 	"android": {
