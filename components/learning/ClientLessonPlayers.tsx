@@ -35,10 +35,16 @@ export function ClientLessonPlayers({
   completedLessons,
   isCompleted,
 }: ClientLessonPlayersProps) {
+  const [isMobileDevice, setIsMobileDevice] = React.useState(false);
+
+  React.useEffect(() => {
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    setIsMobileDevice(isMobile);
+  }, []);
+
   return (
     <>
-      {/* Mobile View */}
-      <div className="md:hidden">
+      {isMobileDevice ? (
         <LessonPlayerMobile
           courseId={courseId}
           courseTitle={courseTitle}
@@ -48,10 +54,7 @@ export function ClientLessonPlayers({
           completedLessons={completedLessons}
           isCompleted={isCompleted}
         />
-      </div>
-
-      {/* Desktop View */}
-      <div className="hidden md:block">
+      ) : (
         <LessonPlayerDesktop
           courseId={courseId}
           courseTitle={courseTitle}
@@ -61,7 +64,7 @@ export function ClientLessonPlayers({
           completedLessons={completedLessons}
           isCompleted={isCompleted}
         />
-      </div>
+      )}
     </>
   );
 }

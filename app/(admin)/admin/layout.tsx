@@ -19,6 +19,24 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobileLandscape, setIsMobileLandscape] = useState(false);
+
+  React.useEffect(() => {
+    const checkOrientation = () => {
+      // Check if it's mobile and in landscape
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const isLandscape = window.innerWidth > window.innerHeight && window.innerHeight < 600;
+      setIsMobileLandscape(isMobile && isLandscape);
+    };
+
+    checkOrientation();
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
+    return () => {
+      window.removeEventListener('resize', checkOrientation);
+      window.removeEventListener('orientationchange', checkOrientation);
+    };
+  }, []);
 
   return (
     <AuthProvider>
@@ -31,12 +49,16 @@ export default function AdminLayout({
         showWarningOnAttempt={true}
       >
         <Toaster position="top-center" reverseOrder={false} />
-        <div className="flex min-h-screen bg-brand-gray">
-          <AdminSidebar isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
-          <div className="flex-1 w-full flex flex-col">
-            <MobileHeader onMenuClick={() => setIsMobileMenuOpen(true)} />
-            {/* Main Content - adjusted for mobile header */}
-            <main className="flex-1 w-full">
+        <div className="flex min-h-screen bg-brand-gray overflow-hidden">
+          {!isMobileLandscape && (
+            <AdminSidebar isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
+          )}
+          <div className="flex-1 w-full flex flex-col min-w-0">
+            {!isMobileLandscape && (
+              <MobileHeader onMenuClick={() => setIsMobileMenuOpen(true)} />
+            )}
+            {/* Main Content - adjusted for mobile landscape */}
+            <main className={`flex-1 w-full ${isMobileLandscape ? 'p-0' : ''}`}>
               {children}
             </main>
           </div>

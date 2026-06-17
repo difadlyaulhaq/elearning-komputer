@@ -13,10 +13,14 @@ import {
   Link as LinkIcon,
   ChevronLeft,
   ChevronRight,
+  Clock,
+  Play,
+  Lock,
+  FileText,
+  BookOpen,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { MarkdownRenderer } from "@/components/shared/MarkdownRenderer";
-// import { ScreenProtection } from "@/components/shared/ScreenProtection";
 import UniversalPlayer from "./UniversalPlayer";
 import { LessonSkeleton } from "./LessonSkeleton";
 
@@ -41,7 +45,7 @@ export function LessonPlayerDesktop({
 }: LessonPlayerDesktopProps) {
   const { user, isLoading: authLoading, authFetch } = useAuth();
   const router = useRouter();
-  
+
   const [isVideoCompleted, setIsVideoCompleted] = useState(initialCompleted);
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -57,23 +61,23 @@ export function LessonPlayerDesktop({
     if (!user || !isVideoCompleted) return;
     setIsUpdating(true);
     toast.loading('Menyimpan progress...');
-    
+
     try {
       const res = await authFetch('/api/progress/lesson', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id, courseId, lessonId: lesson.id })
       });
-      
+
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || 'Gagal update progress');
       }
-      
+
       const data = await res.json();
       toast.dismiss();
       toast.success('Progress berhasil disimpan!');
-      
+
       const isCourseCompleted = data.data.status === 'completed';
       if (isCourseCompleted) {
         router.push(`/learning/course/${courseId}/complete`);
@@ -96,167 +100,222 @@ export function LessonPlayerDesktop({
     return <LessonSkeleton />;
   }
 
-  return (
+  const isVideoContent = !['text', 'image-upload', 'file-upload'].includes(lesson.contentType);
 
-      <div className="flex-1 flex flex-col bg-[#F8F9FA] min-h-screen">
-        {/* Desktop Header */}
-        <header className="bg-white p-4 border-b flex items-center justify-between sticky top-0 z-10">
-          <div className="flex-1">
-            <Link 
-              href={`/learning/course/${courseId}`} 
-              className="text-sm text-gray-600 hover:text-black transition-colors flex items-center gap-2"
-            >
-              <ArrowLeft size={16} /> Kembali ke Detail Kursus
-            </Link>
-            <h1 className="text-lg md:text-xl font-bold text-black mt-1 truncate">
+  return (
+    <div className="flex-1 flex flex-col bg-[#F8F9FA] min-h-screen">
+      {/* Desktop Header */}
+      <header className="bg-white border-b border-gray-200 px-6 py-3.5 sticky top-0 z-10 flex items-center justify-between shadow-sm">
+        <div className="flex items-center gap-4 flex-1 min-w-0">
+          <Link
+            href={`/learning/course/${courseId}`}
+            className="flex items-center gap-2 text-sm text-gray-500 hover:text-black transition-colors flex-shrink-0 group"
+          >
+            <div className="w-7 h-7 rounded-full bg-gray-100 group-hover:bg-gray-200 flex items-center justify-center transition-colors">
+              <ArrowLeft size={14} />
+            </div>
+            <span className="hidden lg:block">Kembali</span>
+          </Link>
+
+          <div className="h-4 w-px bg-gray-200 hidden lg:block" />
+
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] text-[#C5A059] font-semibold uppercase tracking-widest truncate">
+              {courseTitle}
+            </p>
+            <h1 className="text-sm font-bold text-gray-900 truncate leading-tight">
               {lesson.title}
             </h1>
-            <p className="text-sm text-gray-500">{courseTitle}</p>
           </div>
-        </header>
+        </div>
 
-        <div className="p-4 md:p-8 flex-1">
-          {lesson.contentType === "text" ? (
-            <div className="bg-white p-6 md:p-8 rounded-lg border max-w-4xl mx-auto">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 bg-[#C5A059]/10 rounded-lg flex items-center justify-center">
-                  <LinkIcon size={24} className="text-[#C5A059]" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-black">Artikel Pembelajaran</h2>
-                  <p className="text-gray-500">{lesson.duration || '10'} menit membaca</p>
-                </div>
-              </div>
-              <MarkdownRenderer content={lesson.textContent || ''} />
-            </div>
-          ) : lesson.contentType === "image-upload" ? (
-            <div className="bg-white p-6 md:p-8 rounded-lg border max-w-4xl mx-auto">
-              <img 
-                src={lesson.url} 
-                alt={lesson.title} 
-                className="w-full h-auto rounded-lg shadow-md"
-              />
-            </div>
-          ) : lesson.contentType === "file-upload" ? (
-            <div className="bg-white p-6 md:p-8 rounded-lg border max-w-4xl mx-auto text-center">
-              <div className="w-20 h-20 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Download size={40} />
-              </div>
-              <h2 className="text-xl font-bold text-black mb-2">File Materi</h2>
-              <p className="text-gray-500 mb-6">Silakan unduh atau buka file materi melalui tombol di bawah.</p>
-              <a 
-                href={lesson.url} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-[#C5A059] text-black font-bold rounded-lg hover:bg-[#B08F4A] transition-colors"
-              >
-                <Download size={20} /> Buka / Unduh File
-              </a>
-            </div>
-          ) : (
-            <div className="max-w-4xl mx-auto">
-              <UniversalPlayer 
-                src={lesson.url}
-                contentType={lesson.contentType as any}
-                onEnded={() => setIsVideoCompleted(true)}
-                onTimeUpdate={(currentTime, duration) => {
-                  if (duration > 0 && (currentTime / duration) >= 0.9) {
-                    setIsVideoCompleted(true);
-                  }
-                }}
-                watermark={lesson.watermark}
-                disableSeeking={false}
-              />
+        <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+          {lesson.duration && (
+            <div className="hidden md:flex items-center gap-1.5 text-xs text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full">
+              <Clock size={12} />
+              <span>{lesson.duration} menit</span>
             </div>
           )}
+          <div className={`text-xs font-medium px-3 py-1.5 rounded-full border ${
+            isVideoCompleted
+              ? 'bg-green-50 text-green-700 border-green-200'
+              : 'bg-amber-50 text-amber-700 border-amber-200'
+          }`}>
+            {isVideoCompleted ? '✓ Selesai' : 'Sedang Belajar'}
+          </div>
+        </div>
+      </header>
 
-          {/* Attachments Section */}
-          {lesson.attachmentUrl && lesson.attachmentName && (
-            <div className="max-w-4xl mx-auto mt-6">
-              <div className="bg-white p-6 rounded-lg border">
-                <h3 className="text-lg font-bold text-black mb-4 flex items-center gap-2">
-                  <LinkIcon size={18} />
-                  Materi Pendukung
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col lg:flex-row">
+        {/* Left: Player / Content */}
+        <div className="flex-1 flex flex-col">
+          {/* Player Area */}
+          <div className="bg-black rounded-xl overflow-hidden mx-4 md:mx-6 mt-4">
+            {isVideoContent ? (
+              <div className="max-w-5xl mx-auto w-full p-4 md:p-6">
+                <UniversalPlayer
+                  src={lesson.url}
+                  contentType={lesson.contentType as any}
+                  onEnded={() => setIsVideoCompleted(true)}
+                  onTimeUpdate={(currentTime, duration) => {
+                    if (duration > 0 && (currentTime / duration) >= 0.9) {
+                      setIsVideoCompleted(true);
+                    }
+                  }}
+                  watermark={lesson.watermark}
+                  disableSeeking={false}
+                />
+              </div>
+            ) : lesson.contentType === "image-upload" ? (
+              <div className="max-w-5xl mx-auto w-full p-4 md:p-6 flex justify-center">
+                <img
+                  src={lesson.url}
+                  alt={lesson.title}
+                  className="w-full h-auto rounded-2xl shadow-2xl"
+                />
+              </div>
+            ) : null}
+          </div>
+
+          {/* Info + Content Area */}
+          <div className="flex-1 p-4 md:p-6 max-w-5xl mx-auto w-full">
+            {/* Text content */}
+            {lesson.contentType === "text" && (
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mb-4">
+                <div className="flex items-center gap-3 mb-5 pb-4 border-b border-gray-100">
+                  <div className="w-11 h-11 bg-[#C5A059]/10 rounded-xl flex items-center justify-center">
+                    <BookOpen size={20} className="text-[#C5A059]" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-bold text-gray-900">Artikel Pembelajaran</h2>
+                    <p className="text-xs text-gray-500">{lesson.duration || '10'} menit membaca</p>
+                  </div>
+                </div>
+                <div className="prose prose-sm max-w-none text-gray-700">
+                  <MarkdownRenderer content={lesson.textContent || ''} />
+                </div>
+              </div>
+            )}
+
+            {/* File Upload Content */}
+            {lesson.contentType === "file-upload" && (
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 text-center mb-4">
+                <div className="w-16 h-16 bg-[#C5A059]/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Download size={28} className="text-[#C5A059]" />
+                </div>
+                <h2 className="text-lg font-bold text-gray-900 mb-1">File Materi</h2>
+                <p className="text-sm text-gray-500 mb-5">Silakan unduh atau buka file materi melalui tombol di bawah.</p>
+                <a
+                  href={lesson.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-[#C5A059] text-black font-bold rounded-xl hover:bg-[#D4AF6A] transition-colors"
+                >
+                  <Download size={18} /> Buka / Unduh File
+                </a>
+              </div>
+            )}
+
+            {/* Lesson Info (for video content) */}
+            {isVideoContent && (
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 mb-4">
+                <h3 className="text-lg font-bold text-gray-900 mb-2">{lesson.title}</h3>
+                <div className={`flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-xl w-fit ${
+                  isVideoCompleted
+                    ? 'bg-green-50 text-green-700 border border-green-200'
+                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                }`}>
+                  {isVideoCompleted ? (
+                    <><CheckCircle size={14} /> Materi selesai. Silakan lanjut ke materi berikutnya.</>
+                  ) : (
+                    <><Play size={13} /> Tonton video hingga selesai untuk melanjutkan.</>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Attachment */}
+            {lesson.attachmentUrl && lesson.attachmentName && (
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 mb-4">
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                  <LinkIcon size={12} /> Materi Pendukung
                 </h3>
-                <div className="space-y-3">
-                  <a
-                    href={lesson.attachmentUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center p-3 bg-gray-50 hover:bg-[#FFF8E7] border rounded-lg transition-colors"
-                  >
-                    <Download size={20} className="text-[#C5A059] mr-4" />
-                    <span className="font-semibold text-black">
-                      {lesson.attachmentName}
-                    </span>
-                  </a>
+                <a
+                  href={lesson.attachmentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-3.5 bg-gray-50 hover:bg-[#C5A059]/10 hover:border-[#C5A059]/20 rounded-xl border border-gray-100 transition-all group"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-[#C5A059]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#C5A059]/20 transition-colors">
+                    <FileText size={18} className="text-[#C5A059]" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-gray-900 truncate">{lesson.attachmentName}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Klik untuk mengunduh</p>
+                  </div>
+                  <Download size={16} className="text-gray-500 flex-shrink-0 group-hover:text-[#C5A059] transition-colors" />
+                </a>
+              </div>
+            )}
+
+            {/* Completion & Navigation */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                {/* Navigation arrows */}
+                <div className="flex items-center gap-2">
+                  {prevLesson ? (
+                    <Link
+                      href={`/learning/course/${courseId}/lesson/${prevLesson.id}`}
+                      className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl transition-all text-sm group"
+                    >
+                      <ChevronLeft size={15} className="text-gray-500" />
+                      <div>
+                        <p className="text-[10px] text-gray-400 uppercase tracking-wider">Sebelumnya</p>
+                        <p className="text-sm font-semibold text-gray-800 line-clamp-1 max-w-[150px]">{prevLesson.title}</p>
+                      </div>
+                    </Link>
+                  ) : (
+                    <div />
+                  )}
+
+                  {nextLesson && (
+                    <Link
+                      href={`/learning/course/${courseId}/lesson/${nextLesson.id}`}
+                      className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl transition-all text-sm group"
+                    >
+                      <div className="text-right">
+                        <p className="text-[10px] text-gray-400 uppercase tracking-wider">Selanjutnya</p>
+                        <p className="text-sm font-semibold text-gray-800 line-clamp-1 max-w-[150px]">{nextLesson.title}</p>
+                      </div>
+                      <ChevronRight size={15} className="text-gray-500" />
+                    </Link>
+                  )}
                 </div>
+
+                {/* Complete button */}
+                <button
+                  onClick={handleMarkComplete}
+                  disabled={!isVideoCompleted || isUpdating}
+                  className={`flex items-center justify-center gap-2 px-6 py-3 font-bold text-sm rounded-xl transition-all duration-300 ${
+                    isVideoCompleted && !isUpdating
+                      ? "bg-[#C5A059] hover:bg-[#b8913e] text-white shadow-lg shadow-[#C5A059]/20 hover:shadow-[#C5A059]/30 hover:scale-[1.02]"
+                      : "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+                  }`}
+                >
+                  {isUpdating ? (
+                    <><Loader2 size={16} className="animate-spin" /><span>Menyimpan...</span></>
+                  ) : isVideoCompleted ? (
+                    <><CheckCircle size={16} /><span>{nextLesson ? "Selesai & Lanjut" : "Selesaikan Kursus"}</span></>
+                  ) : (
+                    <><Lock size={15} /><span>Selesaikan video dulu</span></>
+                  )}
+                </button>
               </div>
             </div>
-          )}
-
-          {/* Completion Section */}
-          <div className="max-w-4xl mx-auto mt-6">
-            <div className="bg-white p-6 rounded-lg border flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-center md:text-left">
-              <div className="flex-1">
-                <h2 className="text-lg font-bold text-black">{lesson.title}</h2>
-                <p className="text-sm text-gray-500">
-                  {isVideoCompleted 
-                    ? "Materi selesai. Silakan lanjut ke materi berikutnya." 
-                    : lesson.contentType === 'text' 
-                      ? "Silakan klik tombol di samping untuk melanjutkan." 
-                      : "Tonton video hingga selesai untuk melanjutkan."}
-                </p>
-              </div>
-              <button
-                onClick={handleMarkComplete}
-                disabled={!isVideoCompleted || isUpdating}
-                className={`w-full md:w-auto flex items-center justify-center gap-2 px-5 py-2.5 font-semibold text-white rounded-lg transition-all ${
-                  isVideoCompleted && !isUpdating 
-                    ? "bg-green-600 hover:bg-green-700 shadow-md" 
-                    : "bg-gray-400 cursor-not-allowed"
-                }`}
-              >
-                {isUpdating ? (
-                  <Loader2 className="animate-spin" size={18} />
-                ) : (
-                  <CheckCircle size={18} />
-                )}
-                {isUpdating 
-                  ? "Menyimpan..." 
-                  : (nextLesson ? "Selesai & Lanjut" : "Selesai Kursus")}
-              </button>
-            </div>
-          </div>
-
-          {/* Navigation */}
-          <div className="max-w-4xl mx-auto mt-6 flex items-center justify-between">
-            {prevLesson ? (
-              <Link
-                href={`/learning/course/${courseId}/lesson/${prevLesson.id}`}
-                className="flex items-center gap-2 text-gray-600 hover:text-black transition-colors"
-              >
-                <ChevronLeft size={16} />
-                <span>Materi Sebelumnya</span>
-              </Link>
-            ) : (
-              <div></div>
-            )}
-            
-            {nextLesson ? (
-              <Link
-                href={`/learning/course/${courseId}/lesson/${nextLesson.id}`}
-                className="flex items-center gap-2 text-gray-600 hover:text-black transition-colors"
-              >
-                <span>Materi Selanjutnya</span>
-                <ChevronRight size={16} />
-              </Link>
-            ) : (
-              <div></div>
-            )}
           </div>
         </div>
       </div>
-
+    </div>
   );
 }

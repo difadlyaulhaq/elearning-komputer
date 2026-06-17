@@ -1,9 +1,15 @@
 'use client';
 
 import { useEffect } from 'react';
+import { isMobileDevice } from '@/lib/security/mobileProtection';
 
 export const WebProtection = () => {
   useEffect(() => {
+    // Disable all web protections (right click, shortcuts, etc.) for all mobile/tablet views
+    if (isMobileDevice()) {
+      return;
+    }
+
     // 1. Disable Right Click
     const handleContextMenu = (e: MouseEvent) => {
       e.preventDefault();
@@ -30,20 +36,17 @@ export const WebProtection = () => {
     };
 
     // 3. Debugger Loop (Freezes execution if DevTools is open)
-    // This is a common technique to make debugging very difficult
     const debuggerInterval = setInterval(() => {
       const startTime = performance.now();
       debugger;
       const endTime = performance.now();
       
-      // If the difference is large, DevTools is likely open (paused on debugger)
       if (endTime - startTime > 100) {
         console.clear();
-        // You could also redirect the user or show a warning
       }
     }, 1000);
 
-    // 4. Disable Drag and Drop (Prevents dragging images/content to other tabs)
+    // 4. Disable Drag and Drop
     const handleDragStart = (e: DragEvent) => {
       e.preventDefault();
     };
@@ -58,7 +61,7 @@ export const WebProtection = () => {
       console.log("%cPERINGATAN!%c\nArea ini diawasi secara ketat oleh sistem keamanan Alfajr. Segala upaya akses ilegal akan dicatat.", 
         "color: red; font-size: 24px; font-weight: bold;", 
         "color: black; font-size: 14px;");
-    }, 2000);
+    }, 10000);
 
     return () => {
       document.removeEventListener('contextmenu', handleContextMenu);
@@ -69,5 +72,5 @@ export const WebProtection = () => {
     };
   }, []);
 
-  return null; // This component doesn't render anything
+  return null;
 };

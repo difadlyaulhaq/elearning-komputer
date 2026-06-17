@@ -84,11 +84,31 @@ const LearningHistoryPage = () => {
         .line-clamp-2 { overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
       `}} />
       
-      {/* Header Mobile - Enhanced */}
-      <div className="sticky top-0 z-50 bg-[#000000] text-white md:hidden shadow-lg">
+      {/* Header - Desktop, matching catalog style */}
+      <div className="bg-white border-b border-gray-200 p-4 md:px-8 md:py-6 hidden md:block">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl md:text-2xl font-bold text-black">Riwayat Belajar</h1>
+            <p className="text-gray-600 mt-1">Arsip perjalanan pengembangan diri Anda</p>
+          </div>
+          <div className="flex gap-3">
+            <div className="text-center px-5 py-2 bg-[#F8F9FA] rounded-xl border border-gray-200">
+              <div className="text-xl font-bold text-[#C5A059]">{stats.total}</div>
+              <div className="text-[10px] uppercase tracking-wider text-gray-500">Total</div>
+            </div>
+            <div className="text-center px-5 py-2 bg-[#F8F9FA] rounded-xl border border-gray-200">
+              <div className="text-xl font-bold text-green-600">{stats.completed}</div>
+              <div className="text-[10px] uppercase tracking-wider text-gray-500">Selesai</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Header Mobile */}
+      <div className="sticky top-0 z-50 bg-white text-black md:hidden shadow-sm border-b border-gray-200">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-3">
-            <Link href="/learning/dashboard" className="p-1 hover:bg-white/10 rounded-full transition-colors">
+            <Link href="/learning/dashboard" className="p-1 hover:bg-gray-100 rounded-full transition-colors">
               <ArrowLeft size={22} />
             </Link>
             <div>
@@ -99,7 +119,7 @@ const LearningHistoryPage = () => {
           
           <button 
             onClick={() => setShowSearch(!showSearch)}
-            className={`p-2 rounded-full transition-colors ${showSearch ? 'bg-[#C5A059] text-black' : 'hover:bg-white/10'}`}
+            className={`p-2 rounded-full transition-colors ${showSearch ? 'bg-[#C5A059] text-white' : 'hover:bg-gray-100'}`}
           >
             {showSearch ? <X size={20} /> : <Search size={20} />}
           </button>
@@ -113,7 +133,7 @@ const LearningHistoryPage = () => {
               <input
                 type="text"
                 placeholder="Cari materi atau kursus..."
-                className="w-full pl-10 pr-10 py-3 bg-white/10 border-0 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-[#C5A059] outline-none transition-all"
+                className="w-full pl-10 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-xl text-black placeholder-gray-400 focus:ring-2 focus:ring-[#C5A059] outline-none transition-all"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 autoFocus
@@ -128,41 +148,7 @@ const LearningHistoryPage = () => {
         )}
       </div>
 
-      {/* Hero Header - Desktop */}
-      <div className="relative bg-[#000000] overflow-hidden mb-8 shadow-md hidden md:block">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `radial-gradient(circle at 2px 2px, #C5A059 1px, transparent 0)`,
-            backgroundSize: '40px 40px'
-          }}></div>
-        </div>
-        <div className="relative container mx-auto p-4 md:px-6 md:py-12">
-           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#C5A059] to-[#8B6E3C] flex items-center justify-center shadow-lg text-white">
-                  <History size={32} />
-                </div>
-                <div>
-                  <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">Riwayat Belajar</h1>
-                  <p className="text-[#C5A059] mt-1 font-medium">Arsip perjalanan pengembangan diri Anda</p>
-                </div>
-              </div>
-
-              <div className="flex gap-4 text-white self-stretch">
-                <div className="text-center px-6 py-2 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm flex-1">
-                  <div className="text-2xl font-bold text-[#C5A059]">{stats.total}</div>
-                  <div className="text-[10px] uppercase tracking-wider opacity-70">Total</div>
-                </div>
-                <div className="text-center px-6 py-2 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm flex-1">
-                  <div className="text-2xl font-bold text-green-400">{stats.completed}</div>
-                  <div className="text-[10px] uppercase tracking-wider opacity-70">Selesai</div>
-                </div>
-              </div>
-           </div>
-        </div>
-      </div>
-
-      <div className="container mx-auto p-4 md:px-6">
+      <div className="p-4 md:p-8">
         
         {/* Stats & Filters Combined for Mobile */}
         <div className="md:hidden space-y-6 mb-6">
@@ -171,7 +157,7 @@ const LearningHistoryPage = () => {
             <button 
               onClick={() => setFilter('all')}
               className={`flex-shrink-0 px-6 py-2.5 rounded-full text-sm font-bold transition-all ${
-                filter === 'all' ? 'bg-[#C5A059] text-black shadow-md' : 'bg-white text-gray-600 border border-gray-200'
+                filter === 'all' ? 'bg-[#C5A059] text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200'
               }`}
             >
               Semua ({stats.total})
@@ -179,7 +165,7 @@ const LearningHistoryPage = () => {
             <button 
               onClick={() => setFilter('in-progress')}
               className={`flex-shrink-0 px-6 py-2.5 rounded-full text-sm font-bold transition-all ${
-                filter === 'in-progress' ? 'bg-orange-500 text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200'
+                filter === 'in-progress' ? 'bg-[#C5A059] text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200'
               }`}
             >
               Berjalan ({stats.inProgress})
@@ -187,7 +173,7 @@ const LearningHistoryPage = () => {
             <button 
               onClick={() => setFilter('completed')}
               className={`flex-shrink-0 px-6 py-2.5 rounded-full text-sm font-bold transition-all ${
-                filter === 'completed' ? 'bg-green-600 text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200'
+                filter === 'completed' ? 'bg-[#C5A059] text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200'
               }`}
             >
               Selesai ({stats.completed})
@@ -196,106 +182,124 @@ const LearningHistoryPage = () => {
         </div>
 
         {/* Controls Bar Desktop */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-8 hidden md:flex flex-row justify-between items-center gap-4 sticky top-4 z-10">
-          <div className="flex p-1.5 bg-gray-50 rounded-lg gap-1">
-            {['all', 'in-progress', 'completed'].map((f) => (
-              <button 
-                key={f}
-                onClick={() => setFilter(f as any)}
-                className={`px-6 py-2.5 rounded-md text-sm font-bold transition-all ${
-                  filter === f 
-                    ? 'bg-[#C5A059] text-black shadow-sm' 
-                    : 'text-gray-500 hover:bg-white hover:text-black'
-                }`}
-              >
-                {f === 'all' ? 'Semua' : f === 'in-progress' ? 'Sedang Berjalan' : 'Selesai'}
-              </button>
-            ))}
-          </div>
+        <div className="mb-8 hidden md:block">
+          <div className="flex flex-row justify-between items-center gap-4">
+            <div className="flex flex-wrap gap-2">
+              {[
+                { key: 'all', label: 'Semua' }, 
+                { key: 'in-progress', label: 'Sedang Berjalan' }, 
+                { key: 'completed', label: 'Selesai' }
+              ].map((f) => (
+                <button 
+                  key={f.key}
+                  onClick={() => setFilter(f.key as any)}
+                  className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-colors ${
+                    filter === f.key 
+                      ? 'bg-[#C5A059] text-white' 
+                      : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
 
-          <div className="relative w-80">
-            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Cari kursus..."
-              className="w-full pl-10 pr-4 py-2.5 border text-gray-700 border-gray-200 rounded-lg focus:ring-2 focus:ring-[#C5A059]/50 focus:border-[#C5A059] outline-none transition-all"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+            <div className="relative max-w-md">
+              <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Cari kursus..."
+                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#C5A059] outline-none text-black"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
           </div>
         </div>
 
         {/* Content Grid */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <Loader2 className="h-12 w-12 animate-spin text-[#C5A059] mb-4" />
-            <p className="text-gray-500 font-medium">Memuat riwayat belajar...</p>
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="w-12 h-12 text-[#C5A059] animate-spin" />
           </div>
         ) : filteredCourses.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
             {filteredCourses.map((item) => (
-              <div key={item.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all group">
-                <div className="relative h-44 bg-gray-900">
-                  {item.thumbnail ? (
-                    <img src={item.thumbnail} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-800 to-black">
-                      <BookOpen size={48} className="text-[#C5A059]/30" />
+              <Link href={`/learning/course/${item.courseId}`} key={item.id}>
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow group h-full flex flex-col">
+                  <div className="h-40 bg-gray-200 relative">
+                    {item.thumbnail ? (
+                      <img src={item.thumbnail} alt={item.title} className="w-full h-full object-cover" crossOrigin="anonymous" onError={(e) => { e.currentTarget.src = "/logo-alfajr.png"; }} />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+                        <img src="/logo-alfajr.png" alt="Logo Alfajr" className="w-1/2 opacity-30 grayscale" />
+                      </div>
+                    )}
+                    <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-[#C5A059] shadow-sm">
+                      {item.categoryName || 'Materi'}
                     </div>
-                  )}
-                  <div className="absolute top-3 left-3">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                      item.status === 'completed' ? 'bg-green-500 text-white' : 'bg-[#C5A059] text-black'
-                    }`}>
-                      {item.status === 'completed' ? 'Selesai' : 'Berjalan'}
-                    </span>
-                  </div>
-                  {item.status !== 'completed' && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-black/40 h-1.5">
-                      <div className="bg-[#C5A059] h-full transition-all duration-1000" style={{ width: `${item.progress || 0}%` }} />
-                    </div>
-                  )}
-                </div>
-                
-                <div className="p-5">
-                  <h3 className="font-bold text-gray-900 line-clamp-2 text-sm leading-tight mb-3 h-10">
-                    {item.title}
-                  </h3>
-                  
-                  <div className="flex items-center text-[11px] text-gray-500 font-medium mb-4 gap-3">
-                    <span className="flex items-center gap-1"><Clock size={12} /> {item.totalVideos || 0} Video</span>
-                    <span className="px-2 py-0.5 bg-gray-100 rounded text-gray-600">{item.categoryName || 'Materi'}</span>
+                    {item.status === 'completed' && (
+                      <div className="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                        <CheckCircle size={12} />
+                        <span>Selesai</span>
+                      </div>
+                    )}
+                    {item.status !== 'completed' && (
+                      <div className="absolute top-2 left-2 bg-[#C5A059] text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                        <Clock size={12} />
+                        <span>Berjalan</span>
+                      </div>
+                    )}
                   </div>
                   
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-50">
-                    <div className="flex items-center gap-1.5">
-                      {item.status === 'completed' ? (
-                        <CheckCircle size={18} className="text-green-500" />
-                      ) : (
-                        <div className="text-xs font-bold text-[#C5A059]">{item.progress || 0}%</div>
-                      )}
+                  <div className="p-4 flex flex-col flex-grow">
+                    <h3 className="font-bold text-base text-black mb-2 line-clamp-2">
+                      {item.title}
+                    </h3>
+                    
+                    {item.status !== 'completed' && (
+                      <div className="mb-2">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-xs font-semibold text-yellow-600">Dalam Pengerjaan</span>
+                          <span className="text-xs font-bold text-black">{item.progress || 0}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-1.5">
+                          <div className="bg-[#C5A059] h-1.5 rounded-full" style={{ width: `${item.progress || 0}%` }} />
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex items-center text-xs text-gray-500 gap-3 mb-3 flex-grow">
+                      <span className="flex items-center gap-1"><PlayCircle size={12} /> {item.totalVideos || 0} Video</span>
                     </div>
                     
-                    <Link 
-                      href={`/learning/course/${item.courseId}`}
-                      className="text-xs font-bold bg-[#000000] text-white px-4 py-2 rounded-xl hover:bg-[#C5A059] hover:text-black transition-all"
-                    >
-                      {item.status === 'completed' ? 'Lihat Detail' : 'Lanjutkan'}
-                    </Link>
+                    <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                      <div className="flex items-center gap-1.5">
+                        {item.status === 'completed' ? (
+                          <CheckCircle size={16} className="text-green-500" />
+                        ) : (
+                          <div className="text-xs font-bold text-[#C5A059]">{item.progress || 0}%</div>
+                        )}
+                      </div>
+                      
+                      <span className="text-xs font-bold text-[#C5A059]">
+                        {item.status === 'completed' ? 'Lihat Detail →' : 'Lanjutkan →'}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         ) : (
-          <div className="text-center py-20 px-6 bg-white rounded-3xl border-2 border-dashed border-gray-100">
+          <div className="text-center py-16 text-gray-500">
             <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
               {searchQuery ? <Search size={32} className="text-gray-300" /> : <BookOpen size={32} className="text-gray-300" />}
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
               {searchQuery ? 'Hasil tidak ditemukan' : 'Belum ada riwayat'}
             </h3>
-            <p className="text-gray-500 text-sm max-w-xs mx-auto mb-8">
+            <p className="text-sm max-w-xs mx-auto mb-6">
               {searchQuery 
                 ? `Tidak dapat menemukan "${searchQuery}". Coba kata kunci lain.`
                 : 'Anda belum memulai kursus apapun. Mari mulai belajar sekarang!'}
@@ -303,7 +307,7 @@ const LearningHistoryPage = () => {
             {searchQuery ? (
               <button onClick={() => setSearchQuery('')} className="text-[#C5A059] font-bold text-sm underline">Hapus Pencarian</button>
             ) : (
-              <Link href="/learning/catalog" className="inline-block bg-black text-white px-8 py-3 rounded-2xl font-bold shadow-lg shadow-black/20">Jelajahi Katalog</Link>
+              <Link href="/learning/catalog" className="inline-block bg-black text-white px-8 py-3 rounded-xl font-bold shadow-sm">Jelajahi Katalog</Link>
             )}
           </div>
         )}

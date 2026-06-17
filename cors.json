@@ -1,15 +1,30 @@
 [
   {
-    "origin": ["*"],
-    "method": ["GET", "HEAD"],
+    "origin": [
+      "https://alfajr-elearning.vercel.app",
+      "https://elearningalfajrumroh.com",
+      "https://www.elearningalfajrumroh.com",
+      "https://*.vercel.app",
+      "https://*.alfajrumroh.com",
+      "https://alfajrumroh.com",
+      "http://localhost:3000",
+      "http://localhost:3001"
+    ],
+    "method": ["GET", "HEAD", "OPTIONS"],
     "responseHeader": [
       "Content-Type",
-      "Range",
-      "Accept-Ranges",
-      "Content-Range",
       "Content-Length",
-      "Access-Control-Allow-Origin"
+      "Content-Range",
+      "Accept-Ranges",
+      "Range",
+      "ETag",
+      "Last-Modified",
+      "Cache-Control",
+      "Access-Control-Allow-Origin",
+      "Access-Control-Allow-Methods",
+      "Access-Control-Allow-Headers",
+      "Authorization"
     ],
-    "maxAgeSeconds": 3600
+    "maxAgeSeconds": 86400
   }
 ]

@@ -1,4 +1,5 @@
 // lib/security/mobileProtection.ts - Enhanced Version
+import { getIsNativeApp } from '../native-detection';
 
 export interface GestureConfig {
   minMultiTouchCount: number;
@@ -32,18 +33,9 @@ export const isMobileDevice = (): boolean => {
   if (typeof window === 'undefined') return false;
   
   const ua = navigator.userAgent;
-  const platform = (navigator as any).platform || '';
   
-  // 1. Standard UA Check
-  const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
-  
-  // 2. Aggressive Desktop Mode Check
-  const hasTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
-  const isLinuxWithTouch = hasTouch && /Linux/i.test(platform);
-  const isMacWithTouch = hasTouch && /MacIntel/i.test(platform) && navigator.maxTouchPoints > 1;
-  const hasOrientation = typeof window.orientation !== 'undefined';
-
-  return isMobileUA || isLinuxWithTouch || isMacWithTouch || (hasTouch && hasOrientation);
+  // Standard UA Check for Mobile and Tablet
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
 };
 
 export const isIOS = (): boolean => {
@@ -76,6 +68,12 @@ export const initializeMobileProtection = (
   customConfig?: Partial<GestureConfig>
 ): (() => void) => {
   if (typeof window === 'undefined') return () => {};
+  
+  // CRITICAL: Skip if running inside a Native App to avoid interference with Capacitor/OS level protection
+  if (getIsNativeApp()) {
+    console.log('Mobile Protection: Native app detected, skipping web-layer mobile protection listeners.');
+    return () => {};
+  }
 
   const config = { ...DEFAULT_CONFIG, ...customConfig };
   const activePointers = new Map<number, PointerEvent>();
@@ -387,7 +385,8 @@ export const initializeMobileProtection = (
 
   // Detect task switcher (Android)
   const handleBlur = () => {
-    if (isMobileDevice()) {
+    // Only apply for mobile WEB (not native app which has OS level protection)
+    if (isMobileDevice() && !getIsNativeApp()) {
       onViolation?.({ 
         type: 'mobile_blur_event', 
         timestamp: Date.now() 
@@ -418,8 +417,22 @@ export const initializeMobileProtection = (
       -webkit-touch-callout: none !important;
     }
     
+    /* Exclude video player controls from touch blocking */
+    .vjs-control-bar, .vjs-control-bar *, .vjs-big-play-button, .vjs-big-play-button *,
+    .video-js, video {
+      pointer-events: auto !important;
+      touch-action: manipulation !important;
+    }
+    
     img, video, canvas {
-      pointer-events: none;
+      -webkit-user-drag: none;
+      -khtml-user-drag: none;
+      -moz-user-drag: none;
+      -o-user-drag: none;
+      user-drag: none;
+    }
+    
+    video {
       -webkit-user-drag: none;
       -khtml-user-drag: none;
       -moz-user-drag: none;

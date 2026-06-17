@@ -9,6 +9,7 @@ import { Course, Section, Lesson, Category, User, Division } from '@/types';
 import UniversalPlayer from '../learning/UniversalPlayer';
 
 import { FileUploader } from '@/components/admin/FileUploader';
+import { VideoCompressorUploader } from '@/components/admin/VideoCompressorUploader';
 
 // Helper for YouTube ID
 const getYouTubeId = (url: string) => {
@@ -54,6 +55,7 @@ export const CoursePreviewModal: React.FC<{
                src={previewData.coverImage || "/logo-alfajr.png"} 
                className="w-full h-full object-cover"
                alt="Cover"
+               crossOrigin="anonymous"
                onError={(e) => { e.currentTarget.src = "/logo-alfajr.png"; }}
              />
              
@@ -64,6 +66,7 @@ export const CoursePreviewModal: React.FC<{
                    src={previewData.thumbnail} 
                    className="w-full h-full object-cover"
                    alt="Thumbnail"
+                   crossOrigin="anonymous"
                  />
                  <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
                     <span className="text-[8px] text-white font-bold bg-black/50 px-1 rounded">Thumbnail</span>
@@ -349,6 +352,16 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
   const [previewData, setPreviewData] = useState<Course | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
 
+  // Sync courses state with props when router.refresh() is called
+  useEffect(() => {
+    setCourses(initialCourses);
+  }, [initialCourses]);
+
+  // Sync categories state with props
+  useEffect(() => {
+    setCategories(initialCategories);
+  }, [initialCategories]);
+
   // Ref for filter dropdown
   const filterRef = useRef<HTMLDivElement>(null);
 
@@ -429,10 +442,13 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Matikan protection saat modal upload atau preview terbuka
+  // Matikan protection saat modal upload terbuka (untuk proses edit kurikulum)
+  // Namun tetap aktifkan saat Preview Mode (showPreview) agar konten tetap terlindungi
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      if (showModal || showPreview) {
+      // Hanya matikan protection jika showModal aktif (sedang edit kurikulum)
+      // Jika showPreview aktif, protection tetap menyala (false)
+      if (showModal) {
         window.disableScreenProtection = true;
       } else {
         window.disableScreenProtection = false;
@@ -579,6 +595,32 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
     setIsLoading(true);
     const loadingToast = toast.loading('Menyimpan perubahan...');
     
+    // Auto-save pending lesson if any
+    let latestFormData = { ...formData };
+    if (activeSectionId) {
+      if (tempLesson.title) {
+        const lessonData = { ...tempLesson, id: editingLessonId || Date.now().toString() } as Lesson;
+        const newSections = (latestFormData.sections || []).map(s => {
+          if (s.id === activeSectionId) {
+            const newLessons = editingLessonId 
+              ? s.lessons.map(l => l.id === editingLessonId ? lessonData : l) 
+              : [...s.lessons, lessonData];
+            return { ...s, lessons: newLessons };
+          }
+          return s;
+        });
+        latestFormData.sections = newSections;
+        setFormData(latestFormData);
+        handleCancelEditLesson();
+      } else if (editingLessonId) {
+         // If editing but title is empty, maybe they wanted to cancel? 
+         // For safety, let's just ask them to finish.
+         setIsLoading(false);
+         toast.dismiss(loadingToast);
+         return toast.error('Selesaikan atau batalkan edit materi sebelum melanjutkan');
+      }
+    }
+
     const url = isEditing ? `/api/admin/courses/${editId}` : '/api/admin/courses';
     const method = isEditing ? 'PATCH' : 'POST';
 
@@ -586,7 +628,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
       const res = await fetch(url, { 
         method, 
         headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify(formData) 
+        body: JSON.stringify(latestFormData) 
       });
       const result = await res.json();
 
@@ -628,20 +670,38 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
   };
 
   const handleSaveCourse = async () => {
-    setIsLoading(true);
     if (!formData.title || !formData.categoryId) {
       toast.error('Judul dan Kategori wajib diisi', { duration: 3000 });
-      setIsLoading(false);
       return;
     }
 
     if (!formData.coverImage || !formData.thumbnail) {
       toast.error('Cover Image dan Thumbnail wajib diunggah', { duration: 3000 });
-      setIsLoading(false);
       return;
     }
 
+    setIsLoading(true);
     const loadingToast = toast.loading('Menyimpan kursus...');
+
+    // Auto-save pending lesson if any
+    let latestFormData = { ...formData };
+    if (activeSectionId) {
+      if (tempLesson.title) {
+        const lessonData = { ...tempLesson, id: editingLessonId || Date.now().toString() } as Lesson;
+        const newSections = (latestFormData.sections || []).map(s => {
+          if (s.id === activeSectionId) {
+            const newLessons = editingLessonId 
+              ? s.lessons.map(l => l.id === editingLessonId ? lessonData : l) 
+              : [...s.lessons, lessonData];
+            return { ...s, lessons: newLessons };
+          }
+          return s;
+        });
+        latestFormData.sections = newSections;
+        setFormData(latestFormData);
+        handleCancelEditLesson();
+      }
+    }
     
     try {
       const url = isEditing ? `/api/admin/courses/${editId}` : '/api/admin/courses';
@@ -649,7 +709,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
       const res = await fetch(url, { 
         method, 
         headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify(formData) 
+        body: JSON.stringify(latestFormData) 
       });
       const result = await res.json();
       
@@ -682,9 +742,13 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
   }));
 
   const updateSectionTitle = (index: number, title: string) => { 
-    const newSections = [...(formData.sections || [])]; 
-    newSections[index].title = title; 
-    setFormData(prev => ({ ...prev, sections: newSections })); 
+    setFormData(prev => {
+      const newSections = [...(prev.sections || [])];
+      if (newSections[index]) {
+        newSections[index] = { ...newSections[index], title };
+      }
+      return { ...prev, sections: newSections };
+    });
   };
 
   const deleteSection = (index: number) => setFormData(prev => ({ 
@@ -718,10 +782,12 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
     const confirmMessage = 'Anda yakin ingin menghapus materi ini dari daftar?';
     
     const performDelete = () => {
-      const newSections = (formData.sections || []).map(s => 
-        s.id === sectionId ? { ...s, lessons: s.lessons.filter(l => l.id !== lessonId) } : s
-      );
-      setFormData(prev => ({ ...prev, sections: newSections }));
+      setFormData(prev => {
+        const newSections = (prev.sections || []).map(s => 
+          s.id === sectionId ? { ...s, lessons: s.lessons.filter(l => l.id !== lessonId) } : s
+        );
+        return { ...prev, sections: newSections };
+      });
       toast.success('Materi dihapus dari daftar.', { duration: 3000 });
     };
 
@@ -733,16 +799,20 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
     if (tempLesson.contentType === 'text' && !tempLesson.textContent) return toast.error('Konten artikel wajib diisi', { duration: 3000 });
 
     const lessonData = { ...tempLesson, id: editingLessonId || Date.now().toString() } as Lesson;
-    const newSections = (formData.sections || []).map(s => {
-      if (s.id === sectionId) {
-        const newLessons = editingLessonId 
-          ? s.lessons.map(l => l.id === editingLessonId ? lessonData : l) 
-          : [...s.lessons, lessonData];
-        return { ...s, lessons: newLessons };
-      }
-      return s;
+    
+    setFormData(prev => {
+      const newSections = (prev.sections || []).map(s => {
+        if (s.id === sectionId) {
+          const newLessons = editingLessonId 
+            ? s.lessons.map(l => l.id === editingLessonId ? lessonData : l) 
+            : [...s.lessons, lessonData];
+          return { ...s, lessons: newLessons };
+        }
+        return s;
+      });
+      return { ...prev, sections: newSections };
     });
-    setFormData(prev => ({ ...prev, sections: newSections }));
+    
     handleCancelEditLesson();
     toast.success('Materi berhasil disimpan sementara!', { duration: 3000 });
   };
@@ -946,6 +1016,8 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                   src={course.thumbnail || course.coverImage || '/logo-alfajr.png'} 
                   alt={course.title} 
                   className="w-full h-full object-cover" 
+                  crossOrigin="anonymous"
+                  onError={(e) => { e.currentTarget.src = "/logo-alfajr.png"; }}
                 />
                 <span className={`absolute top-3 left-3 px-2 py-1 rounded text-xs font-bold ${course.status === 'active' ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'}`}>
                   {course.status === 'active' ? 'Aktif' : 'Draft'}
@@ -1131,12 +1203,12 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                           accept="image/*" 
                           label="Upload Cover" 
                           onIsUploadingChange={setIsUploadingLesson}
-                          onUploadSuccess={(url) => setFormData({...formData, coverImage: url})} 
+                          onUploadSuccess={(url) => setFormData(prev => ({...prev, coverImage: url}))} 
                         />
                         <input 
                           type="text" 
                           value={formData.coverImage} 
-                          onChange={e => setFormData({...formData, coverImage: e.target.value})}
+                          onChange={e => setFormData(prev => ({...prev, coverImage: e.target.value}))}
                           className="w-full px-3 py-2 border rounded-lg text-xs outline-none text-black"
                           placeholder="Atau masukkan URL Cover..."
                           disabled={isLoading}
@@ -1149,12 +1221,12 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                           accept="image/*" 
                           label="Upload Thumbnail" 
                           onIsUploadingChange={setIsUploadingLesson}
-                          onUploadSuccess={(url) => setFormData({...formData, thumbnail: url})} 
+                          onUploadSuccess={(url) => setFormData(prev => ({...prev, thumbnail: url}))} 
                         />
                         <input 
                           type="text" 
                           value={formData.thumbnail} 
-                          onChange={e => setFormData({...formData, thumbnail: e.target.value})}
+                          onChange={e => setFormData(prev => ({...prev, thumbnail: e.target.value}))}
                           className="w-full px-3 py-2 border rounded-lg text-xs outline-none text-black"
                           placeholder="Atau masukkan URL Thumbnail..."
                           disabled={isLoading}
@@ -1347,13 +1419,21 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                                                                                                                       onChange={e => setTempLesson({...tempLesson, duration: e.target.value})}
                                                                                                                       disabled={isLoading}
                                                                                                                     />
-                                                                                                                    <FileUploader 
-                                                                                                                      folder={tempLesson.contentType === 'video-upload' ? 'videos' : tempLesson.contentType === 'image-upload' ? 'images' : 'files'}
-                                                                                                                      accept={tempLesson.contentType === 'video-upload' ? 'video/*' : tempLesson.contentType === 'image-upload' ? 'image/*' : '*/*'}
-                                                                                                                      label={`Upload ${tempLesson.contentType === 'video-upload' ? 'Video' : tempLesson.contentType === 'image-upload' ? 'Gambar' : 'File'}`}
-                                                                                                                      onIsUploadingChange={setIsUploadingLesson}
-                                                                                                                      onUploadSuccess={(url) => setTempLesson(prev => ({ ...prev, url }))}
-                                                                                                                    />
+                                                                                                                    {tempLesson.contentType === 'video-upload' ? (
+                                                                                                                      <VideoCompressorUploader 
+                                                                                                                        folder="videos"
+                                                                                                                        onIsUploadingChange={setIsUploadingLesson}
+                                                                                                                        onUploadSuccess={(url) => setTempLesson(prev => ({ ...prev, url }))}
+                                                                                                                      />
+                                                                                                                    ) : (
+                                                                                                                      <FileUploader 
+                                                                                                                        folder={tempLesson.contentType === 'image-upload' ? 'images' : 'files'}
+                                                                                                                        accept={tempLesson.contentType === 'image-upload' ? 'image/*' : '*/*'}
+                                                                                                                        label={`Upload ${tempLesson.contentType === 'image-upload' ? 'Gambar' : 'File'}`}
+                                                                                                                        onIsUploadingChange={setIsUploadingLesson}
+                                                                                                                        onUploadSuccess={(url) => setTempLesson(prev => ({ ...prev, url }))}
+                                                                                                                      />
+                                                                                                                    )}
                                                                                                                     {tempLesson.url && (
                                                                                                                       <div className="p-2 bg-green-50 rounded-lg border border-green-200">
                                                                                                                         <p className="text-xs text-green-700 font-medium">Berhasil diunggah!</p>

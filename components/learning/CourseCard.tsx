@@ -13,23 +13,24 @@ import { Course, Progress } from '@/types';
 export const StatusBadge = ({ status }: { status: string }) => {
   if (status === 'completed') {
     return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 border border-green-200">
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-green-500 text-white">
         <CheckCircle size={12} />
         Selesai
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-700 border border-yellow-200">
+    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#C5A059] text-white">
       <Clock size={12} />
       Proses
     </span>
   );
 };
 
-// Kartu Kursus dengan Desain Baru (Black & Gold Theme)
+// Kartu Kursus — Light Theme (matching catalog design)
 export const CourseCard: React.FC<{ course: Omit<Course, 'status'> & Progress & { lastAccessedLessonId?: string } }> = ({ course }) => {
   const isCompleted = course.status === 'completed';
+  const isInProgress = course.status === 'in-progress';
 
   const continueUrl =
     course.status === 'in-progress' && course.lastAccessedLessonId
@@ -38,80 +39,90 @@ export const CourseCard: React.FC<{ course: Omit<Course, 'status'> & Progress & 
 
   return (
     <Link href={continueUrl} className="block h-full">
-      <div className="group bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-brand-gold h-full flex flex-col relative">
+      <div className="group bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-200 h-full flex flex-col">
         
         {/* Thumbnail Area */}
-        <div className="h-44 relative overflow-hidden bg-brand-black">
+        <div className="h-40 relative overflow-hidden bg-gray-200">
           {course.thumbnail || course.coverImage ? (
             <img 
               src={course.thumbnail || course.coverImage} 
               alt={course.title} 
-              className="w-full h-full text-[#C5A059] object-cover group-hover:scale-105 transition-transform duration-500 opacity-90 group-hover:opacity-100" 
+              className="w-full h-full object-cover" 
+              crossOrigin="anonymous"
+              onError={(e) => { e.currentTarget.src = "/logo-alfajr.png"; }}
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-brand-black to-gray-800">
-              <BookOpen className="text-black opacity-50" size={48} />
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+              <img 
+                src="/logo-alfajr.png" 
+                alt="Logo Alfajr" 
+                className="w-1/2 opacity-30 grayscale"
+              />
             </div>
           )}
-          
-          {/* Overlay Gradient for Text Readability */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60" />
 
           {/* Category Badge */}
-          <div className="absolute top-3 right-3">
-             <span className="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-white text-[#C5A059] shadow-lg">
+          <div className="absolute top-2 right-2">
+             <span className="px-2 py-1 rounded text-xs font-bold bg-white/90 backdrop-blur-sm text-[#C5A059] shadow-sm">
               {course.categoryName}
              </span>
           </div>
 
-          {/* Status Badge Positioned on Image */}
-          <div className="absolute bottom-3 left-3">
-            <StatusBadge status={course.status || 'in-progress'} />
-          </div>
+          {/* Status Badge */}
+          {isCompleted && (
+            <div className="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+              <CheckCircle size={12} />
+              <span>Selesai</span>
+            </div>
+          )}
+          {isInProgress && (
+            <div className="absolute top-2 left-2 bg-[#C5A059] text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+              <Clock size={12} />
+              <span>Proses</span>
+            </div>
+          )}
         </div>
 
         {/* Content Area */}
-        <div className="p-5 flex flex-col flex-grow relative">
-          <h3 className="font-bold text-lg text-black mb-2 line-clamp-2 leading-snug group-hover:text-brand-gold transition-colors">
+        <div className="p-4 flex flex-col flex-grow">
+          <h3 className="font-bold text-base text-black mb-2 line-clamp-2" title={course.title}>
             {course.title}
           </h3>
           
-          <div className="text-xs text-black mb-4 line-clamp-2 flex-grow">
+          {isInProgress && (
+            <div className="mb-2">
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-xs font-semibold text-yellow-600">Dalam Pengerjaan</span>
+                <span className="text-xs font-bold text-black">{course.progress}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-1.5">
+                <div 
+                  className="bg-[#C5A059] h-1.5 rounded-full transition-all duration-1000 ease-out"
+                  style={{ width: `${course.progress}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {isCompleted && (
+            <div className="flex items-center gap-2 text-green-600 text-xs font-medium bg-green-50 p-2 rounded-lg mb-2">
+              <CheckCircle size={14} />
+              <span>Kursus telah diselesaikan pada {course.completedAt ? new Date(course.completedAt).toLocaleDateString('id-ID') : '-'}</span>
+            </div>
+          )}
+
+          <div className="text-xs text-gray-500 line-clamp-2 mb-3 flex-grow">
             {course.description || "Tidak ada deskripsi tersedia."}
           </div>
 
-          {/* Progress Section */}
-          <div className="space-y-3 mt-auto pt-4 border-t border-gray-500">
-            {!isCompleted ? (
-              <div>
-                <div className="flex justify-between text-xs mb-1.5 font-medium">
-                  <span className="text-gray-500">Progress Belajar</span>
-                  <span className="text-black">{course.progress}%</span>
-                </div>
-                <div className="w-full bg-gray-300 rounded-full h-2 overflow-hidden">
-                  <div 
-                    className="bg-[#C5A059] h-full rounded-full transition-all duration-1000 ease-out"
-                    style={{ width: `${course.progress}%` }}
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 text-green-600 text-xs font-medium bg-green-50 p-2 rounded-lg">
-                <CheckCircle size={14} />
-                <span>Kursus telah diselesaikan pada {course.completedAt ? new Date(course.completedAt).toLocaleDateString('id-ID') : '-'}</span>
-              </div>
-            )}
-
-            <div className="flex items-center justify-between mt-2">
-               <div className="flex items-center text-xs text-gray-400 gap-1">
-                  <PlayCircle size={14} />
-                  <span>{course.totalVideos || 0} Materi</span>
-               </div>
-               <span className="text-xs font-bold text-[#C5A059] group-hover:translate-x-1 transition-transform inline-flex items-center">
-                  {isCompleted ? "Lihat Kembali" : "Lanjutkan"} 
-                  <span className="ml-1">→</span>
-               </span>
+          <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+            <div className="text-xs text-gray-500 flex items-center gap-1">
+              <BookOpen size={12} />
+              <span>{course.totalVideos || 0} Materi</span>
             </div>
+            <span className="text-xs font-bold text-[#C5A059]">
+              {isCompleted ? "Lihat Kembali →" : "Lanjutkan →"}
+            </span>
           </div>
         </div>
       </div>

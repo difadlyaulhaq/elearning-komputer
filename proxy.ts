@@ -40,10 +40,8 @@ export function proxy(request: NextRequest) {
   // ============================================
   if (pathname.startsWith('/api/')) {
     const isAllowedOrigin =
-      origin.includes('alfajr-elearning.vercel.app') ||
       origin.includes('elearningalfajrumroh.com') ||
       origin.includes('localhost') ||
-      referer.includes('alfajr-elearning.vercel.app') ||
       referer.includes('elearningalfajrumroh.com') ||
       referer.includes('localhost');
     // Block if request comes from outside the app (e.g., Postman or other sites)
