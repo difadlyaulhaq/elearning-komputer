@@ -67,7 +67,8 @@ const LoginForm = () => {
       }
     } catch (error: any) {
        console.error('Login error:', error);
-       setError(getErrorMessage(error.code));
+       const errCode = error?.code || error?.message || String(error);
+       setError(getErrorMessage(errCode));
        setIsLoading(false);
     }
   };
@@ -137,19 +138,39 @@ const LoginForm = () => {
       }
     } catch (error: any) {
       console.error('Google SSO error:', error);
-      setError(getErrorMessage(error.code));
+      const errCode = error?.code || error?.message || String(error);
+      setError(getErrorMessage(errCode));
       setIsLoading(false);
     }
   };
   
-  const getErrorMessage = (errorCode: string) => {
-    switch (errorCode) {
+  const getErrorMessage = (errorCode: any) => {
+    if (!errorCode) return 'Terjadi kesalahan. Silakan coba lagi.';
+    
+    const codeStr = String(errorCode);
+    
+    switch (codeStr) {
       case 'auth/invalid-email': return 'Format email tidak valid';
       case 'auth/user-disabled': return 'Akun ini dinonaktifkan';
       case 'auth/user-not-found': return 'Email tidak terdaftar';
       case 'auth/wrong-password': return 'Password salah';
       case 'auth/too-many-requests': return 'Terlalu banyak percobaan. Coba lagi nanti.';
-      default: return 'Terjadi kesalahan. Silakan coba lagi.';
+      case '10':
+      case 'developer_error':
+        return 'Google Play Services Error (Developer Error - Code 10). Pastikan SHA-1 sidik jari keystore sudah didaftarkan di Firebase Console.';
+      case '12501':
+      case 'canceled':
+        return 'Google Sign-In dibatalkan atau bermasalah (Code 12501). Periksa Google Play Services perangkat Anda.';
+      case '12500':
+        return 'Google Sign-In gagal (Code 12500). Internal error.';
+      default:
+        if (codeStr.includes('10') || codeStr.toLowerCase().includes('developer_error')) {
+          return `Google Play Services Developer Error (10). Pastikan SHA-1 sidik jari keystore sudah didaftarkan di Firebase Console. (Detail: ${codeStr})`;
+        }
+        if (codeStr.includes('12501')) {
+          return `Google Sign-In dibatalkan atau bermasalah (12501). (Detail: ${codeStr})`;
+        }
+        return `Terjadi kesalahan (${codeStr}). Silakan coba lagi.`;
     }
   };
 
