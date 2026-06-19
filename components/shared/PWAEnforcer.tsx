@@ -88,7 +88,7 @@ export default function PWAEnforcer({ children }: { children: React.ReactNode })
              variant="primary" 
              className="w-full py-3.5 text-sm font-bold bg-[#C5A059] hover:bg-[#b08d4b] text-white rounded-xl shadow-lg shadow-[#C5A059]/20 transition-all active:scale-95" 
              text="Download Aplikasi Android"
-             apkUrl="https://firebasestorage.googleapis.com/v0/b/alfajr-elearning.firebasestorage.app/o/alfajr-elearning.apk?alt=media"
+             apkUrl="https://firebasestorage.googleapis.com/v0/b/alfajr-elearning.firebasestorage.app/o/alfajr-elearning.apk?alt=media&token=67a57e0f-fc2d-42dd-9c6a-3b919f3ff412"
            /> 
 
            {/* Divider */}
