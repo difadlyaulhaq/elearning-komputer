@@ -31,8 +31,7 @@ export default function DownloadPage() {
               <DownloadAppButton 
                   variant="primary" 
                   className="w-full py-3.5" 
-                  // GANTI URL DI BAWAH INI DENGAN URL DARI FIREBASE STORAGE ANDA
-                  apkUrl="https://firebasestorage.googleapis.com/v0/b/alfajr-elearning.firebasestorage.app/o/alfajr-elearning.apk?alt=media&token=67a57e0f-fc2d-42dd-9c6a-3b919f3ff412"
+                  apkUrl="https://alfajr-cdn.b-cdn.net/alfajr-elearning.apk"
               />
               
               <div className="flex items-center justify-center gap-2 text-[10px] text-gray-400 font-medium tracking-wider uppercase">

@@ -48,7 +48,7 @@ The project is strictly divided into two primary modules:
 ### 2. Video Playback (Universal Player)
 The system uses a `UniversalPlayer` wrapper based on `Plyr`. It dynamically handles:
 - **YouTube Embeds**: Optimized for performance.
-- **Direct Uploads**: Plays video files uploaded to Firebase Storage.
+- **Direct Uploads**: Plays video files uploaded and streamed securely via Bunny.net Storage & CDN.
 - **Security Layers**: Integrates `ScreenProtection` and dynamic watermarking.
 
 ### 3. Data Flow

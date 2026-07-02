@@ -3,8 +3,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
-import { ref, uploadBytesResumable, getDownloadURL, UploadTask } from 'firebase/storage';
-import { storage } from '@/lib/firebase/config';
 import { Video, X, CheckCircle2, Loader2, Sparkles, AlertCircle, Info } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -30,7 +28,7 @@ export const VideoCompressorUploader: React.FC<VideoCompressorUploaderProps> = (
   
   const ffmpegRef = useRef(new FFmpeg());
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const uploadTaskRef = useRef<UploadTask | null>(null);
+  const xhrRef = useRef<XMLHttpRequest | null>(null);
 
   useEffect(() => {
     loadFFmpeg();
@@ -115,47 +113,73 @@ export const VideoCompressorUploader: React.FC<VideoCompressorUploaderProps> = (
       setCompressedSize(compressedBlob.size);
 
       setIsCompressing(false);
-      uploadToFirebase(compressedBlob, file.name);
+      uploadToServer(compressedBlob, file.name);
 
     } catch (error) {
       console.error('Compression error:', error);
       toast.error('Kompresi gagal. Menggunakan file asli...');
       setIsCompressing(false);
-      uploadToFirebase(file, file.name);
+      uploadToServer(file, file.name);
     }
   };
 
-  const uploadToFirebase = (fileBlob: Blob | File, originalName: string) => {
+  const uploadToServer = (fileBlob: Blob | File, originalName: string) => {
     setIsUploading(true);
     setProgress(0);
 
-    const storageRef = ref(storage, `${folder}/${Date.now()}-opt-${originalName}`);
-    const uploadTask = uploadBytesResumable(storageRef, fileBlob);
-    uploadTaskRef.current = uploadTask;
+    const xhr = new XMLHttpRequest();
+    xhrRef.current = xhr;
 
-    uploadTask.on(
-      'state_changed',
-      (snapshot) => {
-        const p = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        setProgress(Math.round(p));
-      },
-      (error) => {
-        if (error.code === 'storage/canceled') {
-          console.log("Upload canceled");
-        } else {
-          toast.error(`Gagal mengunggah: ${error.message}`);
-        }
-        setIsUploading(false);
-        setGlobalUploadingState(false);
-      },
-      async () => {
-        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-        onUploadSuccess(downloadURL, originalName);
-        setIsUploading(false);
-        setGlobalUploadingState(false);
-        toast.success('Video berhasil dioptimasi & diunggah!');
+    // Track upload progress
+    xhr.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable) {
+        const percent = (event.loaded / event.total) * 100;
+        setProgress(Math.round(percent));
       }
-    );
+    });
+
+    // Handle completed request
+    xhr.addEventListener('load', () => {
+      setIsUploading(false);
+      setGlobalUploadingState(false);
+      xhrRef.current = null;
+      
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const response = JSON.parse(xhr.responseText);
+          onUploadSuccess(response.url, originalName);
+          toast.success('Video berhasil dioptimasi & diunggah!');
+        } catch (e) {
+          toast.error('Gagal memproses respon server');
+        }
+      } else {
+        try {
+          const response = JSON.parse(xhr.responseText);
+          toast.error(response.error || `Gagal mengunggah: Status ${xhr.status}`);
+        } catch (e) {
+          toast.error(`Gagal mengunggah: Status ${xhr.status}`);
+        }
+      }
+    });
+
+    // Handle network errors
+    xhr.addEventListener('error', () => {
+      setIsUploading(false);
+      setGlobalUploadingState(false);
+      xhrRef.current = null;
+      toast.error('Terjadi kesalahan jaringan saat mengunggah');
+    });
+
+    // Send payload
+    xhr.open('POST', '/api/upload');
+    const formData = new FormData();
+    const uploadName = fileBlob instanceof Blob && !(fileBlob instanceof File) 
+      ? `opt-${originalName}` 
+      : originalName;
+      
+    formData.append('file', fileBlob, uploadName);
+    formData.append('folder', folder);
+    xhr.send(formData);
   };
 
   const formatSize = (bytes: number) => {
@@ -167,8 +191,8 @@ export const VideoCompressorUploader: React.FC<VideoCompressorUploaderProps> = (
   };
 
   const handleCancel = () => {
-    if (uploadTaskRef.current) {
-      uploadTaskRef.current.cancel();
+    if (xhrRef.current) {
+      xhrRef.current.abort();
     }
     setIsCompressing(false);
     setIsUploading(false);

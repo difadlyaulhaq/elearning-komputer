@@ -12,7 +12,8 @@ Alfajr E-Learning provides a seamless educational platform with advanced video p
 - **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
 - **Mobile SDK**: [Capacitor](https://capacitorjs.com/) (Android)
 - **Backend**: [Next.js API Routes](https://nextjs.org/docs/app/building-your-application/routing/route-handlers)
-- **Database & Auth**: [Firebase](https://firebase.google.com/) (Admin SDK & Client SDK)
+- **Database & Auth**: [Firebase](https://firebase.google.com/) (Firestore & Authentication)
+- **Storage & CDN**: [Bunny.net](https://bunny.net/) (Secure Asset & Video Hosting)
 - **Video Player**: [Plyr](https://plyr.io/) (via `plyr-react`)
 - **UI Components**: Headless UI, Radix UI, Lucide Icons
 
@@ -50,14 +51,26 @@ See [STRUCTURE.md](./STRUCTURE.md) for a detailed breakdown of the codebase and 
    ```
 
 3. **Environment Variables**:
-   Create a `.env.local` file in the root directory and add the necessary Firebase and app configuration:
+   Create a `.env.local` (and production `.env`) file in the root directory and add the necessary configuration:
    ```env
-   NEXT_PUBLIC_FIREBASE_API_KEY=...
-   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
-   FIREBASE_PROJECT_ID=...
-   FIREBASE_CLIENT_EMAIL=...
-   FIREBASE_PRIVATE_KEY=...
-   # ... add other required vars
+   # Firebase Web Configuration
+   NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
+   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_auth_domain
+   NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_storage_bucket
+   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_messaging_id
+   NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+
+   # Firebase Admin Configuration (Server Side)
+   FIREBASE_PROJECT_ID=your_project_id
+   FIREBASE_CLIENT_EMAIL=your_client_email
+   FIREBASE_PRIVATE_KEY="your_private_key"
+
+   # Bunny.net Storage & CDN Configuration
+   BUNNY_STORAGE_ZONE_NAME=your_storage_zone_name
+   BUNNY_STORAGE_ACCESS_KEY=your_bunny_access_key
+   BUNNY_STORAGE_REGION=storage.bunnycdn.com
+   BUNNY_CDN_HOSTNAME=your_pull_zone.b-cdn.net
    ```
 
 ### Development

@@ -30,6 +30,43 @@
           }
         },
         {
+          "client_id": "342608432294-go55h3a759tjj70648ng5gnaptpjrbri.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.alfajr.elearning",
+            "certificate_hash": "da27d46bd78f94063f4ae1bb9087b90c89d43f2d"
+          }
+        },
+        {
+          "client_id": "342608432294-6okq9uilstspcmrs7av1obn5859ktr32.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBiBNeLeFyT90bYPjJYfq3aw82MimUJ7Xc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "342608432294-6okq9uilstspcmrs7av1obn5859ktr32.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:342608432294:android:dedb17fcf43eb409403867",
+        "android_client_info": {
+          "package_name": "com.alfajrelearning.egi.egi_mobile"
+        }
+      },
+      "oauth_client": [
+        {
           "client_id": "342608432294-6okq9uilstspcmrs7av1obn5859ktr32.apps.googleusercontent.com",
           "client_type": 3
         }

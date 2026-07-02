@@ -21,6 +21,11 @@ const nextConfig: NextConfig = {
         hostname: 'firebasestorage.googleapis.com',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'alfajr-cdn.b-cdn.net',
+        pathname: '/**',
+      },
     ],
   },
   output: 'standalone',

@@ -1,8 +1,6 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { ref, uploadBytesResumable, getDownloadURL, UploadTask } from 'firebase/storage';
-import { storage } from '@/lib/firebase/config';
 import { Upload, X, CheckCircle2, Loader2, FileIcon, ImageIcon, VideoIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -25,7 +23,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
   const [progress, setProgress] = useState(0);
   const [fileName, setFileName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const uploadTaskRef = useRef<UploadTask | null>(null);
+  const xhrRef = useRef<XMLHttpRequest | null>(null);
 
   const setUploadingState = (state: boolean) => {
     setIsUploading(state);
@@ -41,8 +39,8 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
   };
 
   const handleCancel = () => {
-    if (uploadTaskRef.current) {
-      uploadTaskRef.current.cancel();
+    if (xhrRef.current) {
+      xhrRef.current.abort();
       setUploadingState(false);
       setProgress(0);
       setFileName(null);
@@ -57,34 +55,53 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
     setUploadingState(true);
     setProgress(0);
 
-    const storageRef = ref(storage, `${folder}/${Date.now()}-${file.name}`);
-    const uploadTask = uploadBytesResumable(storageRef, file);
-    uploadTaskRef.current = uploadTask;
+    const xhr = new XMLHttpRequest();
+    xhrRef.current = xhr;
 
-    uploadTask.on(
-      'state_changed',
-      (snapshot) => {
-        const p = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        setProgress(Math.round(p));
-      },
-      (error) => {
-        if (error.code === 'storage/canceled') {
-          console.log("Upload canceled by user");
-        } else {
-          console.error("Upload error:", error);
-          toast.error(`Gagal mengunggah: ${error.message}`);
-        }
-        setUploadingState(false);
-        uploadTaskRef.current = null;
-      },
-      async () => {
-        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-        onUploadSuccess(downloadURL, file.name);
-        setUploadingState(false);
-        uploadTaskRef.current = null;
-        toast.success('File berhasil diunggah!');
+    // Track upload progress
+    xhr.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable) {
+        const percent = (event.loaded / event.total) * 100;
+        setProgress(Math.round(percent));
       }
-    );
+    });
+
+    // Handle completed request
+    xhr.addEventListener('load', () => {
+      setUploadingState(false);
+      xhrRef.current = null;
+      
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const response = JSON.parse(xhr.responseText);
+          onUploadSuccess(response.url, file.name);
+          toast.success('File berhasil diunggah!');
+        } catch (e) {
+          toast.error('Gagal memproses respon server');
+        }
+      } else {
+        try {
+          const response = JSON.parse(xhr.responseText);
+          toast.error(response.error || `Gagal mengunggah: Status ${xhr.status}`);
+        } catch (e) {
+          toast.error(`Gagal mengunggah: Status ${xhr.status}`);
+        }
+      }
+    });
+
+    // Handle network errors
+    xhr.addEventListener('error', () => {
+      setUploadingState(false);
+      xhrRef.current = null;
+      toast.error('Terjadi kesalahan jaringan saat mengunggah');
+    });
+
+    // Send payload
+    xhr.open('POST', '/api/upload');
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('folder', folder);
+    xhr.send(formData);
   };
 
   const getIcon = () => {

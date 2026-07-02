@@ -3,9 +3,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   Bold, Italic, List, ListOrdered, Link as LinkIcon,
   Heading1, Heading2, Quote, Code, Image as ImageIcon,
-  Eye, Save, X, Undo, Redo, Type
+  Eye, Save, X, Undo, Redo, Type, Loader2
 } from 'lucide-react';
 import { MarkdownRenderer } from '@/components/shared/MarkdownRenderer';
+import toast from 'react-hot-toast';
 
 interface RichTextEditorProps {
   initialValue?: string;
@@ -37,6 +38,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const [history, setHistory] = useState<string[]>([initialValue]);
   const [historyIndex, setHistoryIndex] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   // Sync with initialValue when it changes
   useEffect(() => {
@@ -105,6 +108,77 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     }, 0);
   };
 
+  const handleImageUploadClick = () => {
+    if (imageInputRef.current) {
+      imageInputRef.current.click();
+    }
+  };
+
+  const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingImage(true);
+    const toastId = toast.loading('Mengunggah gambar ke Bunny.net...');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', 'images');
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        throw new Error('Gagal mengunggah berkas ke server');
+      }
+
+      const data = await res.json();
+      toast.success('Gambar berhasil diunggah!', { id: toastId });
+
+      // Masukkan sintaks markdown dengan URL Bunny CDN yang baru
+      insertMarkdown('![', `](${data.url})`, file.name.split('.')[0] || 'gambar');
+    } catch (err: any) {
+      console.error(err);
+      toast.error('Gagal mengunggah gambar. Memasukkan placeholder...', { id: toastId });
+      // Fallback ke placeholder manual
+      insertMarkdown('![', '](url)', 'alt text');
+    } finally {
+      setIsUploadingImage(false);
+      if (e.target) e.target.value = ''; // Reset input
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent<HTMLTextAreaElement>) => {
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      e.preventDefault();
+      setIsUploadingImage(true);
+      const toastId = toast.loading('Mengunggah gambar yang di-drop...');
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('folder', 'images');
+
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        toast.success('Gambar berhasil diunggah!', { id: toastId });
+        insertMarkdown('![', `](${data.url})`, file.name.split('.')[0] || 'gambar');
+      } catch (err) {
+        toast.error('Gagal mengunggah gambar yang di-drop', { id: toastId });
+      } finally {
+        setIsUploadingImage(false);
+      }
+    }
+  };
+
   const undo = () => {
     if (historyIndex > 0) {
       setHistoryIndex(historyIndex - 1);
@@ -138,7 +212,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     { icon: ListOrdered, label: 'Numbered List', action: () => insertLine('1. ') },
     { type: 'divider' },
     { icon: LinkIcon, label: 'Link', action: () => insertMarkdown('[', '](url)', 'teks link') },
-    { icon: ImageIcon, label: 'Image', action: () => insertMarkdown('![', '](url)', 'alt text') },
+    { icon: ImageIcon, label: 'Image (Unggah Gambar)', action: handleImageUploadClick, disabled: isUploadingImage },
     { icon: Code, label: 'Inline Code', action: () => insertMarkdown('`', '`', 'code') },
     { icon: Quote, label: 'Quote', action: () => insertLine('> ') },
   ];
@@ -224,7 +298,15 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       </div>
 
       {/* Editor/Preview */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto relative">
+        <input 
+          type="file" 
+          ref={imageInputRef} 
+          onChange={handleImageFileChange} 
+          accept="image/*" 
+          style={{ display: 'none' }}
+          disabled={isUploadingImage}
+        />
         {!showPreview ? (
           <textarea
             ref={textareaRef}
@@ -233,16 +315,27 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               setContent(e.target.value);
               if (onChange) onChange(e.target.value);
             }}
+            onDrop={handleDrop}
+            onDragOver={(e) => e.preventDefault()}
             placeholder={placeholder}
             className="w-full h-full p-6 text-black text-base leading-relaxed focus:outline-none resize-none"
             style={{ minHeight: '400px' }}
+            disabled={isUploadingImage}
           />
         ) : (
-<div className="p-4">
+          <div className="p-4">
             <MarkdownRenderer
               content={content || '*Tidak ada konten untuk ditampilkan*'}
               className="prose prose-sm max-w-none"
             />
+          </div>
+        )}
+        {isUploadingImage && (
+          <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-10">
+            <div className="flex flex-col items-center gap-2">
+              <Loader2 className="animate-spin text-[#C5A059]" size={28} />
+              <p className="text-sm font-semibold text-gray-700">Mengunggah gambar...</p>
+            </div>
           </div>
         )}
       </div>

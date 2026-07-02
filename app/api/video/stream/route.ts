@@ -30,13 +30,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid URL format' }, { status: 400, headers: corsHeaders });
     }
 
-    const hostname = hostMatch[1];
+    const bunnyCdnHostnameRaw = process.env.BUNNY_CDN_HOSTNAME;
+    const bunnyCdnHostname = bunnyCdnHostnameRaw ? bunnyCdnHostnameRaw.replace(/^https?:\/\//i, '').replace(/\/$/, '') : '';
+
     const allowedHosts = [
       'firebasestorage.googleapis.com',
       'storage.googleapis.com',
+      'alfajr-cdn.b-cdn.net',
+      'b-cdn.net'
     ];
 
-    if (!allowedHosts.some((h) => hostname === h)) {
+    if (bunnyCdnHostname) {
+      allowedHosts.push(bunnyCdnHostname);
+    }
+
+    if (!allowedHosts.some((h) => hostname === h || hostname.endsWith('.' + h))) {
       return NextResponse.json({ error: 'URL not allowed' }, { status: 403, headers: corsHeaders });
     }
 
