@@ -23,6 +23,7 @@ import toast from "react-hot-toast";
 import { MarkdownRenderer } from "@/components/shared/MarkdownRenderer";
 import UniversalPlayer from "./UniversalPlayer";
 import { LessonSkeleton } from "./LessonSkeleton";
+import { getIsNativeApp } from "@/lib/native-detection";
 
 interface LessonPlayerDesktopProps {
   courseId: string;
@@ -243,6 +244,13 @@ export function LessonPlayerDesktop({
                 </h3>
                 <a
                   href={lesson.attachmentUrl}
+                  onClick={(e) => {
+                    const isNative = getIsNativeApp();
+                    if (isNative) {
+                      e.preventDefault();
+                      window.open(lesson.attachmentUrl || '', '_system');
+                    }
+                  }}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 p-3.5 bg-gray-50 hover:bg-[#C5A059]/10 hover:border-[#C5A059]/20 rounded-xl border border-gray-100 transition-all group"
