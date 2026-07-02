@@ -350,7 +350,10 @@ export function LessonPlayerMobile({
             {isFullscreen && (
               <>
                 {/* Top-right controls: orientation toggle + exit fullscreen */}
-                <div className="absolute top-4 right-4 z-40 flex items-center gap-2">
+                <div 
+                  className="absolute right-4 z-40 flex items-center gap-2"
+                  style={{ top: 'calc(env(safe-area-inset-top, 0px) + 16px)' }}
+                >
                   {/* Orientation toggle */}
                   <button
                     onClick={toggleFullscreenOrientation}

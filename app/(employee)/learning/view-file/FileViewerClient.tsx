@@ -36,7 +36,10 @@ export function FileViewerClient({ initialUrl, initialName }: FileViewerClientPr
   return (
     <div className="flex flex-col w-full h-screen bg-slate-950 text-slate-100 font-sans select-none">
       {/* Premium Glassmorphic Header */}
-      <header className="flex items-center justify-between px-4 py-3 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 z-10">
+      <header 
+        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)' }}
+        className="flex items-center justify-between px-4 pb-3 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 z-10"
+      >
         <button
           onClick={handleBack}
           className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-300 hover:text-white bg-slate-800/50 hover:bg-slate-800 rounded-xl border border-slate-700/50 transition-all active:scale-95 cursor-pointer"
