@@ -10,10 +10,7 @@ public/Alfajr-elearning.apk
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.env
-.env.local
-.env.production
-.env.development
+# Allow copying .env files for build-time Next.js static page generation
 README.md
 Dockerfile
 docker-compose.yml
