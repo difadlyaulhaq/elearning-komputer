@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid URL format' }, { status: 400, headers: corsHeaders });
     }
 
+    const hostname = hostMatch[1];
     const bunnyCdnHostnameRaw = process.env.BUNNY_CDN_HOSTNAME;
     const bunnyCdnHostname = bunnyCdnHostnameRaw ? bunnyCdnHostnameRaw.replace(/^https?:\/\//i, '').replace(/\/$/, '') : '';
 
