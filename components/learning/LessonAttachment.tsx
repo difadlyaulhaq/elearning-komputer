@@ -9,18 +9,16 @@ interface LessonAttachmentProps {
 }
 
 export function LessonAttachment({ url, name }: LessonAttachmentProps) {
+  const isNative = getIsNativeApp();
   return (
-    <div
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const isNative = getIsNativeApp();
-        window.open(url, isNative ? '_system' : '_blank');
-      }}
+    <a
+      href={url}
+      target={isNative ? '_system' : '_blank'}
+      rel="noopener noreferrer"
       className="inline-flex items-center text-xs text-blue-600 hover:text-blue-800 mt-1 cursor-pointer"
     >
       <LinkIcon size={12} className="mr-1" />
       <span>{name || 'Lampiran'}</span>
-    </div>
+    </a>
   );
 }

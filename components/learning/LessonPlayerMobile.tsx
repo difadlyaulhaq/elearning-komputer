@@ -517,14 +517,7 @@ export function LessonPlayerMobile({
               </h4>
               <a
                 href={lesson.attachmentUrl}
-                onClick={(e) => {
-                  const isNative = getIsNativeApp();
-                  if (isNative) {
-                    e.preventDefault();
-                    window.open(lesson.attachmentUrl || '', '_system');
-                  }
-                }}
-                target="_blank"
+                target={getIsNativeApp() ? '_system' : '_blank'}
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-[#C5A059]/5 border border-gray-100 hover:border-[#C5A059]/30 rounded-xl transition-all"
               >

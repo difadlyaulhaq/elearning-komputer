@@ -244,14 +244,7 @@ export function LessonPlayerDesktop({
                 </h3>
                 <a
                   href={lesson.attachmentUrl}
-                  onClick={(e) => {
-                    const isNative = getIsNativeApp();
-                    if (isNative) {
-                      e.preventDefault();
-                      window.open(lesson.attachmentUrl || '', '_system');
-                    }
-                  }}
-                  target="_blank"
+                  target={getIsNativeApp() ? '_system' : '_blank'}
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 p-3.5 bg-gray-50 hover:bg-[#C5A059]/10 hover:border-[#C5A059]/20 rounded-xl border border-gray-100 transition-all group"
                 >
