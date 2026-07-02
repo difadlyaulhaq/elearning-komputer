@@ -516,8 +516,8 @@ export function LessonPlayerMobile({
                 Materi Pendukung
               </h4>
               <a
-                href={lesson.attachmentUrl}
-                target={getIsNativeApp() ? '_system' : '_blank'}
+                href={getIsNativeApp() ? `/learning/view-file?url=${encodeURIComponent(lesson.attachmentUrl)}&name=${encodeURIComponent(lesson.attachmentName)}` : lesson.attachmentUrl}
+                target={getIsNativeApp() ? undefined : '_blank'}
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-[#C5A059]/5 border border-gray-100 hover:border-[#C5A059]/30 rounded-xl transition-all"
               >

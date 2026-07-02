@@ -12,8 +12,8 @@ export function LessonAttachment({ url, name }: LessonAttachmentProps) {
   const isNative = getIsNativeApp();
   return (
     <a
-      href={url}
-      target={isNative ? '_system' : '_blank'}
+      href={isNative ? `/learning/view-file?url=${encodeURIComponent(url)}&name=${encodeURIComponent(name || 'Lampiran')}` : url}
+      target={isNative ? undefined : '_blank'}
       rel="noopener noreferrer"
       className="inline-flex items-center text-xs text-blue-600 hover:text-blue-800 mt-1 cursor-pointer"
     >

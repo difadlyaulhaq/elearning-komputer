@@ -12,10 +12,15 @@ const ScreenProtection = dynamic(
   { ssr: false }
 );
 
+import { usePathname } from 'next/navigation';
+
 function LayoutContent({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileLandscape, setIsMobileLandscape] = useState(false);
+  const pathname = usePathname();
+  
+  const isViewFilePage = pathname?.endsWith('/learning/view-file') || pathname?.endsWith('/view-file');
 
   React.useEffect(() => {
     const checkOrientation = () => {
@@ -33,6 +38,25 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
       window.removeEventListener('orientationchange', checkOrientation);
     };
   }, []);
+
+  if (isViewFilePage) {
+    return (
+      <ScreenProtection
+        userEmail={user?.email}
+        enableWatermark={true}
+        enableBlurOnFocusLoss={true}
+        enableKeyboardBlock={true}
+        enableContextMenuBlock={true}
+        enableDevToolsDetection={true}
+        showWarningOnAttempt={true}
+      >
+        <main className="h-screen w-screen overflow-hidden bg-slate-950">
+          <Toaster position="top-right" />
+          {children}
+        </main>
+      </ScreenProtection>
+    );
+  }
   
   return (
     <ScreenProtection

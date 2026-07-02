@@ -243,8 +243,8 @@ export function LessonPlayerDesktop({
                   <LinkIcon size={12} /> Materi Pendukung
                 </h3>
                 <a
-                  href={lesson.attachmentUrl}
-                  target={getIsNativeApp() ? '_system' : '_blank'}
+                  href={getIsNativeApp() ? `/learning/view-file?url=${encodeURIComponent(lesson.attachmentUrl)}&name=${encodeURIComponent(lesson.attachmentName)}` : lesson.attachmentUrl}
+                  target={getIsNativeApp() ? undefined : '_blank'}
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 p-3.5 bg-gray-50 hover:bg-[#C5A059]/10 hover:border-[#C5A059]/20 rounded-xl border border-gray-100 transition-all group"
                 >
