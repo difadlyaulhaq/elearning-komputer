@@ -224,7 +224,7 @@ const ReportsPage = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center">
-        <Loader2 className="w-10 h-10 text-[#C5A059] animate-spin" />
+        <Loader2 className="w-10 h-10 text-[#0284c7] animate-spin" />
       </div>
     );
   }
@@ -238,7 +238,7 @@ const ReportsPage = () => {
             <h1 className="text-lg font-bold text-black">Laporan Belajar</h1>
             <p className="text-xs text-gray-600">Monitor progress pembelajaran</p>
           </div>
-          <button onClick={handleExportExcel} className="flex items-center gap-2 bg-[#C5A059] text-black px-3 py-2 rounded-lg hover:bg-[#B08F4A] transition-colors font-semibold text-sm">
+          <button onClick={handleExportExcel} className="flex items-center gap-2 bg-[#0284c7] text-white px-3 py-2 rounded-lg hover:bg-[#0369a1] transition-colors font-semibold text-sm">
             <Download size={16} />
             <span>Export</span>
           </button>
@@ -260,14 +260,14 @@ const ReportsPage = () => {
                   <div className="px-4 py-3 border-b border-gray-100">
                     <h4 className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Divisi</h4>
                     <div className="space-y-1">
-                      <button onClick={() => { setFilterDivision('all'); setIsFilterOpen(false); }} className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-all ${filterDivision === 'all' ? 'bg-[#C5A059]/10 text-[#C5A059] font-medium' : 'text-gray-700 hover:bg-gray-50'}`}>Semua Divisi</button>
-                      {divisions.map(div => <button key={div} onClick={() => { setFilterDivision(div); setIsFilterOpen(false); }} className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-all ${filterDivision === div ? 'bg-[#C5A059]/10 text-[#C5A059] font-medium' : 'text-gray-700 hover:bg-gray-50'}`}>{div}</button>)}
+                      <button onClick={() => { setFilterDivision('all'); setIsFilterOpen(false); }} className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-all ${filterDivision === 'all' ? 'bg-sky-50 text-[#0284c7] font-medium' : 'text-gray-700 hover:bg-gray-50'}`}>Semua Divisi</button>
+                      {divisions.map(div => <button key={div} onClick={() => { setFilterDivision(div); setIsFilterOpen(false); }} className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-all ${filterDivision === div ? 'bg-sky-50 text-[#0284c7] font-medium' : 'text-gray-700 hover:bg-gray-50'}`}>{div}</button>)}
                     </div>
                   </div>
                   <div className="px-4 py-3">
                     <h4 className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Status</h4>
                     <div className="grid grid-cols-2 gap-2">
-                      <button onClick={() => { setFilterStatus('all'); setIsFilterOpen(false); }} className={`flex items-center justify-center px-3 py-2.5 text-sm rounded-lg border transition-all ${filterStatus === 'all' ? 'border-[#C5A059] bg-[#FFF8E7] text-[#C5A059] font-medium' : 'border-gray-200 hover:border-gray-300 text-gray-700'}`}>Semua</button>
+                      <button onClick={() => { setFilterStatus('all'); setIsFilterOpen(false); }} className={`flex items-center justify-center px-3 py-2.5 text-sm rounded-lg border transition-all ${filterStatus === 'all' ? 'border-[#0284c7] bg-[#f0f9ff] text-[#0284c7] font-medium' : 'border-gray-200 hover:border-gray-300 text-gray-700'}`}>Semua</button>
                       <button onClick={() => { setFilterStatus('completed'); setIsFilterOpen(false); }} className={`flex items-center justify-center px-3 py-2.5 text-sm rounded-lg border transition-all ${filterStatus === 'completed' ? 'border-green-500 bg-green-50 text-green-700 font-medium' : 'border-gray-200 hover:border-gray-300 text-gray-700'}`}><CheckCircle size={14} className="mr-1.5" />Selesai</button>
                       <button onClick={() => { setFilterStatus('in-progress'); setIsFilterOpen(false); }} className={`flex items-center justify-center px-3 py-2.5 text-sm rounded-lg border transition-all ${filterStatus === 'in-progress' ? 'border-yellow-500 bg-yellow-50 text-yellow-700 font-medium' : 'border-gray-200 hover:border-gray-300 text-gray-700'}`}><Clock size={14} className="mr-1.5" />Berjalan</button>
                     </div>
@@ -286,7 +286,7 @@ const ReportsPage = () => {
             <h1 className="text-2xl font-bold text-black">Laporan Belajar</h1>
             <p className="text-gray-600 mt-1">Monitor progress pembelajaran pegawai</p>
           </div>
-          <button onClick={handleExportExcel} className="flex items-center space-x-2 bg-[#C5A059] text-black px-5 py-2.5 rounded-lg hover:bg-[#B08F4A] transition-colors font-semibold">
+          <button onClick={handleExportExcel} className="flex items-center space-x-2 bg-[#0284c7] text-white px-5 py-2.5 rounded-lg hover:bg-[#0369a1] transition-colors font-semibold">
             <Download size={20} /><span>Export Excel</span>
           </button>
         </div>
@@ -294,18 +294,18 @@ const ReportsPage = () => {
           <div className="flex gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-              <input type="text" placeholder="Cari nama, email, kursus..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C5A059] outline-none text-sm" />
+              <input type="text" placeholder="Cari nama, email, kursus..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0284c7] outline-none text-sm" />
             </div>
             <div className="flex gap-3">
               <div className="relative">
-                <select value={filterDivision} onChange={(e) => setFilterDivision(e.target.value)} className={`appearance-none w-full md:w-48 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C5A059] outline-none bg-white text-sm cursor-pointer ${filterDivision === 'all' ? 'text-gray-500' : 'text-black'}`}>
+                <select value={filterDivision} onChange={(e) => setFilterDivision(e.target.value)} className={`appearance-none w-full md:w-48 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0284c7] outline-none bg-white text-sm cursor-pointer ${filterDivision === 'all' ? 'text-gray-500' : 'text-black'}`}>
                   <option value="all">Semua Divisi</option>
                   {divisions.map(div => <option key={div} value={div}>{div}</option>)}
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
               </div>
               <div className="flex gap-2">
-                <button onClick={() => setFilterStatus('all')} className={`flex items-center px-4 py-2.5 rounded-lg border text-sm font-medium transition-all ${filterStatus === 'all' ? 'border-[#C5A059] bg-[#FFF8E7] text-[#C5A059]' : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'}`}>Semua Status</button>
+                <button onClick={() => setFilterStatus('all')} className={`flex items-center px-4 py-2.5 rounded-lg border text-sm font-medium transition-all ${filterStatus === 'all' ? 'border-[#0284c7] bg-[#f0f9ff] text-[#0284c7]' : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'}`}>Semua Status</button>
                 <button onClick={() => setFilterStatus('completed')} className={`flex items-center px-4 py-2.5 rounded-lg border text-sm font-medium transition-all ${filterStatus === 'completed' ? 'border-green-500 bg-green-50 text-green-700' : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'}`}><CheckCircle size={16} className="mr-2" />Selesai</button>
                 <button onClick={() => setFilterStatus('in-progress')} className={`flex items-center px-4 py-2.5 rounded-lg border text-sm font-medium transition-all ${filterStatus === 'in-progress' ? 'border-yellow-500 bg-yellow-50 text-yellow-700' : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'}`}><Clock size={16} className="mr-2" />Berjalan</button>
               </div>

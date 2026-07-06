@@ -21,7 +21,7 @@ const CourseCompletionPage = () => {
                 </p>
                 <div className="flex flex-col sm:flex-row justify-center gap-4">
                     <Link href="/learning/dashboard"
-                        className="flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 bg-[#C5A059] text-black rounded-lg font-bold shadow-lg hover:bg-amber-500 transition-colors"
+                        className="flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 bg-[#0284c7] text-white rounded-lg font-bold shadow-lg hover:bg-amber-500 transition-colors"
                     >
                         <Home size={20} />
                         Kembali ke Dashboard

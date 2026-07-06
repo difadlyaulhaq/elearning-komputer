@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import React from "react";
-import { Lesson } from "@/types";
+import { Lesson, Section } from "@/types";
 
 // Dynamically import client components to prevent SSR errors related to client-only contexts.
 // This ensures they only render on the client side where AuthProvider is available.
@@ -19,6 +19,7 @@ const LessonPlayerDesktop = dynamic(
 interface ClientLessonPlayersProps {
   courseId: string;
   courseTitle: string;
+  sections: Section[];
   lesson: Lesson;
   prevLesson: Lesson | null;
   nextLesson: Lesson | null;
@@ -29,6 +30,7 @@ interface ClientLessonPlayersProps {
 export function ClientLessonPlayers({
   courseId,
   courseTitle,
+  sections,
   lesson,
   prevLesson,
   nextLesson,
@@ -48,6 +50,7 @@ export function ClientLessonPlayers({
         <LessonPlayerMobile
           courseId={courseId}
           courseTitle={courseTitle}
+          sections={sections}
           lesson={lesson}
           prevLesson={prevLesson}
           nextLesson={nextLesson}
@@ -58,6 +61,7 @@ export function ClientLessonPlayers({
         <LessonPlayerDesktop
           courseId={courseId}
           courseTitle={courseTitle}
+          sections={sections}
           lesson={lesson}
           prevLesson={prevLesson}
           nextLesson={nextLesson}

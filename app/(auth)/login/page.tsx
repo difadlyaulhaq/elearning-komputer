@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect, Suspense } from 'react';
-import { Mail, Lock, Eye, EyeOff, Loader, Shield, Users, Smartphone, Globe } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Loader, Shield, Users, Smartphone, Globe, BookOpen } from 'lucide-react';
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -190,11 +190,11 @@ const LoginForm = () => {
         .touch-button:active { transform: scale(0.98); }
       `}} />
 
-      <div className="min-h-screen bg-black flex items-center justify-center p-0 sm:p-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-sky-50/50 to-slate-100 flex items-center justify-center p-0 sm:p-4">
         {/* Background Pattern Mobile */}
-        <div className="absolute inset-0 opacity-5">
+        <div className="absolute inset-0 opacity-10">
           <div className="absolute inset-0" style={{
-            backgroundImage: `radial-gradient(circle at 2px 2px, #C5A059 1px, transparent 0)`,
+            backgroundImage: `radial-gradient(circle at 2px 2px, #0ea5e9 1px, transparent 0)`,
             backgroundSize: isMobile ? '20px 20px' : '30px 30px'
           }}></div>
         </div>
@@ -202,28 +202,24 @@ const LoginForm = () => {
         <div className="relative w-full max-w-md mx-auto h-screen sm:h-auto flex flex-col justify-center">
           {/* Mobile-Specific Header */}
           <div className="sm:hidden flex flex-col items-center justify-center pt-12 pb-6 px-4">
-            <div className="bg-white p-3 rounded-xl shadow-md mb-4">
-              <img 
-                src="/logo-alfajr.png" 
-                alt="Alfajr Umroh Logo" 
-                className="w-28 h-auto object-contain"
-              />
+            <div className="bg-sky-50 p-3 rounded-xl border border-sky-100 shadow-sm mb-4">
+              <BookOpen className="text-sky-600" size={32} />
             </div>
-            <h1 className="text-2xl font-bold text-white mb-1 text-center">
-              Alfajr E-learning
+            <h1 className="text-2xl font-bold text-slate-900 mb-1 text-center">
+              E-learning Portal
             </h1>
-            <p className="text-gray-300 text-xs text-center px-4">
-              Silahkan Login Dengan Akun Pegawai Alfajr Anda
+            <p className="text-slate-500 text-xs text-center px-4">
+              Silahkan Login Dengan Akun Pegawai Anda
             </p>
           </div>
 
           {/* Desktop Header (hidden on mobile) */}
           <div className="hidden sm:block text-center mb-7">
-            <div className="bg-white p-4 rounded-xl inline-block shadow-md mb-4">
-              <img src="/logo-alfajr.png" alt="Alfajr Umroh Logo" className="w-40 h-auto object-contain"/>
+            <div className="bg-sky-50 p-4 rounded-xl inline-block border border-sky-100 shadow-sm mb-4">
+              <BookOpen className="text-sky-600" size={48} />
             </div>
-            <h1 className="text-3xl font-bold text-white mb-2">Alfajr E-learning</h1>
-            <p className="text-gray-400 text-sm mt-2">Silahkan Login Dengan Akun Pegawai Alfajr Anda</p>
+            <h1 className="text-3xl font-bold text-slate-900 mb-2">E-learning Portal</h1>
+            <p className="text-slate-500 text-sm mt-2">Silahkan Login Dengan Akun Pegawai Anda</p>
           </div>
 
           {/* Login Card */}
@@ -253,12 +249,12 @@ const LoginForm = () => {
                     <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                     <input 
                       type="email" 
-                      placeholder="nama@alfajrumroh.com" 
+                      placeholder="nama@perusahaan.com" 
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required 
                       disabled={isLoading}
-                      className="w-full text-black text-sm sm:text-base pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C5A059] focus:border-transparent outline-none transition-all disabled:opacity-50"
+                      className="w-full text-black text-sm sm:text-base pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-600 focus:border-transparent outline-none transition-all disabled:opacity-50"
                     />
                   </div>
                 </div>
@@ -277,7 +273,7 @@ const LoginForm = () => {
                       onChange={(e) => setPassword(e.target.value)}
                       required 
                       disabled={isLoading}
-                      className="w-full text-black text-sm sm:text-base pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C5A059] focus:border-transparent outline-none transition-all disabled:opacity-50"
+                      className="w-full text-black text-sm sm:text-base pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-600 focus:border-transparent outline-none transition-all disabled:opacity-50"
                     />
                     <button 
                       type="button" 
@@ -294,7 +290,7 @@ const LoginForm = () => {
                 <button 
                   type="submit" 
                   disabled={isLoading}
-                  className="w-full flex items-center justify-center bg-[#C5A059] text-black font-bold py-3.5 sm:py-3 rounded-lg hover:bg-[#B08F4A] transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed touch-button"
+                  className="w-full flex items-center justify-center bg-sky-600 text-white font-bold py-3.5 sm:py-3 rounded-lg hover:bg-sky-700 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed touch-button"
                 >
                   {isLoading ? (
                     <>
@@ -346,7 +342,7 @@ const LoginForm = () => {
               <div className="mt-8 pt-6 border-t border-gray-200">
                 <div className="text-center">
                   <p className="text-gray-400 text-[10px]">
-                    © 2025 Alfajr Umroh. All rights reserved.
+                    © 2025 E-learning Portal. All rights reserved.
                   </p>
                   <p className="text-gray-400 text-[10px] mt-1">
                     Version 1.0.0 • Mobile Optimized
@@ -360,7 +356,7 @@ const LoginForm = () => {
           {!isMobile && (
             <div className="text-center mt-6 px-2">
               <p className="text-gray-400 text-sm">
-                © 2025 Alfajr Umroh. All rights reserved.
+                © 2025 E-learning Portal. All rights reserved.
               </p>
             </div>
           )}
@@ -375,8 +371,8 @@ const LoginForm = () => {
             bg-white rounded-2xl shadow-2xl w-full max-w-sm text-center animate-slideUp
           `}>
             <div className="mb-6">
-              <div className="w-12 h-12 bg-[#C5A059]/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                <Shield className="text-[#C5A059]" size={24} />
+              <div className="w-12 h-12 bg-sky-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Shield className="text-sky-600" size={24} />
               </div>
               <h2 className={`${isMobile ? 'text-lg' : 'text-2xl'} font-bold text-black mb-2`}>
                 Login sebagai Admin
@@ -389,7 +385,7 @@ const LoginForm = () => {
             <div className="space-y-3 sm:space-y-4">
               <button
                 onClick={() => router.push('/admin/dashboard')}
-                className="w-full flex items-center justify-center gap-3 py-3 bg-[#C5A059] text-black font-bold rounded-lg hover:bg-[#B08F4A] transition-colors shadow-lg touch-button"
+                className="w-full flex items-center justify-center gap-3 py-3 bg-sky-600 text-white font-bold rounded-lg hover:bg-sky-700 transition-colors shadow-lg touch-button"
               >
                 <Shield size={20} />
                 Buka Dasbor Admin
@@ -413,7 +409,7 @@ const LoginForm = () => {
 
 const LoginPage = () => {
     return (
-        <Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center"><Loader className="animate-spin text-[#C5A059]" /></div>}>
+        <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center"><Loader className="animate-spin text-sky-600" /></div>}>
             <LoginForm />
         </Suspense>
     );

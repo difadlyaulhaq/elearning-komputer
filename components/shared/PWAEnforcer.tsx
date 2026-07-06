@@ -6,6 +6,7 @@ import { isMobileDevice } from '@/lib/security/mobileProtection';
 import { Capacitor } from '@capacitor/core';
 import DownloadAppButton from './DownloadAppButton';
 import Image from 'next/image';
+import { BookOpen } from 'lucide-react';
 
 export default function PWAEnforcer({ children }: { children: React.ReactNode }) {
   const [isMobile, setIsMobile] = useState(false);
@@ -55,19 +56,13 @@ export default function PWAEnforcer({ children }: { children: React.ReactNode })
       <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-8 flex flex-col items-center text-center border border-gray-100">
         
         {/* Logo */}
-        <div className="relative w-40 h-14 mb-8">
-          <Image 
-            src="/logo-alfajr.png" 
-            alt="Alfajr E-Learning" 
-            fill
-            className="object-contain"
-            priority
-          />
+        <div className="bg-sky-50 p-4 rounded-2xl border border-sky-100 shadow-sm mb-8 flex items-center justify-center">
+          <BookOpen className="text-sky-600" size={40} />
         </div>
 
         {/* Visual Illustration (Icon) */}
         <div className="mb-6 p-4 bg-orange-50 rounded-full">
-           <svg xmlns="http://www.w3.org/2000/svg" className="w-12 h-12 text-[#C5A059]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+           <svg xmlns="http://www.w3.org/2000/svg" className="w-12 h-12 text-[#0284c7]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
              <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
              <line x1="12" y1="18" x2="12.01" y2="18"></line>
            </svg>
@@ -86,7 +81,7 @@ export default function PWAEnforcer({ children }: { children: React.ReactNode })
         <div className="w-full space-y-6">
            <DownloadAppButton 
              variant="primary" 
-             className="w-full py-3.5 text-sm font-bold bg-[#C5A059] hover:bg-[#b08d4b] text-white rounded-xl shadow-lg shadow-[#C5A059]/20 transition-all active:scale-95" 
+             className="w-full py-3.5 text-sm font-bold bg-[#0284c7] hover:bg-[#0369a1] text-white rounded-xl shadow-lg shadow-[#0284c7]/20 transition-all active:scale-95" 
              text="Download Aplikasi Android"
              apkUrl="https://alfajr-cdn.b-cdn.net/alfajr-elearning.apk"
            /> 
@@ -117,9 +112,8 @@ export default function PWAEnforcer({ children }: { children: React.ReactNode })
         </div>
       </div>
 
-      {/* Footer Text */}
       <p className="mt-8 text-[10px] text-gray-400">
-        &copy; {new Date().getFullYear()} Alfajr E-Learning Security
+        &copy; {new Date().getFullYear()} E-learning Portal Security
       </p>
     </div>
   );

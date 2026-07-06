@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Suspense } from "react";
+import Script from "next/script";
 import "./globals.css";
 import 'highlight.js/styles/github-dark.css';
 import { AuthProvider } from "@/context/AuthContext";
@@ -17,13 +18,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: " Alfajr E-learning",
-  description: "Platform E-learning Alfajr Umroh",
+  title: " E-learning Portal",
+  description: "Platform E-learning E-learning Portal",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Alfajr Learning",
+    title: "E-learning Portal",
   },
 };
 
@@ -49,7 +50,9 @@ export default function RootLayout({
         <link rel="preconnect" href="https://www.googleapis.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <script
+        <Script
+          id="bootstrap-script"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               // ============================================

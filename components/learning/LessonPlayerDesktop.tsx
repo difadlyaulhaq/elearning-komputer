@@ -4,7 +4,8 @@ import React, { useMemo, useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { Lesson } from "@/types";
+import { Lesson, Section } from "@/types";
+import { Playlist } from "./Playlist";
 import {
   ArrowLeft,
   CheckCircle,
@@ -28,6 +29,7 @@ import { getIsNativeApp } from "@/lib/native-detection";
 interface LessonPlayerDesktopProps {
   courseId: string;
   courseTitle: string;
+  sections: Section[];
   lesson: Lesson;
   prevLesson: Lesson | null;
   nextLesson: Lesson | null;
@@ -38,6 +40,7 @@ interface LessonPlayerDesktopProps {
 export function LessonPlayerDesktop({
   courseId,
   courseTitle,
+  sections,
   lesson,
   prevLesson,
   nextLesson,
@@ -121,7 +124,7 @@ export function LessonPlayerDesktop({
           <div className="h-4 w-px bg-gray-200 hidden lg:block" />
 
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] text-[#C5A059] font-semibold uppercase tracking-widest truncate">
+            <p className="text-[10px] text-[#0284c7] font-semibold uppercase tracking-widest truncate">
               {courseTitle}
             </p>
             <h1 className="text-sm font-bold text-gray-900 truncate leading-tight">
@@ -148,9 +151,19 @@ export function LessonPlayerDesktop({
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col lg:flex-row">
-        {/* Left: Player / Content */}
-        <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-row h-[calc(100vh-64px)] overflow-hidden">
+        {/* Left Sidebar: Playlist */}
+        <div className="hidden lg:block w-80 bg-white border-r border-slate-200 h-full overflow-y-auto shrink-0 shadow-xs">
+          <Playlist
+            courseId={courseId}
+            sections={sections}
+            currentLessonId={lesson.id}
+            completedLessons={completedLessons}
+          />
+        </div>
+
+        {/* Right Pane: Player / Content */}
+        <div className="flex-1 flex flex-col overflow-y-auto bg-slate-50 h-full">
           {/* Player Area */}
           <div className="bg-black rounded-xl overflow-hidden mx-4 md:mx-6 mt-4">
             {isVideoContent ? (
@@ -185,8 +198,8 @@ export function LessonPlayerDesktop({
             {lesson.contentType === "text" && (
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mb-4">
                 <div className="flex items-center gap-3 mb-5 pb-4 border-b border-gray-100">
-                  <div className="w-11 h-11 bg-[#C5A059]/10 rounded-xl flex items-center justify-center">
-                    <BookOpen size={20} className="text-[#C5A059]" />
+                  <div className="w-11 h-11 bg-sky-50 rounded-xl flex items-center justify-center">
+                    <BookOpen size={20} className="text-[#0284c7]" />
                   </div>
                   <div>
                     <h2 className="text-base font-bold text-gray-900">Artikel Pembelajaran</h2>
@@ -202,8 +215,8 @@ export function LessonPlayerDesktop({
             {/* File Upload Content */}
             {lesson.contentType === "file-upload" && (
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 text-center mb-4">
-                <div className="w-16 h-16 bg-[#C5A059]/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Download size={28} className="text-[#C5A059]" />
+                <div className="w-16 h-16 bg-sky-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Download size={28} className="text-[#0284c7]" />
                 </div>
                 <h2 className="text-lg font-bold text-gray-900 mb-1">File Materi</h2>
                 <p className="text-sm text-gray-500 mb-5">Silakan unduh atau buka file materi melalui tombol di bawah.</p>
@@ -211,7 +224,7 @@ export function LessonPlayerDesktop({
                   href={lesson.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-[#C5A059] text-black font-bold rounded-xl hover:bg-[#D4AF6A] transition-colors"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-[#0284c7] text-white font-bold rounded-xl hover:bg-[#D4AF6A] transition-colors"
                 >
                   <Download size={18} /> Buka / Unduh File
                 </a>
@@ -246,16 +259,16 @@ export function LessonPlayerDesktop({
                   href={getIsNativeApp() ? `/learning/view-file?url=${encodeURIComponent(lesson.attachmentUrl)}&name=${encodeURIComponent(lesson.attachmentName)}` : lesson.attachmentUrl}
                   target={getIsNativeApp() ? undefined : '_blank'}
                   rel="noopener noreferrer"
-                  className="flex items-center gap-3 p-3.5 bg-gray-50 hover:bg-[#C5A059]/10 hover:border-[#C5A059]/20 rounded-xl border border-gray-100 transition-all group"
+                  className="flex items-center gap-3 p-3.5 bg-gray-50 hover:bg-sky-50 hover:border-[#0284c7]/20 rounded-xl border border-gray-100 transition-all group"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-[#C5A059]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#C5A059]/20 transition-colors">
-                    <FileText size={18} className="text-[#C5A059]" />
+                  <div className="w-10 h-10 rounded-xl bg-sky-50 flex items-center justify-center flex-shrink-0 group-hover:bg-sky-100 transition-colors">
+                    <FileText size={18} className="text-[#0284c7]" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-gray-900 truncate">{lesson.attachmentName}</p>
                     <p className="text-xs text-gray-500 mt-0.5">Klik untuk mengunduh</p>
                   </div>
-                  <Download size={16} className="text-gray-500 flex-shrink-0 group-hover:text-[#C5A059] transition-colors" />
+                  <Download size={16} className="text-gray-500 flex-shrink-0 group-hover:text-[#0284c7] transition-colors" />
                 </a>
               </div>
             )}
@@ -300,7 +313,7 @@ export function LessonPlayerDesktop({
                   disabled={!isVideoCompleted || isUpdating}
                   className={`flex items-center justify-center gap-2 px-6 py-3 font-bold text-sm rounded-xl transition-all duration-300 ${
                     isVideoCompleted && !isUpdating
-                      ? "bg-[#C5A059] hover:bg-[#b8913e] text-white shadow-lg shadow-[#C5A059]/20 hover:shadow-[#C5A059]/30 hover:scale-[1.02]"
+                      ? "bg-[#0284c7] hover:bg-[#0369a1] text-white shadow-lg shadow-[#0284c7]/20 hover:shadow-[#0284c7]/30 hover:scale-[1.02]"
                       : "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
                   }`}
                 >

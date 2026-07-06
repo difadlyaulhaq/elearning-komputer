@@ -48,7 +48,7 @@ export function FileViewerClient({ initialUrl, initialName }: FileViewerClientPr
           <span>Kembali</span>
         </button>
 
-        <h1 className="flex-1 text-center font-bold text-sm md:text-base px-4 truncate text-[#C5A059] max-w-[50%] md:max-w-[60%]">
+        <h1 className="flex-1 text-center font-bold text-sm md:text-base px-4 truncate text-[#0284c7] max-w-[50%] md:max-w-[60%]">
           {fileName}
         </h1>
 
@@ -85,7 +85,7 @@ export function FileViewerClient({ initialUrl, initialName }: FileViewerClientPr
             <p className="text-sm text-slate-400 mb-4">Link materi pendukung tidak valid atau kosong.</p>
             <button
               onClick={handleBack}
-              className="w-full py-2.5 px-4 bg-[#C5A059] hover:bg-[#b08e4d] text-slate-950 font-semibold rounded-xl transition-all cursor-pointer"
+              className="w-full py-2.5 px-4 bg-[#0284c7] hover:bg-[#0369a1] text-white font-semibold rounded-xl transition-all cursor-pointer"
             >
               Kembali ke Materi
             </button>
@@ -105,7 +105,7 @@ export function FileViewerClient({ initialUrl, initialName }: FileViewerClientPr
           <div className="w-full h-full relative">
             {isLoading && (
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950 z-20 gap-3">
-                <Loader2 size={32} className="text-[#C5A059] animate-spin" />
+                <Loader2 size={32} className="text-[#0284c7] animate-spin" />
                 <p className="text-xs text-slate-400">Sedang memuat dokumen...</p>
                 <p className="text-[10px] text-slate-500 max-w-[200px] text-center mt-1">
                   Jika memuat terlalu lama, klik tombol refresh di kanan atas.

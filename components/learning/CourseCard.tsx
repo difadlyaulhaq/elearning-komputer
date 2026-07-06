@@ -20,7 +20,7 @@ export const StatusBadge = ({ status }: { status: string }) => {
     );
   }
   return (
-    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#C5A059] text-white">
+    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#0284c7] text-white">
       <Clock size={12} />
       Proses
     </span>
@@ -63,7 +63,7 @@ export const CourseCard: React.FC<{ course: Omit<Course, 'status'> & Progress & 
 
           {/* Category Badge */}
           <div className="absolute top-2 right-2">
-             <span className="px-2 py-1 rounded text-xs font-bold bg-white/90 backdrop-blur-sm text-[#C5A059] shadow-sm">
+             <span className="px-2 py-1 rounded text-xs font-bold bg-white/90 backdrop-blur-sm text-[#0284c7] shadow-sm">
               {course.categoryName}
              </span>
           </div>
@@ -76,7 +76,7 @@ export const CourseCard: React.FC<{ course: Omit<Course, 'status'> & Progress & 
             </div>
           )}
           {isInProgress && (
-            <div className="absolute top-2 left-2 bg-[#C5A059] text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+            <div className="absolute top-2 left-2 bg-[#0284c7] text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
               <Clock size={12} />
               <span>Proses</span>
             </div>
@@ -97,7 +97,7 @@ export const CourseCard: React.FC<{ course: Omit<Course, 'status'> & Progress & 
               </div>
               <div className="w-full bg-gray-200 rounded-full h-1.5">
                 <div 
-                  className="bg-[#C5A059] h-1.5 rounded-full transition-all duration-1000 ease-out"
+                  className="bg-[#0284c7] h-1.5 rounded-full transition-all duration-1000 ease-out"
                   style={{ width: `${course.progress}%` }}
                 />
               </div>
@@ -120,7 +120,7 @@ export const CourseCard: React.FC<{ course: Omit<Course, 'status'> & Progress & 
               <BookOpen size={12} />
               <span>{course.totalVideos || 0} Materi</span>
             </div>
-            <span className="text-xs font-bold text-[#C5A059]">
+            <span className="text-xs font-bold text-[#0284c7]">
               {isCompleted ? "Lihat Kembali →" : "Lanjutkan →"}
             </span>
           </div>

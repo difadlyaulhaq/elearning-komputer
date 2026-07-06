@@ -97,7 +97,7 @@ export const AdminDashboardClient = ({ stats, recentActivities }: AdminDashboard
               Selamat Datang 👋
             </h1>
           </div>
-          <div className="w-12 h-12 bg-gradient-to-br from-[#C5A059] to-[#B08F4A] rounded-full flex items-center justify-center shadow-lg">
+          <div className="w-12 h-12 bg-gradient-to-br from-[#0284c7] to-[#0369a1] rounded-full flex items-center justify-center shadow-lg">
             <TrendingUp className="text-white" size={24} />
           </div>
         </div>
@@ -149,7 +149,7 @@ export const AdminDashboardClient = ({ stats, recentActivities }: AdminDashboard
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="px-4 py-4 md:px-6 md:py-5 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
               <h3 className="text-base md:text-lg font-bold text-black flex items-center">
-                <div className="w-1 h-5 bg-[#C5A059] rounded-full mr-3"></div>
+                <div className="w-1 h-5 bg-[#0284c7] rounded-full mr-3"></div>
                 Aktivitas Terbaru
               </h3>
             </div>
@@ -160,7 +160,7 @@ export const AdminDashboardClient = ({ stats, recentActivities }: AdminDashboard
                     key={activity.id} 
                     className="flex items-start space-x-3 pb-4 last:pb-0 border-b border-gray-100 last:border-0"
                   >
-                    <div className="w-2 h-2 bg-[#C5A059] rounded-full mt-2 shrink-0 shadow-sm"></div>
+                    <div className="w-2 h-2 bg-[#0284c7] rounded-full mt-2 shrink-0 shadow-sm"></div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-black leading-relaxed">
                         <span className="font-semibold">{activity.user}</span>{' '}
@@ -181,7 +181,7 @@ export const AdminDashboardClient = ({ stats, recentActivities }: AdminDashboard
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="px-4 py-4 md:px-6 md:py-5 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
               <h3 className="text-base md:text-lg font-bold text-black flex items-center">
-                <div className="w-1 h-5 bg-[#C5A059] rounded-full mr-3"></div>
+                <div className="w-1 h-5 bg-[#0284c7] rounded-full mr-3"></div>
                 Aksi Cepat
               </h3>
             </div>
@@ -190,10 +190,10 @@ export const AdminDashboardClient = ({ stats, recentActivities }: AdminDashboard
               <div className="grid grid-cols-3 gap-3 md:flex md:flex-col md:gap-3">
                 <Link 
                   href="/admin/courses" 
-                  className="group flex flex-col items-center md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-3 p-3 md:p-4 border border-gray-200 rounded-xl hover:border-[#C5A059] hover:bg-[#FFF8E7] transition-all duration-200"
+                  className="group flex flex-col items-center md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-3 p-3 md:p-4 border border-gray-200 rounded-xl hover:border-[#0284c7] hover:bg-[#f0f9ff] transition-all duration-200"
                 >
                   <div className="w-10 h-10 md:w-12 md:h-12 bg-gray-100 group-hover:bg-white rounded-xl flex items-center justify-center transition-colors shadow-sm">
-                    <BookOpen className="text-[#C5A059]" size={20} />
+                    <BookOpen className="text-[#0284c7]" size={20} />
                   </div>
                   <div className="text-center md:text-left flex-1">
                     <p className="font-bold text-xs md:text-sm text-black">Kelola Kursus</p>
@@ -203,10 +203,10 @@ export const AdminDashboardClient = ({ stats, recentActivities }: AdminDashboard
 
                 <Link 
                   href="/admin/users" 
-                  className="group flex flex-col items-center md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-3 p-3 md:p-4 border border-gray-200 rounded-xl hover:border-[#C5A059] hover:bg-[#FFF8E7] transition-all duration-200"
+                  className="group flex flex-col items-center md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-3 p-3 md:p-4 border border-gray-200 rounded-xl hover:border-[#0284c7] hover:bg-[#f0f9ff] transition-all duration-200"
                 >
                   <div className="w-10 h-10 md:w-12 md:h-12 bg-gray-100 group-hover:bg-white rounded-xl flex items-center justify-center transition-colors shadow-sm">
-                    <Users className="text-[#C5A059]" size={20} />
+                    <Users className="text-[#0284c7]" size={20} />
                   </div>
                   <div className="text-center md:text-left flex-1">
                     <p className="font-bold text-xs md:text-sm text-black">Kelola Pegawai</p>
@@ -216,10 +216,10 @@ export const AdminDashboardClient = ({ stats, recentActivities }: AdminDashboard
 
                 <Link 
                   href="/admin/reports" 
-                  className="group flex flex-col items-center md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-3 p-3 md:p-4 border border-gray-200 rounded-xl hover:border-[#C5A059] hover:bg-[#FFF8E7] transition-all duration-200"
+                  className="group flex flex-col items-center md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-3 p-3 md:p-4 border border-gray-200 rounded-xl hover:border-[#0284c7] hover:bg-[#f0f9ff] transition-all duration-200"
                 >
                   <div className="w-10 h-10 md:w-12 md:h-12 bg-gray-100 group-hover:bg-white rounded-xl flex items-center justify-center transition-colors shadow-sm">
-                    <BarChart3 className="text-[#C5A059]" size={20} />
+                    <BarChart3 className="text-[#0284c7]" size={20} />
                   </div>
                   <div className="text-center md:text-left flex-1">
                     <p className="font-bold text-xs md:text-sm text-black">Lihat Laporan</p>

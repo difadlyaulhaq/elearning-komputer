@@ -79,21 +79,21 @@ const AdminSidebar = ({ isOpen, onClose }: AdminSidebarProps) => {
     <div className="flex flex-col h-full overflow-hidden">
 
       {/* Header */}
-      <div className="relative flex items-center justify-between px-4 py-4 border-b border-white/10 shrink-0">
+      <div className="relative flex items-center justify-between px-4 py-4 border-b border-slate-100 shrink-0">
         {!isCollapsed && (
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl overflow-hidden bg-white/10 flex items-center justify-center shrink-0">
-              <Image src="/logo-alfajr.png" alt="Logo" width={32} height={32} className="object-contain p-0.5" />
+            <div className="w-9 h-9 rounded-xl bg-sky-100 flex items-center justify-center shrink-0">
+              <BookOpen className="text-sky-600" size={18} />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-white truncate leading-tight">Alfajr Umroh</p>
-              <p className="text-[11px] text-[#C5A059] font-medium">Admin Panel</p>
+              <p className="text-sm font-semibold text-slate-900 truncate leading-tight">E-learning Portal</p>
+              <p className="text-[11px] text-sky-600 font-semibold">Admin Panel</p>
             </div>
           </div>
         )}
         {isCollapsed && (
-          <div className="w-9 h-9 rounded-xl overflow-hidden bg-white/10 mx-auto">
-            <Image src="/logo-alfajr.png" alt="Logo" width={36} height={36} className="object-contain p-0.5" />
+          <div className="w-9 h-9 rounded-xl bg-sky-100 mx-auto flex items-center justify-center">
+            <BookOpen className="text-sky-600" size={18} />
           </div>
         )}
 
@@ -118,7 +118,7 @@ const AdminSidebar = ({ isOpen, onClose }: AdminSidebarProps) => {
       </div>
 
       {/* Navigation & Footer Area */}
-      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
         <nav className="py-3 px-2 space-y-0.5">
           {menuItems.map((item) => (
             <div key={item.key}>
@@ -128,14 +128,14 @@ const AdminSidebar = ({ isOpen, onClose }: AdminSidebarProps) => {
                 className={`
                   w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all group relative
                   ${isActive(item.path)
-                    ? 'bg-[#C5A059] text-black shadow-sm'
-                    : 'text-gray-300 hover:bg-white/8 hover:text-white'}
+                    ? 'bg-sky-50 text-sky-600 font-semibold shadow-xs'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}
                   ${isCollapsed ? 'justify-center' : ''}
                 `}
               >
                 <item.icon
                   size={18}
-                  className={`shrink-0 ${isActive(item.path) ? 'text-black' : 'text-[#C5A059]'}`}
+                  className={`shrink-0 ${isActive(item.path) ? 'text-sky-600' : 'text-slate-400 group-hover:text-slate-600'}`}
                 />
                 {!isCollapsed && (
                   <>
@@ -159,7 +159,7 @@ const AdminSidebar = ({ isOpen, onClose }: AdminSidebarProps) => {
 
               {/* Submenu */}
               {!isCollapsed && item.hasSubmenu && expandedMenus[item.key] && (
-                <div className="ml-3 pl-3 mt-0.5 space-y-0.5 border-l border-white/10">
+                <div className="ml-3 pl-3 mt-0.5 space-y-0.5 border-l border-slate-100">
                   {item.subItems?.map(sub => (
                     <button
                       key={sub.key}
@@ -167,11 +167,11 @@ const AdminSidebar = ({ isOpen, onClose }: AdminSidebarProps) => {
                       className={`
                         w-full flex items-center px-3 py-2 rounded-lg text-left text-sm transition-all
                         ${isActive(sub.path)
-                          ? 'text-[#C5A059] font-semibold bg-[#C5A059]/10'
-                          : 'text-gray-400 hover:text-white hover:bg-white/5'}
+                          ? 'text-sky-600 font-semibold bg-sky-50/50'
+                          : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'}
                       `}
                     >
-                      {isActive(sub.path) && <span className="w-1 h-1 rounded-full bg-[#C5A059] mr-2 shrink-0" />}
+                      {isActive(sub.path) && <span className="w-1.5 h-1.5 rounded-full bg-sky-600 mr-2 shrink-0" />}
                       {sub.label}
                     </button>
                   ))}
@@ -182,7 +182,7 @@ const AdminSidebar = ({ isOpen, onClose }: AdminSidebarProps) => {
         </nav>
 
         {/* Footer — Logout */}
-        <div className={`px-2 py-3 border-t border-white/10 ${isCollapsed ? '' : ''}`}>
+        <div className={`px-2 py-3 border-t border-slate-100 ${isCollapsed ? '' : ''}`}>
           <button
             onClick={handleLogout}
             disabled={isLoggingOut}
@@ -222,8 +222,8 @@ const AdminSidebar = ({ isOpen, onClose }: AdminSidebarProps) => {
       <aside
         className={`
           fixed top-0 left-0 h-screen z-50 flex flex-col
-          bg-gradient-to-b from-[#0d0d0d] via-[#111111] to-[#0d0d0d]
-          border-r border-white/8 shadow-2xl
+          bg-white
+          border-r border-slate-200 shadow-sm
           transition-all duration-300 ease-in-out
           pt-[env(safe-area-inset-top)]
           ${sidebarWidth}

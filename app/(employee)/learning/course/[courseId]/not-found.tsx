@@ -21,7 +21,7 @@ export default function NotFound() {
           </Link>
           <Link
             href="/learning/catalog"
-            className="flex items-center gap-2 px-6 py-3 bg-[#C5A059] text-black font-bold rounded-lg hover:bg-amber-500 transition-colors shadow-md"
+            className="flex items-center gap-2 px-6 py-3 bg-[#0284c7] text-white font-bold rounded-lg hover:bg-amber-500 transition-colors shadow-md"
           >
             <LayoutGrid size={18} />
             Jelajahi Katalog

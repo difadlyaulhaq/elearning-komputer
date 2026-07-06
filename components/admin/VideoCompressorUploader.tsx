@@ -205,7 +205,7 @@ export const VideoCompressorUploader: React.FC<VideoCompressorUploaderProps> = (
     <div className="w-full">
       <div 
         className={`relative border-2 border-dashed rounded-xl p-6 transition-all ${
-          (isCompressing || isUploading) ? 'border-yellow-400 bg-yellow-50' : 'border-gray-200 hover:border-[#C5A059] bg-white'
+          (isCompressing || isUploading) ? 'border-yellow-400 bg-yellow-50' : 'border-gray-200 hover:border-[#0284c7] bg-white'
         }`}
       >
         {!(isCompressing || isUploading) && (
@@ -223,18 +223,18 @@ export const VideoCompressorUploader: React.FC<VideoCompressorUploaderProps> = (
             <div className="space-y-4 w-full max-w-xs">
               <div className="flex justify-center">
                 <div className="relative">
-                  <Video className="text-[#C5A059] animate-pulse" size={32} />
+                  <Video className="text-[#0284c7] animate-pulse" size={32} />
                   <Sparkles className="absolute -top-1 -right-1 text-yellow-500 animate-bounce" size={14} />
                 </div>
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between items-end">
                   <p className="text-sm font-bold text-gray-800">Mengompresi Video...</p>
-                  <p className="text-xs font-mono text-[#C5A059]">{compressionProgress}%</p>
+                  <p className="text-xs font-mono text-[#0284c7]">{compressionProgress}%</p>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div 
-                    className="bg-gradient-to-r from-[#C5A059] to-yellow-400 h-2 rounded-full transition-all duration-300" 
+                    className="bg-gradient-to-r from-[#0284c7] to-yellow-400 h-2 rounded-full transition-all duration-300" 
                     style={{ width: `${compressionProgress}%` }}
                   ></div>
                 </div>
@@ -246,16 +246,16 @@ export const VideoCompressorUploader: React.FC<VideoCompressorUploaderProps> = (
           ) : isUploading ? (
             <div className="space-y-4 w-full max-w-xs">
               <div className="flex justify-center">
-                <Loader2 className="animate-spin text-[#C5A059]" size={32} />
+                <Loader2 className="animate-spin text-[#0284c7]" size={32} />
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between items-end">
                   <p className="text-sm font-bold text-gray-800">Mengunggah...</p>
-                  <p className="text-xs font-mono text-[#C5A059]">{progress}%</p>
+                  <p className="text-xs font-mono text-[#0284c7]">{progress}%</p>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div 
-                    className="bg-[#C5A059] h-2 rounded-full transition-all duration-300" 
+                    className="bg-[#0284c7] h-2 rounded-full transition-all duration-300" 
                     style={{ width: `${progress}%` }}
                   ></div>
                 </div>
@@ -274,7 +274,7 @@ export const VideoCompressorUploader: React.FC<VideoCompressorUploaderProps> = (
             </div>
           ) : (
             <>
-              <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center text-[#C5A059] mb-4 shadow-inner border border-gray-100">
+              <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center text-[#0284c7] mb-4 shadow-inner border border-gray-100">
                 <Video size={28} />
               </div>
               <div className="space-y-1">

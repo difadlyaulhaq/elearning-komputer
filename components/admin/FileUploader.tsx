@@ -114,7 +114,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
     <div className="w-full">
       <div 
         className={`relative border-2 border-dashed rounded-lg p-4 transition-all ${
-          isUploading ? 'border-yellow-400 bg-yellow-50' : 'border-gray-300 hover:border-[#C5A059] bg-white'
+          isUploading ? 'border-yellow-400 bg-yellow-50' : 'border-gray-300 hover:border-[#0284c7] bg-white'
         }`}
       >
         {!isUploading && (
@@ -135,10 +135,10 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
         <div className="flex flex-col items-center justify-center space-y-2">
           {isUploading ? (
             <>
-              <Loader2 className="animate-spin text-[#C5A059]" size={24} />
+              <Loader2 className="animate-spin text-[#0284c7]" size={24} />
               <div className="w-full bg-gray-200 rounded-full h-2.5 max-w-[200px]">
                 <div 
-                  className="bg-[#C5A059] h-2.5 rounded-full transition-all duration-300" 
+                  className="bg-[#0284c7] h-2.5 rounded-full transition-all duration-300" 
                   style={{ width: `${progress}%` }}
                 ></div>
               </div>

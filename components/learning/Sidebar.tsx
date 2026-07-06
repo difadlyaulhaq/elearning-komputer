@@ -44,10 +44,10 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
               <Image src="/logo-alfajr.png" alt="Logo" width={32} height={32} className="object-contain p-0.5" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-white truncate leading-tight group-hover:text-[#C5A059] transition-colors">
-                Alfajr E-Learning
+              <p className="text-sm font-semibold text-white truncate leading-tight group-hover:text-[#0284c7] transition-colors">
+                E-learning Portal
               </p>
-              <p className="text-[11px] text-[#C5A059] font-medium">Learning Portal</p>
+              <p className="text-[11px] text-[#0284c7] font-medium">Learning Portal</p>
             </div>
           </Link>
         )}
@@ -60,7 +60,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         {/* Desktop collapse toggle */}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="hidden md:flex items-center justify-center w-7 h-7 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-all shrink-0"
+          className="hidden md:flex items-center justify-center w-7 h-7 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-all shrink-0"
           title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {isCollapsed
@@ -71,7 +71,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         {/* Mobile close */}
         <button
           onClick={onClose}
-          className="md:hidden flex items-center justify-center w-7 h-7 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-all shrink-0"
+          className="md:hidden flex items-center justify-center w-7 h-7 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-all shrink-0"
         >
           <X size={16} />
         </button>
@@ -79,28 +79,28 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 
       {/* User card */}
       {user && !isCollapsed && (
-        <div className="px-3 py-3 border-b border-white/10 shrink-0">
-          <div className="flex items-center gap-3 px-2 py-2 rounded-xl bg-white/5 transition-colors">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#C5A059] to-[#8B7355] flex items-center justify-center font-semibold text-white text-sm shrink-0">
+        <div className="px-3 py-3 border-b border-slate-100 shrink-0">
+          <div className="flex items-center gap-3 px-2 py-2 rounded-xl bg-slate-50 transition-colors">
+            <div className="w-9 h-9 rounded-full bg-sky-100 flex items-center justify-center font-bold text-sky-600 text-sm shrink-0">
               {user.name.charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-white truncate leading-tight transition-colors">{user.name}</p>
-              <p className="text-[11px] text-[#C5A059] truncate">{user.division || 'Employee'}</p>
+              <p className="text-sm font-semibold text-slate-800 truncate leading-tight transition-colors">{user.name}</p>
+              <p className="text-[11px] text-sky-600 font-medium truncate">{user.division || 'Pegawai'}</p>
             </div>
           </div>
         </div>
       )}
       {user && isCollapsed && (
-        <div className="px-2 py-3 border-b border-white/10 shrink-0 flex justify-center">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#C5A059] to-[#8B7355] flex items-center justify-center font-semibold text-white text-sm">
+        <div className="px-2 py-3 border-b border-slate-100 shrink-0 flex justify-center">
+          <div className="w-9 h-9 rounded-full bg-sky-100 flex items-center justify-center font-bold text-sky-600 text-sm">
             {user.name.charAt(0).toUpperCase()}
           </div>
         </div>
       )}
 
       {/* Navigation & Footer Area */}
-      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
         <nav className="py-3 px-2 space-y-0.5">
           {menuItems.map((item) => {
             const isCurrentPath = pathname.startsWith(item.href);
@@ -113,14 +113,14 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                 className={`
                   flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group relative
                   ${isCurrentPath
-                    ? 'bg-[#C5A059] text-black shadow-sm'
-                    : 'text-gray-300 hover:bg-white/8 hover:text-white'}
+                    ? 'bg-sky-50 text-sky-600 font-semibold shadow-xs'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}
                   ${isCollapsed ? 'justify-center' : ''}
                 `}
               >
                 <item.icon
                   size={18}
-                  className={`shrink-0 ${isCurrentPath ? 'text-black' : 'text-[#C5A059]'}`}
+                  className={`shrink-0 ${isCurrentPath ? 'text-sky-600' : 'text-slate-400 group-hover:text-slate-600'}`}
                 />
                 {!isCollapsed && (
                   <span className={`text-sm font-medium truncate ${isCurrentPath ? 'font-semibold' : ''}`}>
@@ -139,26 +139,26 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 
           {/* Admin link (only for admins) */}
           {user?.role === 'admin' && (
-            <div className="pt-3 mt-2 border-t border-white/10">
+            <div className="pt-3 mt-2 border-t border-slate-100">
               <Link
                 href="/admin/dashboard"
                 onClick={onClose}
                 title={isCollapsed ? 'Kembali ke Admin' : undefined}
                 className={`
-                  flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-400
-                  hover:bg-white/8 hover:text-[#C5A059] transition-all group relative
+                  flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600
+                  hover:bg-slate-50 hover:text-slate-900 transition-all group relative
                   ${isCollapsed ? 'justify-center' : ''}
                 `}
               >
-                <Shield size={18} className="shrink-0 text-[#C5A059]" />
+                <Shield size={18} className="shrink-0 text-slate-400 group-hover:text-slate-600" />
                 {!isCollapsed && (
                   <>
                     <span className="text-sm font-medium flex-1">Kembali ke Admin</span>
-                    <ChevronLeft size={14} className="opacity-50" />
+                    <ChevronLeft size={14} className="opacity-50 text-slate-400" />
                   </>
                 )}
                 {isCollapsed && (
-                  <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 border border-white/10">
+                  <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 border border-slate-100">
                     Panel Admin
                   </div>
                 )}
@@ -168,25 +168,25 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         </nav>
 
         {/* Footer — Logout */}
-        <div className="px-2 py-3 border-t border-white/10">
+        <div className="px-2 py-3 border-t border-slate-100">
           <button
             onClick={handleLogout}
             disabled={isLoading}
             title={isCollapsed ? 'Keluar' : undefined}
             className={`
-              w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-red-400
-              hover:bg-red-500/15 hover:text-red-300 transition-all disabled:opacity-50 group relative
+              w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-red-500
+              hover:bg-red-55 hover:text-red-600 transition-all disabled:opacity-50 group relative
               ${isCollapsed ? 'justify-center' : ''}
             `}
           >
             {isLoading
-              ? <Loader2 size={18} className="shrink-0 animate-spin" />
-              : <LogOut size={18} className="shrink-0" />}
+              ? <Loader2 size={18} className="shrink-0 animate-spin text-red-500" />
+              : <LogOut size={18} className="shrink-0 text-red-500" />}
             {!isCollapsed && (
               <span className="text-sm font-medium">{isLoading ? 'Keluar...' : 'Keluar'}</span>
             )}
             {isCollapsed && (
-              <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 border border-white/10">
+              <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 border border-slate-100">
                 Keluar
               </div>
             )}
@@ -210,8 +210,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       <aside
         className={`
           fixed top-0 left-0 h-screen z-50 flex flex-col
-          bg-gradient-to-b from-[#0d0d0d] via-[#111111] to-[#0d0d0d]
-          border-r border-white/8 shadow-2xl
+          bg-white border-r border-slate-200 shadow-sm
           transition-all duration-300 ease-in-out
           pt-[env(safe-area-inset-top)]
           ${sidebarWidth}

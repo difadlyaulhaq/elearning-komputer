@@ -75,11 +75,20 @@ export async function getRecentActivities(limit = 10): Promise<Activity[]> {
   // IMPORTANT: This query requires a composite index in Firestore.
   // The build log should contain a link to create it. If you see errors, please create the index.
   try {
-    const courseProgressSnapshot = await adminDb.collectionGroup('courses')
-      .where('status', '==', 'completed')
-      .orderBy('completedAt', 'desc')
-      .limit(limit)
-      .get();
+    let courseProgressSnapshot;
+    try {
+      courseProgressSnapshot = await adminDb.collectionGroup('courses')
+        .where('status', '==', 'completed')
+        .orderBy('completedAt', 'desc')
+        .limit(limit)
+        .get();
+    } catch (indexError: any) {
+      console.warn("Firestore index missing for collection group 'courses' completedAt order. Falling back to unordered query: ", indexError.message);
+      courseProgressSnapshot = await adminDb.collectionGroup('courses')
+        .where('status', '==', 'completed')
+        .limit(limit)
+        .get();
+    }
 
     for (const doc of courseProgressSnapshot.docs) {
       const progress = doc.data();

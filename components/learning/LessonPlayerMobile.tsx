@@ -4,7 +4,8 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { Lesson } from "@/types";
+import { Lesson, Section } from "@/types";
+import { Playlist } from "./Playlist";
 import {
   ArrowLeft,
   CheckCircle,
@@ -35,6 +36,7 @@ import { getIsNativeApp } from "@/lib/native-detection";
 interface LessonPlayerMobileProps {
   courseId: string;
   courseTitle: string;
+  sections: Section[];
   lesson: Lesson;
   prevLesson: Lesson | null;
   nextLesson: Lesson | null;
@@ -45,6 +47,7 @@ interface LessonPlayerMobileProps {
 export function LessonPlayerMobile({
   courseId,
   courseTitle,
+  sections,
   lesson,
   prevLesson,
   nextLesson,
@@ -240,7 +243,7 @@ export function LessonPlayerMobile({
             <ArrowLeft size={18} className="text-gray-700" />
           </Link>
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] text-[#C5A059] font-bold uppercase tracking-widest truncate">
+            <p className="text-[10px] text-[#0284c7] font-bold uppercase tracking-widest truncate">
               {courseTitle}
             </p>
             <h1 className="text-sm font-bold text-gray-900 line-clamp-1 leading-tight">
@@ -265,8 +268,8 @@ export function LessonPlayerMobile({
         {lesson.contentType === "text" ? (
           <div className="bg-white min-h-[40vh] p-5">
             <div className="flex items-center gap-3 mb-4 pb-4 border-b border-gray-100">
-              <div className="w-10 h-10 bg-[#C5A059]/10 rounded-xl flex items-center justify-center">
-                <BookOpen size={18} className="text-[#C5A059]" />
+              <div className="w-10 h-10 bg-sky-50 rounded-xl flex items-center justify-center">
+                <BookOpen size={18} className="text-[#0284c7]" />
               </div>
               <div>
                 <h2 className="text-sm font-bold text-gray-900">
@@ -289,8 +292,8 @@ export function LessonPlayerMobile({
           </div>
         ) : lesson.contentType === "file-upload" ? (
           <div className="bg-white min-h-[40vh] flex flex-col items-center justify-center p-8 text-center">
-            <div className="w-16 h-16 bg-[#C5A059]/10 rounded-2xl flex items-center justify-center mb-4">
-              <Download size={28} className="text-[#C5A059]" />
+            <div className="w-16 h-16 bg-sky-50 rounded-2xl flex items-center justify-center mb-4">
+              <Download size={28} className="text-[#0284c7]" />
             </div>
             <h2 className="text-base font-bold text-gray-900 mb-1">
               File Materi
@@ -302,7 +305,7 @@ export function LessonPlayerMobile({
               href={lesson.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#C5A059] text-white text-sm font-bold rounded-xl hover:bg-[#b8913e] transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0284c7] text-white text-sm font-bold rounded-xl hover:bg-[#0369a1] transition-colors"
             >
               <Download size={15} /> Buka / Unduh File
             </a>
@@ -407,7 +410,7 @@ export function LessonPlayerMobile({
                       disabled={!isVideoCompleted || isUpdating}
                       className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                         isVideoCompleted && !isUpdating
-                          ? "bg-[#C5A059] text-white"
+                          ? "bg-[#0284c7] text-white"
                           : "bg-white/10 text-white/50 cursor-not-allowed"
                       }`}
                     >
@@ -452,7 +455,7 @@ export function LessonPlayerMobile({
                     disabled={!isVideoCompleted || isUpdating}
                     className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                       isVideoCompleted && !isUpdating
-                        ? "bg-[#C5A059] text-white"
+                        ? "bg-[#0284c7] text-white"
                         : "bg-white/10 text-white/50 cursor-not-allowed"
                     }`}
                   >
@@ -522,10 +525,10 @@ export function LessonPlayerMobile({
                 href={getIsNativeApp() ? `/learning/view-file?url=${encodeURIComponent(lesson.attachmentUrl)}&name=${encodeURIComponent(lesson.attachmentName)}` : lesson.attachmentUrl}
                 target={getIsNativeApp() ? undefined : '_blank'}
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-[#C5A059]/5 border border-gray-100 hover:border-[#C5A059]/30 rounded-xl transition-all"
+                className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-[#0284c7]/5 border border-gray-100 hover:border-[#0284c7]/30 rounded-xl transition-all"
               >
-                <div className="w-9 h-9 rounded-lg bg-[#C5A059]/10 flex items-center justify-center flex-shrink-0">
-                  <FileText size={16} className="text-[#C5A059]" />
+                <div className="w-9 h-9 rounded-lg bg-sky-50 flex items-center justify-center flex-shrink-0">
+                  <FileText size={16} className="text-[#0284c7]" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-gray-900 text-sm truncate">
@@ -595,7 +598,7 @@ export function LessonPlayerMobile({
             disabled={!isVideoCompleted || isUpdating}
             className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-sm transition-all duration-200 ${
               isVideoCompleted && !isUpdating
-                ? "bg-[#C5A059] hover:bg-[#b8913e] text-white shadow-sm active:scale-[0.98]"
+                ? "bg-[#0284c7] hover:bg-[#0369a1] text-white shadow-sm active:scale-[0.98]"
                 : "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
             }`}
           >
@@ -646,17 +649,17 @@ export function LessonPlayerMobile({
               </div>
 
               {/* Current Lesson */}
-              <div className="bg-[#C5A059]/8 border border-[#C5A059]/20 rounded-2xl p-4 mb-4">
+              <div className="bg-sky-50/50 border border-[#0284c7]/20 rounded-2xl p-4 mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-[#C5A059]/15 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 bg-sky-100/50 rounded-xl flex items-center justify-center flex-shrink-0">
                     {lesson.contentType === "youtube" ? (
-                      <Youtube size={18} className="text-[#C5A059]" />
+                      <Youtube size={18} className="text-[#0284c7]" />
                     ) : (
-                      <Play size={18} className="text-[#C5A059]" />
+                      <Play size={18} className="text-[#0284c7]" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[10px] text-[#C5A059] font-bold uppercase tracking-widest">
+                    <p className="text-[10px] text-[#0284c7] font-bold uppercase tracking-widest">
                       Materi Saat Ini
                     </p>
                     <h4 className="font-bold text-gray-900 text-sm line-clamp-2">
@@ -715,7 +718,7 @@ export function LessonPlayerMobile({
               <Link
                 href={`/learning/course/${courseId}`}
                 onClick={() => setShowLessonMenu(false)}
-                className="flex items-center gap-3 p-3.5 border border-gray-200 rounded-2xl hover:bg-gray-50 transition-all"
+                className="flex items-center gap-3 p-3.5 border border-gray-200 rounded-2xl hover:bg-gray-50 transition-all mb-4"
               >
                 <div className="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
                   <ArrowLeft size={15} className="text-gray-600" />
@@ -724,6 +727,22 @@ export function LessonPlayerMobile({
                   Kembali ke Halaman Kursus
                 </span>
               </Link>
+
+              {/* Full Syllabus Playlist for Mobile Sheet */}
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <h4 className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-3">
+                  Daftar Semua Materi
+                </h4>
+                <div className="max-h-[300px] overflow-y-auto rounded-xl border border-gray-100 shadow-inner">
+                  <Playlist
+                    courseId={courseId}
+                    sections={sections}
+                    currentLessonId={lesson.id}
+                    completedLessons={completedLessons}
+                    onItemClick={() => setShowLessonMenu(false)}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -119,7 +119,7 @@ const ReportsPage = () => {
             <h1 className="text-2xl font-bold text-black">Laporan Belajar</h1>
             <p className="text-gray-600 mt-1">Monitor progress pembelajaran pegawai</p>
           </div>
-          <button className="flex items-center space-x-2 bg-[#C5A059] text-black px-5 py-2.5 rounded-lg hover:bg-[#B08F4A] transition-colors font-semibold">
+          <button className="flex items-center space-x-2 bg-[#0284c7] text-white px-5 py-2.5 rounded-lg hover:bg-[#0369a1] transition-colors font-semibold">
             <Download size={20} />
             <span>Export Excel</span>
           </button>
@@ -184,13 +184,13 @@ const ReportsPage = () => {
                 placeholder="Cari nama pegawai..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C5A059] focus:border-transparent outline-none"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0284c7] focus:border-transparent outline-none"
               />
             </div>
             <select
               value={filterDivision}
               onChange={(e) => setFilterDivision(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C5A059] focus:border-transparent outline-none"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0284c7] focus:border-transparent outline-none"
             >
               <option value="all">Semua Divisi</option>
               <option value="Marketing">Marketing</option>
@@ -200,7 +200,7 @@ const ReportsPage = () => {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C5A059] focus:border-transparent outline-none"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0284c7] focus:border-transparent outline-none"
             >
               <option value="all">Semua Status</option>
               <option value="completed">Selesai</option>
@@ -214,7 +214,7 @@ const ReportsPage = () => {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
           {loading ? (
              <div className="p-12 flex justify-center items-center">
-               <Loader2 className="w-8 h-8 animate-spin text-[#C5A059]" />
+               <Loader2 className="w-8 h-8 animate-spin text-[#0284c7]" />
              </div>
           ) : (
           <div className="overflow-x-auto">
@@ -252,7 +252,7 @@ const ReportsPage = () => {
                   <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-[#C5A059] rounded-full flex items-center justify-center">
+                        <div className="w-10 h-10 bg-[#0284c7] rounded-full flex items-center justify-center">
                           <span className="text-black font-bold">{item.name.charAt(0)}</span>
                         </div>
                         <span className="font-semibold text-black">{item.name}</span>

@@ -267,7 +267,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <button
             onClick={() => setShowPreview(!showPreview)}
             className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-colors ${showPreview 
-              ? 'bg-[#C5A059] text-white' 
+              ? 'bg-[#0284c7] text-white' 
               : 'border border-gray-300 text-gray-700 hover:bg-gray-100'
             }`}
           >
@@ -288,7 +288,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           {showSaveButton && onSave && (
             <button
               onClick={handleSave}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm bg-[#C5A059] text-white rounded-lg hover:bg-[#B08F4A] font-semibold"
+              className="flex items-center gap-2 px-3 py-1.5 text-sm bg-[#0284c7] text-white rounded-lg hover:bg-[#0369a1] font-semibold"
             >
               <Save size={16} />
               Simpan
@@ -333,7 +333,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         {isUploadingImage && (
           <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-10">
             <div className="flex flex-col items-center gap-2">
-              <Loader2 className="animate-spin text-[#C5A059]" size={28} />
+              <Loader2 className="animate-spin text-[#0284c7]" size={28} />
               <p className="text-sm font-semibold text-gray-700">Mengunggah gambar...</p>
             </div>
           </div>

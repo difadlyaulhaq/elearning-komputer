@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import Button from '@/components/shared/Button';
 import { ResponsiveTable } from '@/components/shared/ResponsiveTable';
 import React, { useState, useEffect, Fragment, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 
 // Definisikan tipe data User
 interface User {
@@ -167,8 +168,22 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, isSub
   );
 };
 
+interface UserManagementProps {
+  forceAction?: 'create' | 'edit';
+  forceId?: string;
+}
+
 // --- KOMPONEN UTAMA ---
-const UserManagement = () => {
+const UserManagement: React.FC<UserManagementProps> = ({ forceAction, forceId }) => {
+  const router = useRouter();
+
+  const handleCloseModal = () => {
+    if (forceAction) {
+      router.push('/admin/users');
+    } else {
+      setIsModalOpen(false);
+    }
+  };
   const [users, setUsers] = useState<User[]>([]);
   const [divisions, setDivisions] = useState<Division[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -238,21 +253,11 @@ const UserManagement = () => {
   };
 
   const handleAddClick = () => {
-    setEditingId(null);
-    setFormData(initialFormState);
-    setIsModalOpen(true);
+    router.push('/admin/users/create');
   };
 
   const handleEditClick = (user: User) => {
-    setEditingId(user.id);
-    setFormData({
-      name: user.name,
-      email: user.email,
-      division: user.division,
-      role: user.role,
-      password: ''
-    });
-    setIsModalOpen(true);
+    router.push(`/admin/users/${user.id}/edit`);
   };
 
   const showConfirmationToast = (message: string, onConfirm: () => void, confirmButtonColor: string = 'bg-red-600 hover:bg-red-700') => {
@@ -309,7 +314,7 @@ const UserManagement = () => {
       
       toast.dismiss();
       if (response.ok) {
-        setIsModalOpen(false);
+        handleCloseModal();
         setFormData(initialFormState);
         setEditingId(null);
         fetchUsers();
@@ -459,7 +464,9 @@ const UserManagement = () => {
   });
 
   return (
-    <div className="min-h-screen bg-brand-gray">
+    <div className="min-h-screen bg-slate-50">
+      {!isModalOpen ? (
+        <>
       {/* Header Mobile */}
       <div className="md:hidden bg-white border-b border-gray-200 p-4 sticky top-0 z-10">
         <div className="flex items-center justify-between mb-3">
@@ -856,16 +863,21 @@ const UserManagement = () => {
       </div>
 
       {/* Render Modal */}
-      <UserFormModal 
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmit={handleSubmit}
-        formData={formData}
-        setFormData={setFormData}
-        isSubmitting={isSubmitting}
-        isEditing={!!editingId}
-        divisions={divisions}
-      />
+      </>
+      ) : (
+        <div className="p-4 md:p-8">
+          <UserFormModal
+            isOpen={isModalOpen}
+            onClose={() => handleCloseModal()}
+            onSubmit={handleSubmit}
+            formData={formData}
+            setFormData={setFormData}
+            isSubmitting={isSubmitting}
+            isEditing={!!editingId}
+            divisions={divisions}
+          />
+        </div>
+      )}
     </div>
   );
 };

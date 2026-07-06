@@ -11,13 +11,15 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          black: '#000000',
-          gold: '#C5A059',
+          black: '#0f172a',
+          gold: '#0284c7', // Mapped to sky-600 for legacy compatibility
+          primary: '#0284c7', // Sky-600
+          sky: '#e0f2fe', // Sky-100
           white: '#FFFFFF',
           gray: '#F8F9FA',
-          success: '#28A745',
-          warning: '#FFC107',
-          danger: '#DC3545',
+          success: '#10b981',
+          warning: '#f59e0b',
+          danger: '#ef4444',
         },
       },
       fontFamily: {

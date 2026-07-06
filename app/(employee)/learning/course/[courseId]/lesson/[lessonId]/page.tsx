@@ -79,6 +79,7 @@ export default async function LessonPage({
     <ClientLessonPlayers
       courseId={courseId}
       courseTitle={course.title}
+      sections={course.sections}
       lesson={currentLesson}
       prevLesson={prevLesson}
       nextLesson={nextLesson}

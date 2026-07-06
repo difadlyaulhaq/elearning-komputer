@@ -325,10 +325,20 @@ export const CoursePreviewModal: React.FC<{
 interface CourseManagementProps {
   initialCourses: Course[];
   initialCategories: Category[];
+  forceAction?: 'create' | 'edit';
+  forceId?: string;
 }
 
-const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, initialCategories }) => {
+const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, initialCategories, forceAction, forceId }) => {
   const router = useRouter();
+
+  const handleCloseModal = () => {
+    if (forceAction) {
+      router.push('/admin/courses');
+    } else {
+      handleCloseModal();
+    }
+  };
   const [courses, setCourses] = useState<Course[]>(initialCourses);
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [allUsers, setAllUsers] = useState<User[]>([]);
@@ -539,17 +549,11 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
 
   // Handlers
   const handleOpenAdd = () => {
-    resetForm();
-    setShowModal(true);
+    router.push('/admin/courses/create');
   };
 
   const handleOpenEdit = (course: Course) => {
-    setFormData(course);
-    setInitialFormData(course);
-    setEditId(course.id);
-    setIsEditing(true);
-    setCurrentStep(1);
-    setShowModal(true);
+    router.push(`/admin/courses/${course.id}/edit`);
   };
 
   const handleOpenPreview = (course: Course) => {
@@ -716,7 +720,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
       toast.dismiss(loadingToast);
       if (result.success) {
         toast.success(`Kursus berhasil ${isEditing ? 'diperbarui' : 'dibuat'}!`, { duration: 3000 });
-        setShowModal(false);
+        handleCloseModal();
         router.refresh();
       } else {
         toast.error(`Gagal: ${result.error}`, { duration: 3000 });
@@ -835,7 +839,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
         <span className={`absolute top-2 left-2 px-2 py-1 rounded text-xs font-bold ${course.status === 'active' ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'}`}>
           {course.status === 'active' ? 'Aktif' : 'Draft'}
         </span>
-        <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-[#C5A059] shadow-sm">
+        <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-[#0284c7] shadow-sm">
           {course.categoryName}
         </div>
       </div>
@@ -862,7 +866,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
           </button>
           <button 
             onClick={() => handleOpenEdit(course)}
-            className="flex-1 py-2 bg-[#FFF8E7] text-[#C5A059] rounded hover:bg-[#FFF3D6] text-xs flex items-center justify-center"
+            className="flex-1 py-2 bg-[#f0f9ff] text-[#0284c7] rounded hover:bg-[#e0f2fe] text-xs flex items-center justify-center"
           >
             <Edit size={14} className="mr-1" /> Edit
           </button>
@@ -888,7 +892,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
           </div>
           <button 
             onClick={handleOpenAdd}
-            className="flex items-center gap-2 bg-[#C5A059] text-black px-3 py-2 rounded-lg hover:bg-[#B08F4A] transition-colors font-semibold shadow-md text-sm"
+            className="flex items-center gap-2 bg-[#0284c7] text-white px-3 py-2 rounded-lg hover:bg-[#0369a1] transition-colors font-semibold shadow-md text-sm"
           >
             <Plus size={16} />
             <span>Tambah</span>
@@ -939,13 +943,13 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                     <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
                       <button
                         onClick={() => setViewMode('grid')}
-                        className={`p-1.5 rounded-md text-sm flex-1 flex justify-center ${viewMode === 'grid' ? 'bg-white shadow-sm text-[#C5A059]' : 'text-gray-500'}`}
+                        className={`p-1.5 rounded-md text-sm flex-1 flex justify-center ${viewMode === 'grid' ? 'bg-white shadow-sm text-[#0284c7]' : 'text-gray-500'}`}
                       >
                         <Grid size={16} />
                       </button>
                       <button
                         onClick={() => setViewMode('list')}
-                        className={`p-1.5 rounded-md text-sm flex-1 flex justify-center ${viewMode === 'list' ? 'bg-white shadow-sm text-[#C5A059]' : 'text-gray-500'}`}
+                        className={`p-1.5 rounded-md text-sm flex-1 flex justify-center ${viewMode === 'list' ? 'bg-white shadow-sm text-[#0284c7]' : 'text-gray-500'}`}
                       >
                         <Menu size={16} />
                       </button>
@@ -973,14 +977,14 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                   setSearchTerm('');
                   setFilterCategory('all');
                 }}
-                className="mt-2 text-[#C5A059] hover:text-[#B08F4A] font-medium text-sm"
+                className="mt-2 text-[#0284c7] hover:text-[#0369a1] font-medium text-sm"
               >
                 Reset pencarian
               </button>
             ) : (
               <button
                 onClick={handleOpenAdd}
-                className="mt-2 text-[#C5A059] hover:text-[#B08F4A] font-medium text-sm"
+                className="mt-2 text-[#0284c7] hover:text-[#0369a1] font-medium text-sm"
               >
                 Buat kursus pertama
               </button>
@@ -998,7 +1002,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
           </div>
           <button 
             onClick={handleOpenAdd}
-            className="flex items-center space-x-2 bg-[#C5A059] text-black px-5 py-2.5 rounded-lg hover:bg-[#B08F4A] transition-colors font-semibold shadow-md"
+            className="flex items-center space-x-2 bg-[#0284c7] text-white px-5 py-2.5 rounded-lg hover:bg-[#0369a1] transition-colors font-semibold shadow-md"
           >
             <Plus size={20} />
             <span>Buat Kursus Baru</span>
@@ -1022,7 +1026,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                 <span className={`absolute top-3 left-3 px-2 py-1 rounded text-xs font-bold ${course.status === 'active' ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'}`}>
                   {course.status === 'active' ? 'Aktif' : 'Draft'}
                 </span>
-                <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-[#C5A059] shadow-sm">
+                <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-[#0284c7] shadow-sm">
                   {course.categoryName}
                 </div>
               </div>
@@ -1049,7 +1053,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                   </button>
                   <button 
                     onClick={() => handleOpenEdit(course)}
-                    className="flex-1 py-2 bg-[#FFF8E7] text-[#C5A059] rounded hover:bg-[#FFF3D6] font-medium text-sm flex items-center justify-center"
+                    className="flex-1 py-2 bg-[#f0f9ff] text-[#0284c7] rounded hover:bg-[#e0f2fe] font-medium text-sm flex items-center justify-center"
                   >
                     <Edit size={16} className="mr-1" /> Edit
                   </button>
@@ -1074,7 +1078,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                 {isEditing ? 'Edit Kursus' : 'Buat Kursus Baru'}
               </h2>
               <button 
-                onClick={() => setShowModal(false)}
+                onClick={() => handleCloseModal()}
                 disabled={isLoading || isUploadingLesson}
                 className="p-2 rounded-full hover:bg-gray-100 disabled:opacity-50"
               >
@@ -1088,7 +1092,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                 <button 
                   onClick={() => setCurrentStep(1)}
                   disabled={isLoading || isUploadingLesson}
-                  className={`px-3 md:px-4 py-2 rounded-full flex items-center space-x-2 ${currentStep === 1 ? 'bg-[#FFF8E7] text-[#C5A059] border border-[#C5A059]' : 'text-gray-400 opacity-50 cursor-not-allowed'}`}
+                  className={`px-3 md:px-4 py-2 rounded-full flex items-center space-x-2 ${currentStep === 1 ? 'bg-[#f0f9ff] text-[#0284c7] border border-[#0284c7]' : 'text-gray-400 opacity-50 cursor-not-allowed'}`}
                 >
                   <span className="w-6 h-6 rounded-full bg-current text-white flex items-center justify-center text-xs">
                     1
@@ -1101,7 +1105,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                 <button 
                   onClick={() => isDirty ? handleSaveAndContinue() : setCurrentStep(2)}
                   disabled={(!isEditing && !formData.title) || isLoading || isUploadingLesson}
-                  className={`px-3 md:px-4 py-2 rounded-full flex items-center space-x-2 ${currentStep === 2 ? 'bg-[#FFF8E7] text-[#C5A059] border border-[#C5A059]' : 'text-gray-400 opacity-50 cursor-not-allowed'}`}
+                  className={`px-3 md:px-4 py-2 rounded-full flex items-center space-x-2 ${currentStep === 2 ? 'bg-[#f0f9ff] text-[#0284c7] border border-[#0284c7]' : 'text-gray-400 opacity-50 cursor-not-allowed'}`}
                 >
                   <span className="w-6 h-6 rounded-full bg-current text-white flex items-center justify-center text-xs">
                     2
@@ -1114,7 +1118,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                 <button 
                   onClick={() => isDirty ? handleSaveAndContinue() : setCurrentStep(3)}
                   disabled={(!isEditing && !formData.title) || isLoading || isUploadingLesson}
-                  className={`px-3 md:px-4 py-2 rounded-full flex items-center space-x-2 ${currentStep === 3 ? 'bg-[#FFF8E7] text-[#C5A059] border border-[#C5A059]' : 'text-gray-400 opacity-50 cursor-not-allowed'}`}
+                  className={`px-3 md:px-4 py-2 rounded-full flex items-center space-x-2 ${currentStep === 3 ? 'bg-[#f0f9ff] text-[#0284c7] border border-[#0284c7]' : 'text-gray-400 opacity-50 cursor-not-allowed'}`}
                 >
                   <span className="w-6 h-6 rounded-full bg-current text-white flex items-center justify-center text-xs">
                     3
@@ -1138,7 +1142,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                       type="text" 
                       value={formData.title} 
                       onChange={e => setFormData({...formData, title: e.target.value})}
-                      className="w-full px-3 md:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#C5A059] outline-none text-black placeholder:text-gray-400 text-sm md:text-base"
+                      className="w-full px-3 md:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#0284c7] outline-none text-black placeholder:text-gray-400 text-sm md:text-base"
                       placeholder="Contoh: SOP Pelayanan Jamaah"
                       disabled={isLoading}
                     />
@@ -1151,7 +1155,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                     <select 
                       value={formData.categoryId} 
                       onChange={e => setFormData({...formData, categoryId: e.target.value})}
-                      className="w-full px-3 md:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#C5A059] outline-none text-black bg-white text-sm md:text-base"
+                      className="w-full px-3 md:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#0284c7] outline-none text-black bg-white text-sm md:text-base"
                       disabled={isLoading}
                     >
                       <option value="">Pilih Kategori</option>
@@ -1168,7 +1172,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                     <select 
                       value={formData.level} 
                       onChange={e => setFormData({...formData, level: e.target.value as any})}
-                      className="w-full px-3 md:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#C5A059] outline-none text-black bg-white text-sm md:text-base"
+                      className="w-full px-3 md:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#0284c7] outline-none text-black bg-white text-sm md:text-base"
                       disabled={isLoading}
                     >
                       <option value="basic">Basic</option>
@@ -1185,7 +1189,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                       rows={4} 
                       value={formData.description} 
                       onChange={e => setFormData({...formData, description: e.target.value})}
-                      className="w-full px-3 md:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#C5A059] outline-none text-black placeholder:text-gray-400 text-sm md:text-base"
+                      className="w-full px-3 md:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#0284c7] outline-none text-black placeholder:text-gray-400 text-sm md:text-base"
                       placeholder="Jelaskan tentang kursus ini..."
                       disabled={isLoading}
                     />
@@ -1238,7 +1242,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                   {(formData.thumbnail || formData.coverImage) && (
                     <div className="md:col-span-2 bg-gray-50 p-4 rounded-xl border border-dashed border-gray-300">
                       <label className="block text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
-                        <Eye size={16} className="text-[#C5A059]" />
+                        <Eye size={16} className="text-[#0284c7]" />
                         Preview Visual Terunggah
                       </label>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1300,7 +1304,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                           type="radio" 
                           checked={formData.status === 'draft'} 
                           onChange={() => setFormData({...formData, status: 'draft'})}
-                          className="text-[#C5A059]" 
+                          className="text-[#0284c7]" 
                           disabled={isLoading}
                         />
                         <span className="text-black text-sm md:text-base">Draft</span>
@@ -1310,7 +1314,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                           type="radio" 
                           checked={formData.status === 'active'} 
                           onChange={() => setFormData({...formData, status: 'active'})}
-                          className="text-[#C5A059]" 
+                          className="text-[#0284c7]" 
                           disabled={isLoading}
                         />
                         <span className="text-black text-sm md:text-base">Active</span>
@@ -1333,7 +1337,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                             type="text" 
                             value={section.title} 
                             onChange={(e) => updateSectionTitle(sIndex, e.target.value)}
-                            className="bg-transparent border-b border-dashed border-gray-400 focus:border-[#C5A059] outline-none font-semibold text-black flex-1 placeholder:text-gray-400 text-sm md:text-base"
+                            className="bg-transparent border-b border-dashed border-gray-400 focus:border-[#0284c7] outline-none font-semibold text-black flex-1 placeholder:text-gray-400 text-sm md:text-base"
                             placeholder="Judul Bab"
                             disabled={isLoading}
                           />
@@ -1350,7 +1354,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                       <div className="p-3 md:p-4 space-y-2 md:space-y-3">
                         {section.lessons.map((lesson) => (
                           <div key={lesson.id} className="flex items-center p-2 md:p-3 bg-gray-100 rounded border group">
-                                                          <div className="w-8 h-8 md:w-10 md:h-10 bg-[#C5A059]/10 text-[#C5A059] flex items-center justify-center rounded mr-2 md:mr-3 shrink-0">
+                                                          <div className="w-8 h-8 md:w-10 md:h-10 bg-sky-50 text-[#0284c7] flex items-center justify-center rounded mr-2 md:mr-3 shrink-0">
                                                           {['youtube', 'video-upload'].includes(lesson.contentType) ? <PlayCircle size={16} /> : lesson.contentType === 'image-upload' ? <ImageIcon size={16} /> : <BookText size={16} />}
                                                         </div>
                                                         <div className="flex-1">
@@ -1383,7 +1387,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                                                     ))}
                                                     
                                                     {activeSectionId === section.id ? (
-                                                      <div className="border-2 border-dashed border-[#C5A059] rounded-lg p-3 md:p-4 bg-[#FFF8E7]/30 mt-3">
+                                                      <div className="border-2 border-dashed border-[#0284c7] rounded-lg p-3 md:p-4 bg-[#f0f9ff]/30 mt-3">
                                                         <h4 className="font-bold text-gray-800 mb-2 md:mb-3 text-sm">
                                                           {editingLessonId ? 'Edit Materi' : 'Tambah Materi'}
                                                         </h4>
@@ -1391,13 +1395,13 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                                                           <input 
                                                             type="text" 
                                                             placeholder="Judul Materi" 
-                                                            className="px-3 md:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#C5A059] outline-none text-black placeholder:text-gray-400 text-sm"
+                                                            className="px-3 md:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#0284c7] outline-none text-black placeholder:text-gray-400 text-sm"
                                                             value={tempLesson.title} 
                                                             onChange={e => setTempLesson({...tempLesson, title: e.target.value})}
                                                             disabled={isLoading}
                                                           />
                                                           <select 
-                                                            className="px-3 md:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#C5A059] outline-none text-black bg-white text-sm"
+                                                            className="px-3 md:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#0284c7] outline-none text-black bg-white text-sm"
                                                             value={tempLesson.contentType} 
                                                             onChange={e => setTempLesson({...tempLesson, contentType: e.target.value as any, url: '', textContent: ''})}
                                                             disabled={isLoading}
@@ -1414,7 +1418,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                                                                                                                     <input 
                                                                                                                       type="text" 
                                                                                                                       placeholder="Durasi (menit) - Opsional" 
-                                                                                                                      className="px-3 md:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#C5A059] outline-none text-black placeholder:text-gray-400 text-sm"
+                                                                                                                      className="px-3 md:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#0284c7] outline-none text-black placeholder:text-gray-400 text-sm"
                                                                                                                       value={tempLesson.duration} 
                                                                                                                       onChange={e => setTempLesson({...tempLesson, duration: e.target.value})}
                                                                                                                       disabled={isLoading}
@@ -1462,14 +1466,14 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                                 <div className="space-y-2">
                                   <input 
                                     placeholder="Nama File Lampiran" 
-                                    className="px-3 md:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#C5A059] outline-none text-black placeholder:text-gray-400 w-full text-xs md:text-sm"
+                                    className="px-3 md:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#0284c7] outline-none text-black placeholder:text-gray-400 w-full text-xs md:text-sm"
                                     value={tempLesson.attachmentName || ''} 
                                     onChange={e => setTempLesson(prev => ({...prev, attachmentName: e.target.value}))}
                                     disabled={isLoading}
                                   />
                                   <input 
                                     placeholder="URL File (Drive, Docs, dll)" 
-                                    className="px-3 md:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#C5A059] outline-none text-black placeholder:text-gray-400 w-full text-xs md:text-sm"
+                                    className="px-3 md:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#0284c7] outline-none text-black placeholder:text-gray-400 w-full text-xs md:text-sm"
                                     value={tempLesson.attachmentUrl || ''} 
                                     onChange={e => setTempLesson(prev => ({...prev, attachmentUrl: e.target.value}))}
                                     disabled={isLoading}
@@ -1498,7 +1502,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                               <button 
                                 onClick={() => handleSaveLesson(section.id)}
                                 disabled={isLoading || isUploadingLesson}
-                                className="w-full md:w-auto px-3 py-1.5 text-xs bg-[#C5A059] text-black rounded font-bold hover:bg-[#B08F4A]"
+                                className="w-full md:w-auto px-3 py-1.5 text-xs bg-[#0284c7] text-white rounded font-bold hover:bg-[#0369a1]"
                               >
                                 {isUploadingLesson ? (
                                   <span className="flex items-center gap-1">
@@ -1515,7 +1519,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                           <button 
                             onClick={() => setActiveSectionId(section.id)}
                             disabled={isLoading}
-                            className="w-full py-2 border border-dashed border-gray-300 text-gray-600 rounded hover:border-[#C5A059] hover:text-[#C5A059] text-xs flex items-center justify-center transition-colors font-semibold"
+                            className="w-full py-2 border border-dashed border-gray-300 text-gray-600 rounded hover:border-[#0284c7] hover:text-[#0284c7] text-xs flex items-center justify-center transition-colors font-semibold"
                           >
                             <Plus size={14} className="mr-1" /> Tambah Materi
                           </button>
@@ -1544,7 +1548,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                     <input
                       type="text"
                       placeholder="Cari pengguna..."
-                      className="w-full px-3 md:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#C5A059] outline-none text-black placeholder:text-gray-400 text-sm"
+                      className="w-full px-3 md:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#0284c7] outline-none text-black placeholder:text-gray-400 text-sm"
                       value={searchTermUsers}
                       onChange={(e) => setSearchTermUsers(e.target.value)}
                     />
@@ -1578,7 +1582,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                                       : (prev.enrolledUserIds || []).filter(id => id !== userId),
                                   }));
                                 }}
-                                className="h-4 w-4 rounded border-gray-300 text-[#C5A059] focus:ring-2 focus:ring-offset-0 focus:ring-[#C5A059]/50"
+                                className="h-4 w-4 rounded border-gray-300 text-[#0284c7] focus:ring-2 focus:ring-offset-0 focus:ring-[#0284c7]/50"
                               />
                               <div className="flex items-center gap-2">
                                 <div className="w-6 h-6 md:w-8 md:h-8 bg-gradient-to-br from-brand-gold to-yellow-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
@@ -1607,7 +1611,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                     <input
                       type="text"
                       placeholder="Cari divisi..."
-                      className="w-full px-3 md:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#C5A059] outline-none text-black placeholder:text-gray-400 text-sm"
+                      className="w-full px-3 md:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#0284c7] outline-none text-black placeholder:text-gray-400 text-sm"
                       value={searchTermDivisions}
                       onChange={(e) => setSearchTermDivisions(e.target.value)}
                     />
@@ -1640,7 +1644,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                                       : (prev.enrolledDivisionIds || []).filter(id => id !== divisionId),
                                   }));
                                 }}
-                                className="h-4 w-4 rounded border-gray-300 text-[#C5A059] focus:ring-2 focus:ring-offset-0 focus:ring-[#C5A059]/50"
+                                className="h-4 w-4 rounded border-gray-300 text-[#0284c7] focus:ring-2 focus:ring-offset-0 focus:ring-[#0284c7]/50"
                               />
                               <div className="flex items-center gap-2">
                                 <div className="w-6 h-6 md:w-8 md:h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-600">
@@ -1689,7 +1693,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                   <button 
                     onClick={() => setCurrentStep(prev => prev + 1)}
                     disabled={isLoading || isUploadingLesson}
-                    className="w-full md:w-auto px-4 md:px-6 py-2.5 bg-[#C5A059] text-black rounded-lg hover:bg-[#B08F4A] font-bold text-sm disabled:opacity-50"
+                    className="w-full md:w-auto px-4 md:px-6 py-2.5 bg-[#0284c7] text-white rounded-lg hover:bg-[#0369a1] font-bold text-sm disabled:opacity-50"
                   >
                     Lanjut
                   </button>
@@ -1698,7 +1702,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                 <button 
                   onClick={handleSaveCourse}
                   disabled={isLoading || isUploadingLesson || (!isDirty && isEditing)}
-                  className="w-full md:w-auto px-4 md:px-6 py-2.5 bg-[#C5A059] text-black rounded-lg hover:bg-[#B08F4A] font-bold flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                  className="w-full md:w-auto px-4 md:px-6 py-2.5 bg-[#0284c7] text-white rounded-lg hover:bg-[#0369a1] font-bold flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
                   {isLoading ? (
                     <Loader2 size={16} className="mr-2 animate-spin" />

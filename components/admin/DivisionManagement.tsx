@@ -187,9 +187,22 @@ const DivisionModal = ({ isOpen, onClose, onSubmit, formData, setFormData, isSub
   );
 };
 
+interface DivisionManagementProps {
+  forceAction?: 'create' | 'edit';
+  forceId?: string;
+}
+
 // Main Component
-const DivisionManagement = () => {
+const DivisionManagement: React.FC<DivisionManagementProps> = ({ forceAction, forceId }) => {
   const router = useRouter();
+
+  const handleCloseModal = () => {
+    if (forceAction) {
+      router.push('/admin/divisions');
+    } else {
+      handleCloseModal();
+    }
+  };
   const [divisions, setDivisions] = useState<Division[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -240,21 +253,11 @@ const DivisionManagement = () => {
   };
 
   const handleAddClick = () => {
-    setEditingId(null);
-    setFormData(initialFormState);
-    setIsModalOpen(true);
+    router.push('/admin/divisions/create');
   };
 
   const handleEditClick = (division: Division) => {
-    setEditingId(division.id);
-    setFormData({
-      name: division.name,
-      description: division.description,
-      head: division.head,
-      icon: division.icon,
-      color: division.color
-    });
-    setIsModalOpen(true);
+    router.push(`/admin/divisions/${division.id}/edit`);
   };
 
   const showConfirmationToast = (message: string, onConfirm: () => void) => {
@@ -313,7 +316,7 @@ const DivisionManagement = () => {
       toast.dismiss();
 
       if (response.ok) {
-        setIsModalOpen(false);
+        handleCloseModal();
         setFormData(initialFormState);
         setEditingId(null);
         fetchDivisions();
@@ -411,7 +414,9 @@ const DivisionManagement = () => {
   });
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA]">
+    <div className="min-h-screen bg-slate-50">
+      {!isModalOpen ? (
+        <>
       {/* Header Mobile */}
       <div className="md:hidden bg-white border-b border-gray-200 p-4 sticky top-0 z-10">
         <div className="flex items-center justify-between mb-3">
@@ -728,15 +733,20 @@ const DivisionManagement = () => {
         )}
       </div>
 
-      <DivisionModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmit={handleSubmit}
-        formData={formData}
-        setFormData={setFormData}
-        isSubmitting={isSubmitting}
-        isEditing={!!editingId}
-      />
+      </>
+      ) : (
+        <div className="p-4 md:p-8">
+          <DivisionModal
+            isOpen={isModalOpen}
+            onClose={() => handleCloseModal()}
+            onSubmit={handleSubmit}
+            formData={formData}
+            setFormData={setFormData}
+            isSubmitting={isSubmitting}
+            isEditing={!!editingId}
+          />
+        </div>
+      )}
     </div>
   );
 };

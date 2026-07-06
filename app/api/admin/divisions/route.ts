@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       description: description || '',
       head: head || '', // Kepala divisi
       icon: icon || '🏢', // Default icon
-      color: color || '#C5A059', // Default color
+      color: color || '#0284c7', // Default color
       employeeCount: 0,
       status: 'active',
       createdAt: new Date().toISOString(),

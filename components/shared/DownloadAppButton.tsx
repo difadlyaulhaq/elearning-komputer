@@ -83,10 +83,10 @@ export default function DownloadAppButton({
   if (!showButton && !isProbablyMobile) return null;
   const baseStyles = "flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-all active:scale-95 touch-button";
   const variants = {
-    primary: "bg-[#C5A059] text-black hover:bg-[#B08F4A] shadow-md",
-    outline: "border-2 border-[#C5A059] text-[#C5A059] hover:bg-[#C5A059] hover:text-black",
-    ghost: "text-[#C5A059] hover:bg-[#C5A059]/10",
-    "white-outline": "border border-white/30 text-white hover:bg-white hover:text-black backdrop-blur-sm bg-white/5"
+    primary: "bg-[#0284c7] text-white hover:bg-[#0369a1] shadow-md",
+    outline: "border-2 border-[#0284c7] text-[#0284c7] hover:bg-[#0284c7] hover:text-white",
+    ghost: "text-[#0284c7] hover:bg-[#0284c7]/10",
+    "white-outline": "border border-white/30 text-white hover:bg-white hover:text-white backdrop-blur-sm bg-white/5"
   };
 
   return (

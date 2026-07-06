@@ -3,8 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { Loader } from 'lucide-react';
-import Image from 'next/image';
+import { Loader, BookOpen } from 'lucide-react';
 
 export default function Home() {
   const router = useRouter();
@@ -27,21 +26,16 @@ export default function Home() {
     }
   }, [user, isLoading, isAuthenticated, router]);
 
-  // Tampilkan loading screen branding Alfajr sementara cek auth
+  // Tampilkan loading screen branding sementara cek auth
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
        <div className="relative mb-6">
-          <div className="absolute inset-0 bg-[#C5A059]/20 blur-xl rounded-full"></div>
-          <Image 
-            src="/logo-alfajr.png" 
-            alt="Alfajr Logo" 
-            width={150} 
-            height={150} 
-            className="relative z-10 object-contain"
-            priority
-          />
+          <div className="absolute inset-0 bg-sky-200/50 blur-xl rounded-full"></div>
+          <div className="relative z-10 w-24 h-24 bg-white border border-slate-100 rounded-3xl flex items-center justify-center shadow-md">
+            <BookOpen className="text-sky-600" size={40} />
+          </div>
        </div>
-       <div className="flex items-center gap-3 text-[#C5A059]">
+       <div className="flex items-center gap-3 text-sky-600">
           <Loader className="animate-spin" size={24} />
           <span className="font-medium">Memuat Aplikasi...</span>
        </div>

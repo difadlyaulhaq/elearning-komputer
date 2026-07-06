@@ -171,9 +171,22 @@ const CategoryModal = ({ isOpen, onClose, onSubmit, formData, setFormData, isSub
   );
 };
 
+interface CategoryManagementProps {
+  forceAction?: 'create' | 'edit';
+  forceId?: string;
+}
+
 // Main Component
-const CategoryManagement = () => {
+const CategoryManagement: React.FC<CategoryManagementProps> = ({ forceAction, forceId }) => {
   const router = useRouter();
+
+  const handleCloseModal = () => {
+    if (forceAction) {
+      router.push('/admin/categories');
+    } else {
+      handleCloseModal();
+    }
+  };
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -226,20 +239,11 @@ const CategoryManagement = () => {
   };
 
   const handleAddClick = () => {
-    setEditingId(null);
-    setFormData(initialFormState);
-    setIsModalOpen(true);
+    router.push('/admin/categories/create');
   };
 
   const handleEditClick = (category: Category) => {
-    setEditingId(category.id);
-    setFormData({
-      name: category.name,
-      description: category.description,
-      icon: category.icon,
-      color: category.color
-    });
-    setIsModalOpen(true);
+    router.push(`/admin/categories/${category.id}/edit`);
   };
 
   const showConfirmationToast = (message: string, onConfirm: () => void) => {
@@ -306,7 +310,7 @@ const CategoryManagement = () => {
             </button>
           </div>
         ), { duration: 3000 });
-        setIsModalOpen(false);
+        handleCloseModal();
         setFormData(initialFormState);
         setEditingId(null);
         fetchCategories();
@@ -395,7 +399,9 @@ const CategoryManagement = () => {
   });
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA]">
+    <div className="min-h-screen bg-slate-50">
+      {!isModalOpen ? (
+        <>
       {/* Header Mobile */}
       <div className="md:hidden bg-white border-b border-gray-200 p-4 sticky top-0 z-10">
         <div className="flex items-center justify-between mb-3">
@@ -617,15 +623,20 @@ const CategoryManagement = () => {
         )}
       </div>
 
-      <CategoryModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmit={handleSubmit}
-        formData={formData}
-        setFormData={setFormData}
-        isSubmitting={isSubmitting}
-        isEditing={!!editingId}
-      />
+      </>
+      ) : (
+        <div className="p-4 md:p-8">
+          <CategoryModal
+            isOpen={isModalOpen}
+            onClose={() => handleCloseModal()}
+            onSubmit={handleSubmit}
+            formData={formData}
+            setFormData={setFormData}
+            isSubmitting={isSubmitting}
+            isEditing={!!editingId}
+          />
+        </div>
+      )}
     </div>
   );
 };

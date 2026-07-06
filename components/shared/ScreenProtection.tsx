@@ -27,7 +27,7 @@ interface ScreenProtectionProps {
 
 export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
   children,
-  watermarkText = 'ALFAJR E-LEARNING',
+  watermarkText = 'E-LEARNING PORTAL',
   userEmail,
   enableWatermark = true,
   enableBlurOnFocusLoss = true,
@@ -199,7 +199,7 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
       )}
 
       {!forceDisableAllProtections && (isViolation || (finalEnableBlur && (isBlurred || isCoolDownActive)) || (finalEnableDevTools && violationType === 'devtools')) && ( 
-        <div className="fixed inset-0 z-[999999] bg-black flex flex-col items-center justify-center text-white p-4 text-center select-none">
+        <div className="fixed inset-0 z-[999999] bg-gradient-to-br from-slate-900 via-sky-950 to-slate-900 flex flex-col items-center justify-center text-white p-4 text-center select-none">
           {/* Top Warning Banner for Screenshot Violation */}
           {violationType === 'screenshot' && (
             <div className="absolute top-8 bg-red-600 px-6 py-2.5 rounded-xl shadow-[0_0_20px_rgba(220,38,38,0.5)] flex items-center gap-3 font-bold animate-bounce-short">
@@ -213,7 +213,7 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
           <div className="max-w-xl flex flex-col items-center">
             <Shield 
               size={80} 
-              className={violationType === 'screenshot' ? "text-red-500 mb-6 drop-shadow-[0_0_15px_rgba(239,68,68,0.4)]" : "text-[#d4af37] mb-6 drop-shadow-[0_0_15px_rgba(212,175,55,0.3)]"} 
+              className={violationType === 'screenshot' ? "text-red-500 mb-6 drop-shadow-[0_0_15px_rgba(239,68,68,0.4)]" : "text-sky-500 mb-6 drop-shadow-[0_0_15px_rgba(14,165,233,0.3)]"} 
               strokeWidth={1.5} 
             />
             
@@ -229,10 +229,10 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
             
             <div className="relative flex items-center justify-center">
               <div className={`w-24 h-24 rounded-full border-[3px] flex items-center justify-center ${
-                violationType === 'screenshot' ? "border-red-500/20" : "border-[#d4af37]/20"
+                violationType === 'screenshot' ? "border-red-500/20" : "border-sky-500/20"
               }`}>
                 <div className={`absolute inset-0 rounded-full border-[3px] border-t-transparent animate-spin-slow ${
-                  violationType === 'screenshot' ? "border-red-500" : "border-[#d4af37]"
+                  violationType === 'screenshot' ? "border-red-500" : "border-sky-500"
                 }`}></div>
                 <span className={`text-4xl font-bold ${violationType === 'screenshot' ? "text-white" : "text-white"}`}>
                   {countdown > 0 ? countdown : "!"}
@@ -263,7 +263,7 @@ export const ScreenProtection: React.FC<ScreenProtectionProps> = ({
   );
 
   return (
-    <div className={`screen-protected ${className} relative`} ref={wrapperRef} id="alfajr-screen-protection-wrapper">
+    <div className={`screen-protected ${className} relative`} ref={wrapperRef} id="screen-protection-wrapper">
       {children}
       {mounted && ReactDOM.createPortal(renderOverlays(), fullscreenElement || document.body)}
     </div>

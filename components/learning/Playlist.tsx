@@ -10,6 +10,7 @@ interface PlaylistProps {
   sections: Section[];
   currentLessonId: string;
   completedLessons: string[];
+  onItemClick?: () => void;
 }
 
 export function Playlist({
@@ -17,6 +18,7 @@ export function Playlist({
   sections,
   currentLessonId,
   completedLessons = [],
+  onItemClick,
 }: PlaylistProps) {
   return (
     <div className="bg-white rounded-lg border border-gray-200 h-full flex flex-col">
@@ -36,7 +38,7 @@ export function Playlist({
                 </h3>
                 <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
                   <div
-                    className="bg-[#C5A059] h-1.5 rounded-full"
+                    className="bg-[#0284c7] h-1.5 rounded-full"
                     style={{ width: `${sectionProgress}%` }}
                   ></div>
                 </div>
@@ -56,13 +58,14 @@ export function Playlist({
                             ? "#"
                             : `/learning/course/${courseId}/lesson/${lesson.id}`
                         }
+                        onClick={onItemClick}
                       >
                         <div
                           className={`p-4 flex items-center transition-colors text-sm ${
                             isActive
-                              ? "bg-[#FFF8E7] text-[#C5A059]"
+                              ? "bg-[#f0f9ff] text-[#0284c7] font-semibold"
                             : isCompleted
-                              ? "bg-green-50 text-gray-500"
+                              ? "bg-green-50/40 text-gray-700"
                               : isLocked
                               ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                               : "hover:bg-gray-50 text-black"
@@ -70,16 +73,16 @@ export function Playlist({
                         >
                           <div className="mr-3 shrink-0">
                             {isCompleted ? (
-                              <CheckCircle size={20} className="text-green-500" />
+                              <CheckCircle size={20} className="text-green-500 fill-green-50" />
                             ) : isActive ? (
-                              <PlayCircle size={20} />
+                              <PlayCircle size={20} className="text-[#0284c7]" />
                             ) : isLocked ? (
                               <Lock size={20} />
                             ) : (
                               <div className="w-5 h-5 rounded-full border-2 border-gray-300" />
                             )}
                           </div>
-                          <span className={`font-medium flex-1 ${isCompleted && 'line-through'}`}>
+                          <span className="flex-1">
                             {lesson.title}
                           </span>
                         </div>

@@ -107,7 +107,7 @@ export default async function CourseDetailPage({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
         <div className="absolute bottom-0 left-0 p-4">
-          <span className="bg-[#C5A059] text-black text-xs font-bold px-2 py-1 rounded mb-2 inline-block">
+          <span className="bg-[#0284c7] text-white text-xs font-bold px-2 py-1 rounded mb-2 inline-block">
             {course.categoryName}
           </span>
           <h1 className="text-xl font-bold text-white mb-1 line-clamp-2">
@@ -128,7 +128,7 @@ export default async function CourseDetailPage({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
         <div className="absolute bottom-0 left-0 p-8">
-          <span className="bg-[#C5A059] text-black text-xs font-bold px-2 py-1 rounded mb-2 inline-block">
+          <span className="bg-[#0284c7] text-white text-xs font-bold px-2 py-1 rounded mb-2 inline-block">
             {course.categoryName}
           </span>
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
@@ -145,7 +145,7 @@ export default async function CourseDetailPage({
         {firstLessonId ? (
           <Link 
             href={`/learning/course/${course.id}/lesson/${firstLessonId}`} 
-            className="w-full flex items-center justify-center gap-2 py-3 bg-[#C5A059] text-black rounded-lg font-bold shadow-lg hover:bg-amber-500 transition-colors"
+            className="w-full flex items-center justify-center gap-2 py-3 bg-[#0284c7] text-white rounded-lg font-bold shadow-lg hover:bg-amber-500 transition-colors"
           >
             <PlayCircle size={20} />
             Mulai Belajar Sekarang
@@ -164,7 +164,7 @@ export default async function CourseDetailPage({
                 <p className="text-xs text-gray-500">Total Materi</p>
                 <p className="text-lg font-bold text-black">{totalLessons}</p>
               </div>
-              <BookOpen size={20} className="text-[#C5A059]" />
+              <BookOpen size={20} className="text-[#0284c7]" />
             </div>
           </div>
           <div className="bg-white p-3 rounded-lg border border-gray-200">
@@ -210,7 +210,7 @@ export default async function CourseDetailPage({
                     <div className="p-4 flex items-center justify-between bg-gray-50">
                       <div className="flex-1">
                         <h3 className="font-bold text-black text-sm md:text-base">
-                          <span className="text-[#C5A059]">Bab {sIndex + 1}:</span> {section.title}
+                          <span className="text-[#0284c7]">Bab {sIndex + 1}:</span> {section.title}
                         </h3>
                         <p className="text-xs text-gray-500 mt-1">
                           {section.lessons?.length || 0} materi
@@ -229,16 +229,16 @@ export default async function CourseDetailPage({
                             className="block"
                           >
                             <div className="flex items-start p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors mt-2 group">
-                              <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#C5A059]/10 mr-3 shrink-0 group-hover:bg-[#C5A059]/20 transition-colors">
+                              <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-sky-50 mr-3 shrink-0 group-hover:bg-sky-100 transition-colors">
                                 {lesson.contentType === 'youtube' ? (
-                                  <PlayCircle size={16} className="text-[#C5A059]" />
+                                  <PlayCircle size={16} className="text-[#0284c7]" />
                                 ) : (
-                                  <BookOpen size={16} className="text-[#C5A059]" />
+                                  <BookOpen size={16} className="text-[#0284c7]" />
                                 )}
                               </div>
                               <div className="flex-1">
                                 <div className="flex items-start justify-between mb-1">
-                                  <h4 className="font-medium text-black text-sm line-clamp-2 group-hover:text-[#C5A059] transition-colors">
+                                  <h4 className="font-medium text-black text-sm line-clamp-2 group-hover:text-[#0284c7] transition-colors">
                                     {lesson.title}
                                   </h4>
                                   <div className="flex items-center text-xs text-gray-500 ml-2">
@@ -255,7 +255,7 @@ export default async function CourseDetailPage({
                                   />
                                 )}
                               </div>
-                              <ChevronRight size={16} className="text-gray-300 ml-2 self-center group-hover:text-[#C5A059] transition-all transform group-hover:translate-x-1" />
+                              <ChevronRight size={16} className="text-gray-300 ml-2 self-center group-hover:text-[#0284c7] transition-all transform group-hover:translate-x-1" />
                             </div>
                           </Link>
                         ))}
@@ -279,7 +279,7 @@ export default async function CourseDetailPage({
             {firstLessonId ? (
               <Link 
                 href={`/learning/course/${course.id}/lesson/${firstLessonId}`} 
-                className="w-full flex items-center justify-center gap-2 py-3 bg-[#C5A059] text-black rounded-lg font-bold text-lg mb-4 shadow-lg hover:bg-amber-500 transition-colors"
+                className="w-full flex items-center justify-center gap-2 py-3 bg-[#0284c7] text-white rounded-lg font-bold text-lg mb-4 shadow-lg hover:bg-amber-500 transition-colors"
               >
                 <PlayCircle />
                 Mulai Belajar
@@ -292,8 +292,8 @@ export default async function CourseDetailPage({
             
             <div className="space-y-4 mt-4">
               <div className="flex items-center">
-                <div className="w-10 h-10 bg-[#C5A059]/10 rounded-lg flex items-center justify-center mr-3">
-                  <BookOpen size={20} className="text-[#C5A059]"/>
+                <div className="w-10 h-10 bg-sky-50 rounded-lg flex items-center justify-center mr-3">
+                  <BookOpen size={20} className="text-[#0284c7]"/>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Total Materi</p>
@@ -304,8 +304,8 @@ export default async function CourseDetailPage({
               </div>
               
               <div className="flex items-center">
-                <div className="w-10 h-10 bg-[#C5A059]/10 rounded-lg flex items-center justify-center mr-3">
-                  <BookOpen size={20} className="text-[#C5A059]" />
+                <div className="w-10 h-10 bg-sky-50 rounded-lg flex items-center justify-center mr-3">
+                  <BookOpen size={20} className="text-[#0284c7]" />
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Level</p>
@@ -324,7 +324,7 @@ export default async function CourseDetailPage({
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-20 p-4 bg-white border-t border-gray-200 shadow-lg">
           <Link 
             href={`/learning/course/${course.id}/lesson/${firstLessonId}`} 
-            className="w-full flex items-center justify-center gap-2 py-3 bg-[#C5A059] text-black rounded-lg font-bold shadow-lg hover:bg-amber-500 transition-colors"
+            className="w-full flex items-center justify-center gap-2 py-3 bg-[#0284c7] text-white rounded-lg font-bold shadow-lg hover:bg-amber-500 transition-colors"
           >
             <PlayCircle size={20} />
             Mulai Belajar

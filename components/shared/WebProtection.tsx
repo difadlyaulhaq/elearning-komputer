@@ -58,7 +58,7 @@ export const WebProtection = () => {
     // Periodic Console Clearing
     const consoleClearInterval = setInterval(() => {
       console.clear();
-      console.log("%cPERINGATAN!%c\nArea ini diawasi secara ketat oleh sistem keamanan Alfajr. Segala upaya akses ilegal akan dicatat.", 
+      console.log("%cPERINGATAN!%c\nArea ini diawasi secara ketat oleh sistem keamanan. Segala upaya akses ilegal akan dicatat.", 
         "color: red; font-size: 24px; font-weight: bold;", 
         "color: black; font-size: 14px;");
     }, 10000);

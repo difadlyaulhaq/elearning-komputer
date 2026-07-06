@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
       name: name.trim(),
       description: description || '',
       icon: icon || '📚', // Default icon
-      color: color || '#C5A059', // Default color
+      color: color || '#0284c7', // Default color
       courseCount: 0,
       status: 'active',
       createdAt: new Date().toISOString(),

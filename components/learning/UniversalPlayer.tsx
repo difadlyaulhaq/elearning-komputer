@@ -542,7 +542,7 @@ const NativeVideoPlayer: React.FC<{
               <circle cx="28" cy="28" r="24" stroke="rgba(255,255,255,0.15)" strokeWidth="4" />
               <circle
                 cx="28" cy="28" r="24"
-                stroke="#C5A059"
+                stroke="#0284c7"
                 strokeWidth="4"
                 strokeLinecap="round"
                 strokeDasharray="100 50"
@@ -564,7 +564,7 @@ const NativeVideoPlayer: React.FC<{
       {!isBuffering && bufferPercent > 0 && bufferPercent < 100 && (
         <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white/10 z-10 pointer-events-none">
           <div
-            className="h-full bg-[#C5A059]/40 transition-all duration-500"
+            className="h-full bg-[#0284c7]/40 transition-all duration-500"
             style={{ width: `${bufferPercent}%` }}
           />
         </div>
@@ -579,7 +579,7 @@ const NativeVideoPlayer: React.FC<{
           <p className="text-sm font-medium text-red-300 mb-3">{error}</p>
           <button
             onClick={() => { setError(null); setRetryCount(0); handleRetry(); }}
-            className="px-4 py-2 bg-[#C5A059] text-black text-sm font-bold rounded-lg hover:bg-[#D4AF6A] transition-colors"
+            className="px-4 py-2 bg-[#0284c7] text-white text-sm font-bold rounded-lg hover:bg-[#D4AF6A] transition-colors"
           >
             Coba Lagi
           </button>

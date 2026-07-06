@@ -145,7 +145,7 @@ const SecurityLogPage = () => {
   return (
     <div className="p-4 md:p-8">
       <div className="flex items-center mb-6">
-        <Shield size={32} className="text-[#C5A059] mr-4" />
+        <Shield size={32} className="text-[#0284c7] mr-4" />
         <div>
           <h1 className="text-2xl font-bold text-white">Log Keamanan - Upaya Tangkapan Layar</h1>
           <p className="text-white">Riwayat kejadian deteksi upaya screenshot.</p>
