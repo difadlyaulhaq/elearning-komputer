@@ -114,7 +114,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const setupDeepLinks = async () => {
       appListenerHandle = await App.addListener('appUrlOpen', async (data) => {
-        if (data.url.includes('alfajrelearning://auth/callback')) {
+        if (data.url.includes('internasionalkomputerelearning://auth/callback') || data.url.includes('alfajrelearning://auth/callback')) {
           const url = new URL(data.url);
           const token = url.searchParams.get('token');
           if (token) {

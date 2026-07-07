@@ -1,86 +1,41 @@
 {
   "project_info": {
-    "project_number": "342608432294",
-    "project_id": "alfajr-elearning",
-    "storage_bucket": "alfajr-elearning.firebasestorage.app"
+    "project_number": "237681279253",
+    "project_id": "elearning-komputer",
+    "storage_bucket": "elearning-komputer.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:342608432294:android:eb631e87be27ea1c403867",
+        "mobilesdk_app_id": "1:237681279253:android:b31f13f71cd9ae7a69a91c",
         "android_client_info": {
-          "package_name": "com.alfajr.elearning"
+          "package_name": "com.elearninginternasionalkomp"
         }
       },
       "oauth_client": [
         {
-          "client_id": "342608432294-99te09rjj1oe5c5ufp7ce8hq6qr9lod2.apps.googleusercontent.com",
+          "client_id": "237681279253-t11m0c79iqegehnjq6u1inh2nqdtaho8.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.alfajr.elearning",
-            "certificate_hash": "4a9a7d217e16354c3e370baee361feeeb69f1ae8"
-          }
-        },
-        {
-          "client_id": "342608432294-c1l7ppvhs1hlbrugg5jsks36glo4b6dl.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.alfajr.elearning",
+            "package_name": "com.elearninginternasionalkomp",
             "certificate_hash": "e47a96df927ae2d9bb1e584b0c205db436ee2aed"
           }
         },
         {
-          "client_id": "342608432294-go55h3a759tjj70648ng5gnaptpjrbri.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.alfajr.elearning",
-            "certificate_hash": "da27d46bd78f94063f4ae1bb9087b90c89d43f2d"
-          }
-        },
-        {
-          "client_id": "342608432294-6okq9uilstspcmrs7av1obn5859ktr32.apps.googleusercontent.com",
+          "client_id": "237681279253-tu2j5l7pdpti9lsm707c429gkvc0bqai.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyBiBNeLeFyT90bYPjJYfq3aw82MimUJ7Xc"
+          "current_key": "AIzaSyCw_vayhK_adh9J6P9mN4pye6It_tlPPcI"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "342608432294-6okq9uilstspcmrs7av1obn5859ktr32.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:342608432294:android:dedb17fcf43eb409403867",
-        "android_client_info": {
-          "package_name": "com.alfajrelearning.egi.egi_mobile"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "342608432294-6okq9uilstspcmrs7av1obn5859ktr32.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyBiBNeLeFyT90bYPjJYfq3aw82MimUJ7Xc"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "342608432294-6okq9uilstspcmrs7av1obn5859ktr32.apps.googleusercontent.com",
+              "client_id": "237681279253-tu2j5l7pdpti9lsm707c429gkvc0bqai.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

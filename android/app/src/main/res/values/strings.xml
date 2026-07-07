@@ -1,10 +1,10 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Alfajr E-Learning</string>
-    <string name="title_activity_main">Alfajr E-Learning</string>
-    <string name="package_name">com.alfajr.elearning</string>
-    <string name="custom_url_scheme">com.alfajr.elearning</string>
+    <string name="app_name">Internasional Komputer E-Learning</string>
+    <string name="title_activity_main">Internasional Komputer E-Learning</string>
+    <string name="package_name">com.elearninginternasionalkomp</string>
+    <string name="custom_url_scheme">com.elearninginternasionalkomp</string>
     <!-- GANTI INI DENGAN WEB CLIENT ID DARI FIREBASE CONSOLE ANDA -->
     <!-- Format: xxxxxxxxxx-xxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com -->
-    <string name="server_client_id">342608432294-6okq9uilstspcmrs7av1obn5859ktr32.apps.googleusercontent.com</string>
+    <string name="server_client_id">237681279253-tu2j5l7pdpti9lsm707c429gkvc0bqai.apps.googleusercontent.com</string>
 </resources>

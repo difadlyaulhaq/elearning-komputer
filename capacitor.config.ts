@@ -1,7 +1,7 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.alfajr.elearning',
+  appId: 'com.elearninginternasionalkomp',
   appName: 'Internasional Komputer E-Learning',
   webDir: 'public', // Set to public due to PWA build config
   server: {
@@ -25,7 +25,7 @@ const config: CapacitorConfig = {
       providers: ["google.com"],
       // Tambahkan konfigurasi ini
       // @ts-ignore
-      serverClientId: "342608432294-6okq9uilstspcmrs7av1obn5859ktr32.apps.googleusercontent.com", 
+      serverClientId: "237681279253-tu2j5l7pdpti9lsm707c429gkvc0bqai.apps.googleusercontent.com", 
     },
     PrivacyScreen: {
       enable: true,
