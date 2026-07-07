@@ -3,7 +3,7 @@ const { Jimp } = require('jimp');
 async function processImage() {
   try {
     // 1. Read the original logo
-    const logo = await Jimp.read('public/logo-alfajr.png');
+    const logo = await Jimp.read('public/LOGO INTER.png');
     
     // 2. Create a new 1024x1024 transparent canvas
     const size = 1024;
