@@ -1,7 +1,5 @@
-'use client';
-
-import CategoryManagement from '@/components/admin/CategoryManagement';
+import CategoryForm from '@/components/admin/CategoryForm';
 
 export default function CreateCategoryPage() {
-  return <CategoryManagement forceAction="create" />;
+  return <CategoryForm />;
 }

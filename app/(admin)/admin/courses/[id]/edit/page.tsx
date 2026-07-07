@@ -1,25 +1,10 @@
-import CourseManagement from '@/components/admin/CourseManagement';
-import { getAllCourses } from '@/lib/data/courses';
-import { getAllCategories } from '@/lib/data/categories';
+import CourseForm from '@/components/admin/CourseForm';
 
-export const revalidate = 0;
-
-interface EditPageProps {
-  params: {
-    id: string;
-  };
+interface EditCoursePageProps {
+  params: Promise<{ id: string }>;
 }
 
-export default async function EditCoursePage({ params }: EditPageProps) {
-  const courses = await getAllCourses();
-  const categories = await getAllCategories();
-
-  return (
-    <CourseManagement 
-      initialCourses={courses} 
-      initialCategories={categories} 
-      forceAction="edit" 
-      forceId={params.id} 
-    />
-  );
+export default async function EditCoursePage({ params }: EditCoursePageProps) {
+  const { id } = await params;
+  return <CourseForm id={id} />;
 }

@@ -1,13 +1,10 @@
-'use client';
+import UserForm from '@/components/admin/UserForm';
 
-import UserManagement from '@/components/admin/UserManagement';
-
-interface EditPageProps {
-  params: {
-    id: string;
-  };
+interface EditUserPageProps {
+  params: Promise<{ id: string }>;
 }
 
-export default function EditUserPage({ params }: EditPageProps) {
-  return <UserManagement forceAction="edit" forceId={params.id} />;
+export default async function EditUserPage({ params }: EditUserPageProps) {
+  const { id } = await params;
+  return <UserForm id={id} />;
 }

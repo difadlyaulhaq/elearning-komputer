@@ -93,7 +93,7 @@ const LearningHistoryPage = () => {
           </div>
           <div className="flex gap-3">
             <div className="text-center px-5 py-2 bg-[#F8F9FA] rounded-xl border border-gray-200">
-              <div className="text-xl font-bold text-[#0284c7]">{stats.total}</div>
+              <div className="text-xl font-bold text-[#0066FF]">{stats.total}</div>
               <div className="text-[10px] uppercase tracking-wider text-gray-500">Total</div>
             </div>
             <div className="text-center px-5 py-2 bg-[#F8F9FA] rounded-xl border border-gray-200">
@@ -113,13 +113,13 @@ const LearningHistoryPage = () => {
             </Link>
             <div>
               <h1 className="font-bold text-lg leading-tight">Riwayat Belajar</h1>
-              <p className="text-xs text-[#0284c7] font-medium">{stats.total} Kursus Terdaftar</p>
+              <p className="text-xs text-[#0066FF] font-medium">{stats.total} Kursus Terdaftar</p>
             </div>
           </div>
           
           <button 
             onClick={() => setShowSearch(!showSearch)}
-            className={`p-2 rounded-full transition-colors ${showSearch ? 'bg-[#0284c7] text-white' : 'hover:bg-gray-100'}`}
+            className={`p-2 rounded-full transition-colors ${showSearch ? 'bg-[#0066FF] text-white' : 'hover:bg-gray-100'}`}
           >
             {showSearch ? <X size={20} /> : <Search size={20} />}
           </button>
@@ -133,7 +133,7 @@ const LearningHistoryPage = () => {
               <input
                 type="text"
                 placeholder="Cari materi atau kursus..."
-                className="w-full pl-10 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-xl text-black placeholder-gray-400 focus:ring-2 focus:ring-[#0284c7] outline-none transition-all"
+                className="w-full pl-10 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-xl text-black placeholder-gray-400 focus:ring-2 focus:ring-[#0066FF] outline-none transition-all"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 autoFocus
@@ -157,7 +157,7 @@ const LearningHistoryPage = () => {
             <button 
               onClick={() => setFilter('all')}
               className={`flex-shrink-0 px-6 py-2.5 rounded-full text-sm font-bold transition-all ${
-                filter === 'all' ? 'bg-[#0284c7] text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200'
+                filter === 'all' ? 'bg-[#0066FF] text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200'
               }`}
             >
               Semua ({stats.total})
@@ -165,7 +165,7 @@ const LearningHistoryPage = () => {
             <button 
               onClick={() => setFilter('in-progress')}
               className={`flex-shrink-0 px-6 py-2.5 rounded-full text-sm font-bold transition-all ${
-                filter === 'in-progress' ? 'bg-[#0284c7] text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200'
+                filter === 'in-progress' ? 'bg-[#0066FF] text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200'
               }`}
             >
               Berjalan ({stats.inProgress})
@@ -173,7 +173,7 @@ const LearningHistoryPage = () => {
             <button 
               onClick={() => setFilter('completed')}
               className={`flex-shrink-0 px-6 py-2.5 rounded-full text-sm font-bold transition-all ${
-                filter === 'completed' ? 'bg-[#0284c7] text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200'
+                filter === 'completed' ? 'bg-[#0066FF] text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200'
               }`}
             >
               Selesai ({stats.completed})
@@ -195,7 +195,7 @@ const LearningHistoryPage = () => {
                   onClick={() => setFilter(f.key as any)}
                   className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-colors ${
                     filter === f.key 
-                      ? 'bg-[#0284c7] text-white' 
+                      ? 'bg-[#0066FF] text-white' 
                       : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-100'
                   }`}
                 >
@@ -209,7 +209,7 @@ const LearningHistoryPage = () => {
               <input
                 type="text"
                 placeholder="Cari kursus..."
-                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#0284c7] outline-none text-black"
+                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#0066FF] outline-none text-black"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -220,7 +220,7 @@ const LearningHistoryPage = () => {
         {/* Content Grid */}
         {loading ? (
           <div className="flex items-center justify-center h-64">
-            <Loader2 className="w-12 h-12 text-[#0284c7] animate-spin" />
+            <Loader2 className="w-12 h-12 text-[#0066FF] animate-spin" />
           </div>
         ) : filteredCourses.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
@@ -229,13 +229,13 @@ const LearningHistoryPage = () => {
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow group h-full flex flex-col">
                   <div className="h-40 bg-gray-200 relative">
                     {item.thumbnail ? (
-                      <img src={item.thumbnail} alt={item.title} className="w-full h-full object-cover" crossOrigin="anonymous" onError={(e) => { e.currentTarget.src = "/logo-alfajr.png"; }} />
+                      <img src={item.thumbnail} alt={item.title} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.src = "/LOGO INTER.png"; }} />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-                        <img src="/logo-alfajr.png" alt="Logo Alfajr" className="w-1/2 opacity-30 grayscale" />
+                        <img src="/LOGO INTER.png" alt="Logo Internasional Komputer" className="w-1/2 opacity-30 grayscale" />
                       </div>
                     )}
-                    <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-[#0284c7] shadow-sm">
+                    <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-[#0066FF] shadow-sm">
                       {item.categoryName || 'Materi'}
                     </div>
                     {item.status === 'completed' && (
@@ -245,7 +245,7 @@ const LearningHistoryPage = () => {
                       </div>
                     )}
                     {item.status !== 'completed' && (
-                      <div className="absolute top-2 left-2 bg-[#0284c7] text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                      <div className="absolute top-2 left-2 bg-[#0066FF] text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
                         <Clock size={12} />
                         <span>Berjalan</span>
                       </div>
@@ -264,7 +264,7 @@ const LearningHistoryPage = () => {
                           <span className="text-xs font-bold text-black">{item.progress || 0}%</span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-1.5">
-                          <div className="bg-[#0284c7] h-1.5 rounded-full" style={{ width: `${item.progress || 0}%` }} />
+                          <div className="bg-[#0066FF] h-1.5 rounded-full" style={{ width: `${item.progress || 0}%` }} />
                         </div>
                       </div>
                     )}
@@ -278,11 +278,11 @@ const LearningHistoryPage = () => {
                         {item.status === 'completed' ? (
                           <CheckCircle size={16} className="text-green-500" />
                         ) : (
-                          <div className="text-xs font-bold text-[#0284c7]">{item.progress || 0}%</div>
+                          <div className="text-xs font-bold text-[#0066FF]">{item.progress || 0}%</div>
                         )}
                       </div>
                       
-                      <span className="text-xs font-bold text-[#0284c7]">
+                      <span className="text-xs font-bold text-[#0066FF]">
                         {item.status === 'completed' ? 'Lihat Detail →' : 'Lanjutkan →'}
                       </span>
                     </div>
@@ -305,7 +305,7 @@ const LearningHistoryPage = () => {
                 : 'Anda belum memulai kursus apapun. Mari mulai belajar sekarang!'}
             </p>
             {searchQuery ? (
-              <button onClick={() => setSearchQuery('')} className="text-[#0284c7] font-bold text-sm underline">Hapus Pencarian</button>
+              <button onClick={() => setSearchQuery('')} className="text-[#0066FF] font-bold text-sm underline">Hapus Pencarian</button>
             ) : (
               <Link href="/learning/catalog" className="inline-block bg-black text-white px-8 py-3 rounded-xl font-bold shadow-sm">Jelajahi Katalog</Link>
             )}

@@ -1,7 +1,7 @@
 {
-  "name": "Alfajr E-Learning",
-  "short_name": "Alfajr Learning",
-  "description": "Platform E-learning Alfajr Umroh dengan konten terlindungi",
+  "name": "Internasional Komputer E-Learning",
+  "short_name": "Internasional Komputer Learning",
+  "description": "Platform E-Learning Internasional Komputer Umroh dengan konten terlindungi",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -9,13 +9,13 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/logo-alfajr.png",
+      "src": "/LOGO INTER.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/logo-alfajr.png",
+      "src": "/LOGO INTER.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

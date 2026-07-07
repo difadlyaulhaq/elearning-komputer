@@ -1,4 +1,5 @@
 'use client';
+import { useRouter } from 'next/navigation';
 import { Listbox } from '@headlessui/react';
 import { CheckIcon, ChevronUpDownIcon } from '@heroicons/react/20/solid';
 import { Menu, Transition } from '@headlessui/react';
@@ -7,7 +8,6 @@ import toast from 'react-hot-toast';
 import Button from '@/components/shared/Button';
 import { ResponsiveTable } from '@/components/shared/ResponsiveTable';
 import React, { useState, useEffect, Fragment, useRef } from 'react';
-import { useRouter } from 'next/navigation';
 
 // Definisikan tipe data User
 interface User {
@@ -65,7 +65,7 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, isSub
               placeholder="Contoh: Ahmad Fulan"
               value={formData.name}
               onChange={(e) => setFormData({...formData, name: e.target.value})}
-              className="w-full text-black px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C5A059]/50 focus:border-[#C5A059] outline-none transition-all"
+              className="w-full text-black px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066FF]/50 focus:border-[#0066FF] outline-none transition-all"
             />
           </div>
 
@@ -79,7 +79,7 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, isSub
               value={formData.email}
               onChange={(e) => setFormData({...formData, email: e.target.value})}
               className={`w-full text-black px-4 py-2.5 border border-gray-300 rounded-lg outline-none transition-all ${
-                isEditing ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'focus:ring-2 focus:ring-[#C5A059]/50 focus:border-[#C5A059]'
+                isEditing ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'focus:ring-2 focus:ring-[#0066FF]/50 focus:border-[#0066FF]'
               }`}
             />
             {isEditing && <p className="text-xs text-gray-500 mt-1">Email tidak dapat diubah untuk menjaga integritas data.</p>}
@@ -92,7 +92,7 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, isSub
                 required
                 value={formData.division}
                 onChange={(e) => setFormData({...formData, division: e.target.value})}
-                className="w-full text-black px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C5A059]/50 focus:border-[#C5A059] outline-none transition-all bg-white"
+                className="w-full text-black px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066FF]/50 focus:border-[#0066FF] outline-none transition-all bg-white"
               >
                 <option value="">Pilih Divisi</option>
                 {divisions.length === 0 ? (
@@ -117,7 +117,7 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, isSub
                 required
                 value={formData.role}
                 onChange={(e) => setFormData({...formData, role: e.target.value})}
-                className="w-full px-4 text-black py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C5A059]/50 focus:border-[#C5A059] outline-none transition-all bg-white"
+                className="w-full px-4 text-black py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066FF]/50 focus:border-[#0066FF] outline-none transition-all bg-white"
               >
                 <option value="user">User</option>
                 <option value="admin">Admin</option>
@@ -134,7 +134,7 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, isSub
               placeholder={isEditing ? "Kosongkan jika tidak ingin mengganti" : "Opsional (default: Alfajr123!)"}
               value={formData.password}
               onChange={(e) => setFormData({...formData, password: e.target.value})}
-              className="w-full text-black px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C5A059]/50 focus:border-[#C5A059] outline-none transition-all"
+              className="w-full text-black px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066FF]/50 focus:border-[#0066FF] outline-none transition-all"
             />
           </div>
 
@@ -150,7 +150,7 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, isSub
             <button
               type="submit"
               disabled={isSubmitting || divisions.length === 0}
-              className="w-full md:flex-1 px-4 py-2.5 bg-[#C5A059] text-black rounded-lg hover:bg-[#B08F4A] font-semibold flex justify-center items-center transition-all shadow-md hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
+              className="w-full md:flex-1 px-4 py-2.5 bg-[#0066FF] text-white rounded-lg hover:bg-[#0052CC] font-semibold flex justify-center items-center transition-all shadow-md hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
                 <>
@@ -168,22 +168,9 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, isSub
   );
 };
 
-interface UserManagementProps {
-  forceAction?: 'create' | 'edit';
-  forceId?: string;
-}
-
 // --- KOMPONEN UTAMA ---
-const UserManagement: React.FC<UserManagementProps> = ({ forceAction, forceId }) => {
+const UserManagement = () => {
   const router = useRouter();
-
-  const handleCloseModal = () => {
-    if (forceAction) {
-      router.push('/admin/users');
-    } else {
-      setIsModalOpen(false);
-    }
-  };
   const [users, setUsers] = useState<User[]>([]);
   const [divisions, setDivisions] = useState<Division[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -252,33 +239,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ forceAction, forceId })
     }
   };
 
-  // Handle forceAction and forceId for direct routing (Create / Edit Pages)
-  useEffect(() => {
-    if (isLoading) return;
-
-    if (forceAction === 'create') {
-      setFormData(initialFormState);
-      setEditingId(null);
-      setIsModalOpen(true);
-    } else if (forceAction === 'edit' && forceId) {
-      const userToEdit = users.find(u => u.id === forceId);
-      if (userToEdit) {
-        setFormData({
-          name: userToEdit.name,
-          email: userToEdit.email,
-          division: userToEdit.division || '',
-          role: userToEdit.role || 'user',
-          password: ''
-        });
-        setEditingId(forceId);
-        setIsModalOpen(true);
-      } else {
-        toast.error('User tidak ditemukan');
-        router.push('/admin/users');
-      }
-    }
-  }, [forceAction, forceId, users, isLoading]);
-
   const handleAddClick = () => {
     router.push('/admin/users/create');
   };
@@ -341,7 +301,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ forceAction, forceId })
       
       toast.dismiss();
       if (response.ok) {
-        handleCloseModal();
+        setIsModalOpen(false);
         setFormData(initialFormState);
         setEditingId(null);
         fetchUsers();
@@ -491,9 +451,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ forceAction, forceId })
   });
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {!isModalOpen ? (
-        <>
+    <div className="min-h-screen bg-brand-gray">
       {/* Header Mobile */}
       <div className="md:hidden bg-white border-b border-gray-200 p-4 sticky top-0 z-10">
         <div className="flex items-center justify-between mb-3">
@@ -546,7 +504,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ forceAction, forceId })
                       setFilterDivision('all');
                       setIsFilterOpen(false);
                     }}
-                    className={`w-full text-left px-4 py-2.5 text-sm ${filterDivision === 'all' ? 'bg-[#C5A059]/10 text-[#C5A059] font-medium' : 'text-gray-700 hover:bg-gray-50'}`}
+                    className={`w-full text-left px-4 py-2.5 text-sm ${filterDivision === 'all' ? 'bg-[#0066FF]/10 text-[#0066FF] font-medium' : 'text-gray-700 hover:bg-gray-50'}`}
                   >
                     Semua Divisi
                   </button>
@@ -557,7 +515,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ forceAction, forceId })
                         setFilterDivision(div.name);
                         setIsFilterOpen(false);
                       }}
-                      className={`w-full text-left px-4 py-2.5 text-sm ${filterDivision === div.name ? 'bg-[#C5A059]/10 text-[#C5A059] font-medium' : 'text-gray-700 hover:bg-gray-50'}`}
+                      className={`w-full text-left px-4 py-2.5 text-sm ${filterDivision === div.name ? 'bg-[#0066FF]/10 text-[#0066FF] font-medium' : 'text-gray-700 hover:bg-gray-50'}`}
                     >
                       {div.name}
                     </button>
@@ -573,7 +531,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ forceAction, forceId })
           <div className="mt-2 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-600">Filter aktif:</span>
-              <span className="text-xs font-medium bg-[#C5A059]/10 text-[#C5A059] px-2 py-1 rounded">
+              <span className="text-xs font-medium bg-[#0066FF]/10 text-[#0066FF] px-2 py-1 rounded">
                 {filterDivision}
               </span>
             </div>
@@ -614,12 +572,12 @@ const UserManagement: React.FC<UserManagementProps> = ({ forceAction, forceId })
                 placeholder="Cari nama atau email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full text-black pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C5A059] outline-none transition-all"
+                className="w-full text-black pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066FF] outline-none transition-all"
               />
             </div>
             <Listbox value={filterDivision} onChange={setFilterDivision}>
               <div className="relative">
-                <Listbox.Button className="w-full px-4 py-2.5 text-left bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C5A059] outline-none cursor-pointer text-black">
+                <Listbox.Button className="w-full px-4 py-2.5 text-left bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066FF] outline-none cursor-pointer text-black">
                   <span className="block truncate">{filterDivision === 'all' ? 'Semua Divisi' : filterDivision}</span>
                   <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
                     <ChevronUpDownIcon
@@ -715,7 +673,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ forceAction, forceId })
               {isLoading ? (
                 <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-500">
                   <div className="flex flex-col justify-center items-center">
-                    <Loader className="animate-spin mb-2 text-[#C5A059]" size={32} />
+                    <Loader className="animate-spin mb-2 text-[#0066FF]" size={32} />
                     <span className="text-sm">Memuat data...</span>
                   </div>
                 </td></tr>
@@ -730,7 +688,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ forceAction, forceId })
                             setSearchTerm('');
                             setFilterDivision('all');
                           }}
-                          className="text-sm text-[#C5A059] hover:text-[#B08F4A] font-medium"
+                          className="text-sm text-[#0066FF] hover:text-[#0052CC] font-medium"
                         >
                           Hapus filter
                         </button>
@@ -889,22 +847,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ forceAction, forceId })
         </ResponsiveTable>
       </div>
 
-      {/* Render Modal */}
-      </>
-      ) : (
-        <div className="p-4 md:p-8">
-          <UserFormModal
-            isOpen={isModalOpen}
-            onClose={() => handleCloseModal()}
-            onSubmit={handleSubmit}
-            formData={formData}
-            setFormData={setFormData}
-            isSubmitting={isSubmitting}
-            isEditing={!!editingId}
-            divisions={divisions}
-          />
-        </div>
-      )}
+
     </div>
   );
 };

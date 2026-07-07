@@ -91,7 +91,7 @@ const FullscreenWatermark: React.FC<{ user: any }> = ({ user }) => {
         className="absolute text-white/5 font-bold text-[10px] whitespace-nowrap mix-blend-overlay"
         style={{ bottom: '15%', right: '10%', transform: 'rotate(-10deg)' }}
       >
-        PROPERTY OF ALFAJR • {user.name}
+        PROPERTY OF INTERNASIONAL KOMPUTER • {user.name}
       </div>
     </div>,
     fullscreenElement
@@ -290,7 +290,7 @@ const YouTubePlayer: React.FC<{
             className="absolute text-white/5 font-bold text-[10px] whitespace-nowrap select-none pointer-events-none mix-blend-overlay"
             style={{ bottom: '20%', right: '10%', transform: 'rotate(-10deg)' }}
           >
-            PROPERTY OF ALFAJR • {user.name}
+            PROPERTY OF INTERNASIONAL KOMPUTER • {user.name}
           </div>
           <div
             className="absolute text-white/8 font-bold text-xs whitespace-nowrap select-none pointer-events-none mix-blend-overlay"
@@ -599,7 +599,7 @@ const NativeVideoPlayer: React.FC<{
             className="absolute text-white/5 font-bold text-[10px] whitespace-nowrap mix-blend-overlay"
             style={{ bottom: '20%', right: '10%', transform: 'rotate(-10deg)' }}
           >
-            PROPERTY OF ALFAJR • {user.name}
+            PROPERTY OF INTERNASIONAL KOMPUTER • {user.name}
           </div>
           <div
             className="absolute text-white/8 font-bold text-xs whitespace-nowrap mix-blend-overlay"

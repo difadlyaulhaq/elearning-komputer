@@ -82,18 +82,18 @@ const AdminSidebar = ({ isOpen, onClose }: AdminSidebarProps) => {
       <div className="relative flex items-center justify-between px-4 py-4 border-b border-slate-100 shrink-0">
         {!isCollapsed && (
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-sky-100 flex items-center justify-center shrink-0">
-              <BookOpen className="text-sky-600" size={18} />
+            <div className="w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center shrink-0 overflow-hidden border border-slate-100">
+              <img src="/LOGO INTER.png" alt="Logo" className="w-full h-full object-contain" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-slate-900 truncate leading-tight">E-learning Portal</p>
+              <p className="text-sm font-semibold text-slate-900 truncate leading-tight">Internasional Komputer</p>
               <p className="text-[11px] text-sky-600 font-semibold">Admin Panel</p>
             </div>
           </div>
         )}
         {isCollapsed && (
-          <div className="w-9 h-9 rounded-xl bg-sky-100 mx-auto flex items-center justify-center">
-            <BookOpen className="text-sky-600" size={18} />
+          <div className="w-9 h-9 rounded-xl bg-slate-50 mx-auto flex items-center justify-center overflow-hidden border border-slate-100">
+            <img src="/LOGO INTER.png" alt="Logo" className="w-full h-full object-contain" />
           </div>
         )}
 

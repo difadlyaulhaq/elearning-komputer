@@ -2,14 +2,14 @@ import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.alfajr.elearning',
-  appName: 'Alfajr E-Learning',
+  appName: 'Internasional Komputer E-Learning',
   webDir: 'public', // Set to public due to PWA build config
   server: {
     // PRODUCTION MODE: Menggunakan domain sendiri (Ubuntu VPS)
-    url: 'https://elearningalfajrumroh.com',
+    url: 'https://elearninginternasionalkomp.web.id',
     allowNavigation: [
-      "elearningalfajrumroh.com",
-      "*.elearningalfajrumroh.com",
+      "elearninginternasionalkomp.web.id",
+      "*.elearninginternasionalkomp.web.id",
       "firebasestorage.googleapis.com",
       "*.googleapis.com",
       "*.firebaseapp.com",

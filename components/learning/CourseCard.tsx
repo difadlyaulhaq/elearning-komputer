@@ -20,7 +20,7 @@ export const StatusBadge = ({ status }: { status: string }) => {
     );
   }
   return (
-    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#0284c7] text-white">
+    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#0066FF] text-white">
       <Clock size={12} />
       Proses
     </span>
@@ -48,14 +48,13 @@ export const CourseCard: React.FC<{ course: Omit<Course, 'status'> & Progress & 
               src={course.thumbnail || course.coverImage} 
               alt={course.title} 
               className="w-full h-full object-cover" 
-              crossOrigin="anonymous"
-              onError={(e) => { e.currentTarget.src = "/logo-alfajr.png"; }}
+              onError={(e) => { e.currentTarget.src = "/LOGO INTER.png"; }}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
               <img 
-                src="/logo-alfajr.png" 
-                alt="Logo Alfajr" 
+                src="/LOGO INTER.png" 
+                alt="Logo Internasional Komputer" 
                 className="w-1/2 opacity-30 grayscale"
               />
             </div>
@@ -63,7 +62,7 @@ export const CourseCard: React.FC<{ course: Omit<Course, 'status'> & Progress & 
 
           {/* Category Badge */}
           <div className="absolute top-2 right-2">
-             <span className="px-2 py-1 rounded text-xs font-bold bg-white/90 backdrop-blur-sm text-[#0284c7] shadow-sm">
+             <span className="px-2 py-1 rounded text-xs font-bold bg-white/90 backdrop-blur-sm text-[#0066FF] shadow-sm">
               {course.categoryName}
              </span>
           </div>
@@ -76,7 +75,7 @@ export const CourseCard: React.FC<{ course: Omit<Course, 'status'> & Progress & 
             </div>
           )}
           {isInProgress && (
-            <div className="absolute top-2 left-2 bg-[#0284c7] text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+            <div className="absolute top-2 left-2 bg-[#0066FF] text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
               <Clock size={12} />
               <span>Proses</span>
             </div>
@@ -97,7 +96,7 @@ export const CourseCard: React.FC<{ course: Omit<Course, 'status'> & Progress & 
               </div>
               <div className="w-full bg-gray-200 rounded-full h-1.5">
                 <div 
-                  className="bg-[#0284c7] h-1.5 rounded-full transition-all duration-1000 ease-out"
+                  className="bg-[#0066FF] h-1.5 rounded-full transition-all duration-1000 ease-out"
                   style={{ width: `${course.progress}%` }}
                 />
               </div>
@@ -120,7 +119,7 @@ export const CourseCard: React.FC<{ course: Omit<Course, 'status'> & Progress & 
               <BookOpen size={12} />
               <span>{course.totalVideos || 0} Materi</span>
             </div>
-            <span className="text-xs font-bold text-[#0284c7]">
+            <span className="text-xs font-bold text-[#0066FF]">
               {isCompleted ? "Lihat Kembali →" : "Lanjutkan →"}
             </span>
           </div>

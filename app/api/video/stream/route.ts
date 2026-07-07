@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     const allowedHosts = [
       'firebasestorage.googleapis.com',
       'storage.googleapis.com',
-      'alfajr-cdn.b-cdn.net',
+      'internasionalkomp-cdn.b-cdn.net',
       'b-cdn.net'
     ];
 

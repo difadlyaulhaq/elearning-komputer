@@ -32,7 +32,7 @@ const CategoryModal = ({ isOpen, onClose, onSubmit, formData, setFormData, isSub
 
   const iconOptions = ['📚', '💼', '💰', '🎓', '📊', '🛠️', '🌐', '📱', '🎯', '💡', '🔧', '📈'];
   const colorOptions = [
-    { name: 'Emas', value: '#C5A059' },
+    { name: 'Emas', value: '#0066FF' },
     { name: 'Biru', value: '#3B82F6' },
     { name: 'Hijau', value: '#10B981' },
     { name: 'Merah', value: '#EF4444' },
@@ -64,7 +64,7 @@ const CategoryModal = ({ isOpen, onClose, onSubmit, formData, setFormData, isSub
               placeholder="Contoh: Marketing & Sales"
               value={formData.name}
               onChange={(e) => setFormData({...formData, name: e.target.value})}
-              className="w-full text-black px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C5A059]/50 focus:border-[#C5A059] outline-none transition-all text-sm sm:text-base"
+              className="w-full text-black px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066FF]/50 focus:border-[#0066FF] outline-none transition-all text-sm sm:text-base"
             />
           </div>
 
@@ -75,7 +75,7 @@ const CategoryModal = ({ isOpen, onClose, onSubmit, formData, setFormData, isSub
               value={formData.description}
               onChange={(e) => setFormData({...formData, description: e.target.value})}
               rows={3}
-              className="w-full text-black px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C5A059]/50 focus:border-[#C5A059] outline-none transition-all text-sm sm:text-base"
+              className="w-full text-black px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066FF]/50 focus:border-[#0066FF] outline-none transition-all text-sm sm:text-base"
             />
           </div>
 
@@ -85,7 +85,7 @@ const CategoryModal = ({ isOpen, onClose, onSubmit, formData, setFormData, isSub
               <button
                 type="button"
                 onClick={() => setShowIconPicker(!showIconPicker)}
-                className="w-full text-left px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C5A059]/50 focus:border-[#C5A059] outline-none transition-all flex items-center justify-between"
+                className="w-full text-left px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066FF]/50 focus:border-[#0066FF] outline-none transition-all flex items-center justify-between"
               >
                 <div className="flex items-center space-x-2 sm:space-x-3">
                   <span className="text-xl sm:text-2xl">{formData.icon}</span>
@@ -105,7 +105,7 @@ const CategoryModal = ({ isOpen, onClose, onSubmit, formData, setFormData, isSub
                       }}
                       className={`p-2 sm:p-3 text-xl sm:text-2xl rounded-lg transition-all hover:bg-gray-50 flex items-center justify-center ${
                         formData.icon === emoji
-                          ? 'bg-[#FFF8E7] scale-105 ring-1 sm:ring-2 ring-[#C5A059]'
+                          ? 'bg-[#E6F0FF] scale-105 ring-1 sm:ring-2 ring-[#0066FF]'
                           : ''
                       }`}
                     >
@@ -126,7 +126,7 @@ const CategoryModal = ({ isOpen, onClose, onSubmit, formData, setFormData, isSub
                     onClick={() => setFormData({...formData, color: color.value})}
                     className={`flex items-center space-x-2 p-2 sm:p-2.5 rounded-lg border transition-all ${
                       formData.color === color.value
-                        ? 'border-[#C5A059] bg-[#FFF8E7]'
+                        ? 'border-[#0066FF] bg-[#E6F0FF]'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
@@ -153,7 +153,7 @@ const CategoryModal = ({ isOpen, onClose, onSubmit, formData, setFormData, isSub
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full sm:flex-1 px-4 py-2.5 bg-[#C5A059] text-black rounded-lg hover:bg-[#B08F4A] font-semibold flex justify-center items-center transition-all shadow-md hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed text-sm sm:text-base"
+              className="w-full sm:flex-1 px-4 py-2.5 bg-[#0066FF] text-white rounded-lg hover:bg-[#0052CC] font-semibold flex justify-center items-center transition-all shadow-md hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed text-sm sm:text-base"
             >
               {isSubmitting ? (
                 <>
@@ -171,22 +171,9 @@ const CategoryModal = ({ isOpen, onClose, onSubmit, formData, setFormData, isSub
   );
 };
 
-interface CategoryManagementProps {
-  forceAction?: 'create' | 'edit';
-  forceId?: string;
-}
-
 // Main Component
-const CategoryManagement: React.FC<CategoryManagementProps> = ({ forceAction, forceId }) => {
+const CategoryManagement = () => {
   const router = useRouter();
-
-  const handleCloseModal = () => {
-    if (forceAction) {
-      router.push('/admin/categories');
-    } else {
-      setIsModalOpen(false);
-    }
-  };
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -200,7 +187,7 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({ forceAction, fo
     name: '',
     description: '',
     icon: '📚',
-    color: '#C5A059'
+    color: '#0066FF'
   };
 
   const [formData, setFormData] = useState(initialFormState);
@@ -237,32 +224,6 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({ forceAction, fo
       setIsLoading(false);
     }
   };
-
-  // Handle forceAction and forceId for direct routing (Create / Edit Pages)
-  useEffect(() => {
-    if (isLoading) return;
-
-    if (forceAction === 'create') {
-      setFormData(initialFormState);
-      setEditingId(null);
-      setIsModalOpen(true);
-    } else if (forceAction === 'edit' && forceId) {
-      const categoryToEdit = categories.find(cat => cat.id === forceId);
-      if (categoryToEdit) {
-        setFormData({
-          name: categoryToEdit.name,
-          description: categoryToEdit.description || '',
-          icon: categoryToEdit.icon || '📚',
-          color: categoryToEdit.color || '#C5A059'
-        });
-        setEditingId(forceId);
-        setIsModalOpen(true);
-      } else {
-        toast.error('Kategori tidak ditemukan');
-        router.push('/admin/categories');
-      }
-    }
-  }, [forceAction, forceId, categories, isLoading]);
 
   const handleAddClick = () => {
     router.push('/admin/categories/create');
@@ -336,7 +297,7 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({ forceAction, fo
             </button>
           </div>
         ), { duration: 3000 });
-        handleCloseModal();
+        setIsModalOpen(false);
         setFormData(initialFormState);
         setEditingId(null);
         fetchCategories();
@@ -425,9 +386,7 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({ forceAction, fo
   });
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {!isModalOpen ? (
-        <>
+    <div className="min-h-screen bg-[#F8F9FA]">
       {/* Header Mobile */}
       <div className="md:hidden bg-white border-b border-gray-200 p-4 sticky top-0 z-10">
         <div className="flex items-center justify-between mb-3">
@@ -437,7 +396,7 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({ forceAction, fo
           </div>
           <button
             onClick={handleAddClick}
-            className="flex items-center gap-2 bg-[#C5A059] text-black px-3 py-2 rounded-lg hover:bg-[#B08F4A] transition-colors font-semibold shadow-md hover:shadow-lg text-sm"
+            className="flex items-center gap-2 bg-[#0066FF] text-white px-3 py-2 rounded-lg hover:bg-[#0052CC] transition-colors font-semibold shadow-md hover:shadow-lg text-sm"
           >
             <Plus size={16} />
             <span>Tambah</span>
@@ -479,7 +438,7 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({ forceAction, fo
                       setFilterStatus('all');
                       setIsFilterOpen(false);
                     }}
-                    className={`w-full text-left px-4 py-2.5 text-sm ${filterStatus === 'all' ? 'bg-[#C5A059]/10 text-[#C5A059] font-medium' : 'text-gray-700 hover:bg-gray-50'}`}
+                    className={`w-full text-left px-4 py-2.5 text-sm ${filterStatus === 'all' ? 'bg-[#0066FF]/10 text-[#0066FF] font-medium' : 'text-gray-700 hover:bg-gray-50'}`}
                   >
                     Semua Status
                   </button>
@@ -488,7 +447,7 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({ forceAction, fo
                       setFilterStatus('active');
                       setIsFilterOpen(false);
                     }}
-                    className={`w-full text-left px-4 py-2.5 text-sm ${filterStatus === 'active' ? 'bg-[#C5A059]/10 text-[#C5A059] font-medium' : 'text-gray-700 hover:bg-gray-50'}`}
+                    className={`w-full text-left px-4 py-2.5 text-sm ${filterStatus === 'active' ? 'bg-[#0066FF]/10 text-[#0066FF] font-medium' : 'text-gray-700 hover:bg-gray-50'}`}
                   >
                     Aktif
                   </button>
@@ -497,7 +456,7 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({ forceAction, fo
                       setFilterStatus('inactive');
                       setIsFilterOpen(false);
                     }}
-                    className={`w-full text-left px-4 py-2.5 text-sm ${filterStatus === 'inactive' ? 'bg-[#C5A059]/10 text-[#C5A059] font-medium' : 'text-gray-700 hover:bg-gray-50'}`}
+                    className={`w-full text-left px-4 py-2.5 text-sm ${filterStatus === 'inactive' ? 'bg-[#0066FF]/10 text-[#0066FF] font-medium' : 'text-gray-700 hover:bg-gray-50'}`}
                   >
                     Nonaktif
                   </button>
@@ -512,7 +471,7 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({ forceAction, fo
           <div className="mt-2 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-600">Filter aktif:</span>
-              <span className="text-xs font-medium bg-[#C5A059]/10 text-[#C5A059] px-2 py-1 rounded">
+              <span className="text-xs font-medium bg-[#0066FF]/10 text-[#0066FF] px-2 py-1 rounded">
                 {filterStatus === 'active' ? 'Aktif' : 'Nonaktif'}
               </span>
             </div>
@@ -535,7 +494,7 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({ forceAction, fo
           </div>
           <button
             onClick={handleAddClick}
-            className="w-full md:w-auto flex items-center justify-center space-x-2 bg-[#C5A059] text-black px-4 sm:px-5 py-2.5 rounded-lg hover:bg-[#B08F4A] transition-colors font-semibold shadow-md hover:shadow-lg text-sm sm:text-base"
+            className="w-full md:w-auto flex items-center justify-center space-x-2 bg-[#0066FF] text-white px-4 sm:px-5 py-2.5 rounded-lg hover:bg-[#0052CC] transition-colors font-semibold shadow-md hover:shadow-lg text-sm sm:text-base"
           >
             <Plus size={18} />
             <span>Buat Kategori</span>
@@ -553,7 +512,7 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({ forceAction, fo
               placeholder="Cari kategori..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full text-black pl-10 pr-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#C5A059] outline-none text-sm sm:text-base"
+              className="w-full text-black pl-10 pr-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066FF] outline-none text-sm sm:text-base"
             />
           </div>
         </div>
@@ -561,7 +520,7 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({ forceAction, fo
         {/* Category Grid */}
         {isLoading ? (
           <div className="flex justify-center items-center py-20">
-            <Loader className="animate-spin text-[#C5A059]" size={40} />
+            <Loader className="animate-spin text-[#0066FF]" size={40} />
           </div>
         ) : filteredCategories.length === 0 ? (
           <div className="bg-white rounded-lg p-6 sm:p-8 md:p-12 text-center">
@@ -575,7 +534,7 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({ forceAction, fo
                   setSearchTerm('');
                   setFilterStatus('all');
                 }}
-                className="mt-4 text-[#C5A059] hover:text-[#B08F4A] font-medium text-sm sm:text-base"
+                className="mt-4 text-[#0066FF] hover:text-[#0052CC] font-medium text-sm sm:text-base"
               >
                 Reset pencarian
               </button>
@@ -649,20 +608,7 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({ forceAction, fo
         )}
       </div>
 
-      </>
-      ) : (
-        <div className="p-4 md:p-8">
-          <CategoryModal
-            isOpen={isModalOpen}
-            onClose={() => handleCloseModal()}
-            onSubmit={handleSubmit}
-            formData={formData}
-            setFormData={setFormData}
-            isSubmitting={isSubmitting}
-            isEditing={!!editingId}
-          />
-        </div>
-      )}
+
     </div>
   );
 };

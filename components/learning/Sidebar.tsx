@@ -41,7 +41,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         {!isCollapsed && (
           <Link href="/learning/dashboard" onClick={onClose} className="flex items-center gap-3 min-w-0 group">
             <div className="w-9 h-9 rounded-xl overflow-hidden bg-white/10 flex items-center justify-center shrink-0">
-              <Image src="/logo-alfajr.png" alt="Logo" width={32} height={32} className="object-contain p-0.5" />
+              <Image src="/LOGO INTER.png" alt="Logo" width={32} height={32} className="object-contain p-0.5" />
             </div>
             <div className="min-w-0">
               <p className="text-sm font-semibold text-white truncate leading-tight group-hover:text-[#0284c7] transition-colors">
@@ -53,7 +53,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         )}
         {isCollapsed && (
           <Link href="/learning/dashboard" onClick={onClose} className="w-9 h-9 rounded-xl overflow-hidden bg-white/10 mx-auto block">
-            <Image src="/logo-alfajr.png" alt="Logo" width={36} height={36} className="object-contain p-0.5" />
+            <Image src="/LOGO INTER.png" alt="Logo" width={36} height={36} className="object-contain p-0.5" />
           </Link>
         )}
 

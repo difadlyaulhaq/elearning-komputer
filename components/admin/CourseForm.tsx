@@ -323,20 +323,20 @@ export const CoursePreviewModal: React.FC<{
   );
 };
 
-interface CourseManagementProps {
-  initialCourses: Course[];
-  initialCategories: Category[];
+interface CourseFormProps {
+  id?: string;
 }
 
-const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, initialCategories }) => {
+const CourseForm: React.FC<CourseFormProps> = ({ id }) => {
   const router = useRouter();
-  const [courses, setCourses] = useState<Course[]>(initialCourses);
-  const [categories, setCategories] = useState<Category[]>(initialCategories);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [searchTermUsers, setSearchTermUsers] = useState<string>('');
   const [allDivisions, setAllDivisions] = useState<Division[]>([]);
   const [searchTermDivisions, setSearchTermDivisions] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingCourse, setIsLoadingCourse] = useState(!!id);
   const [isUploadingLesson, setIsUploadingLesson] = useState(false);
   
   // State untuk tampilan mobile
@@ -345,23 +345,48 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
   const [filterCategory, setFilterCategory] = useState('all');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  // State untuk modal
-  const [showModal, setShowModal] = useState(false);
+  // State untuk modal (selalu true karena ini halaman penuh)
+  const [showModal, setShowModal] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [previewData, setPreviewData] = useState<Course | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
 
-  // Sync courses state with props when router.refresh() is called
+  // Load data kursus jika sedang mengedit
   useEffect(() => {
-    setCourses(initialCourses);
-  }, [initialCourses]);
-
-  // Sync categories state with props
-  useEffect(() => {
-    setCategories(initialCategories);
-  }, [initialCategories]);
+    if (id) {
+      const fetchCourse = async () => {
+        setIsLoadingCourse(true);
+        try {
+          const res = await fetch(`/api/admin/courses/${id}`);
+          const result = await res.json();
+          if (result.success) {
+            setFormData(result.data);
+            setInitialFormData(result.data);
+            setEditId(id);
+            setIsEditing(true);
+            setShowModal(true);
+          } else {
+            toast.error("Gagal memuat data kursus");
+            router.push('/admin/courses');
+          }
+        } catch (error) {
+          console.error("Error loading course:", error);
+          toast.error("Terjadi kesalahan koneksi");
+          router.push('/admin/courses');
+        } finally {
+          setIsLoadingCourse(false);
+        }
+      };
+      fetchCourse();
+    } else {
+      setIsLoadingCourse(false);
+      setEditId(null);
+      setIsEditing(false);
+      setShowModal(true);
+    }
+  }, [id, router]);
 
   // Ref for filter dropdown
   const filterRef = useRef<HTMLDivElement>(null);
@@ -540,11 +565,17 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
 
   // Handlers
   const handleOpenAdd = () => {
-    router.push('/admin/courses/create');
+    resetForm();
+    setShowModal(true);
   };
 
   const handleOpenEdit = (course: Course) => {
-    router.push(`/admin/courses/${course.id}/edit`);
+    setFormData(course);
+    setInitialFormData(course);
+    setEditId(course.id);
+    setIsEditing(true);
+    setCurrentStep(1);
+    setShowModal(true);
   };
 
   const handleOpenPreview = (course: Course) => {
@@ -711,7 +742,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
       toast.dismiss(loadingToast);
       if (result.success) {
         toast.success(`Kursus berhasil ${isEditing ? 'diperbarui' : 'dibuat'}!`, { duration: 3000 });
-        setShowModal(false);
+        router.push('/admin/courses');
         router.refresh();
       } else {
         toast.error(`Gagal: ${result.error}`, { duration: 3000 });
@@ -873,210 +904,56 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
     </div>
   );
 
+  if (isLoadingCourse) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-2">
+          <Loader2 className="animate-spin text-[#0066FF]" size={32} />
+          <span className="text-sm text-gray-500 font-medium">Memuat data kursus...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[#F8F9FA]">
-      {/* Mobile Header */}
-      <div className="md:hidden bg-white border-b border-gray-200 p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <h1 className="text-lg font-bold text-black">Kelola Kursus</h1>
-            <p className="text-xs text-gray-600">Buat dan kelola materi pembelajaran</p>
-          </div>
-          <button 
-            onClick={handleOpenAdd}
-            className="flex items-center gap-2 bg-[#0066FF] text-black px-3 py-2 rounded-lg hover:bg-[#0052CC] transition-colors font-semibold shadow-md text-sm"
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+      {/* Premium Sticky Header */}
+      <header className="sticky top-0 z-30 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => router.push('/admin/courses')}
+            className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-500 hover:text-gray-900"
+            disabled={isLoading || isUploadingLesson}
           >
-            <Plus size={16} />
-            <span>Tambah</span>
+            <ChevronLeft size={20} />
+          </button>
+          <div>
+            <div className="flex items-center gap-2 text-xs text-gray-500">
+              <span>Dashboard</span>
+              <span>/</span>
+              <span>Kursus</span>
+              <span>/</span>
+              <span className="text-gray-900 font-medium">{isEditing ? 'Edit' : 'Buat Baru'}</span>
+            </div>
+            <h1 className="text-lg font-bold text-gray-900 mt-0.5">
+              {isEditing ? 'Edit Kursus' : 'Buat Kursus Baru'}
+            </h1>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => router.push('/admin/courses')}
+            disabled={isLoading || isUploadingLesson}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors"
+          >
+            Batal
           </button>
         </div>
-        
-        {/* Mobile Search & Filters */}
-        <div className="flex gap-2 mb-3">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-2.5 text-gray-400" size={16} />
-            <input
-              type="text"
-              placeholder="Cari kursus..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full text-black pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none"
-            />
-          </div>
-          <div className="relative" ref={filterRef}>
-            <button
-              onClick={() => setIsFilterOpen(!isFilterOpen)}
-              className="flex items-center gap-1 px-3 py-2 border border-gray-300 text-gray-700 rounded-lg bg-white hover:bg-gray-50 text-sm font-medium"
-            >
-              <Filter size={16} />
-            </button>
-            
-            {isFilterOpen && (
-              <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-20">
-                <div className="p-3 border-b border-gray-200">
-                  <h3 className="text-sm font-semibold text-gray-800">Filter & Tampilan</h3>
-                </div>
-                <div className="p-3 space-y-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">Kategori</label>
-                    <select
-                      value={filterCategory}
-                      onChange={(e) => setFilterCategory(e.target.value)}
-                      className="w-full px-3 py-2 text-sm border text-gray-700 border-gray-300 rounded-lg focus:outline-none bg-white"
-                    >
-                      <option value="all">Semua Kategori</option>
-                      {categories.map(cat => (
-                        <option key={cat.id} value={cat.id}>{cat.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-gray-700">Tampilan</span>
-                    <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
-                      <button
-                        onClick={() => setViewMode('grid')}
-                        className={`p-1.5 rounded-md text-sm flex-1 flex justify-center ${viewMode === 'grid' ? 'bg-white shadow-sm text-[#0066FF]' : 'text-gray-500'}`}
-                      >
-                        <Grid size={16} />
-                      </button>
-                      <button
-                        onClick={() => setViewMode('list')}
-                        className={`p-1.5 rounded-md text-sm flex-1 flex justify-center ${viewMode === 'list' ? 'bg-white shadow-sm text-[#0066FF]' : 'text-gray-500'}`}
-                      >
-                        <Menu size={16} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+      </header>
 
-        {/* Mobile Course List/Grid */}
-        <div className={viewMode === 'grid' ? 'grid grid-cols-1 gap-3' : 'space-y-3'}>
-          {filteredCourses.map((course) => (
-            <MobileCourseCard key={course.id} course={course} />
-          ))}
-        </div>
-
-        {filteredCourses.length === 0 && (
-          <div className="text-center py-8">
-            <p className="text-gray-500">Tidak ada kursus ditemukan</p>
-            {searchTerm || filterCategory !== 'all' ? (
-              <button
-                onClick={() => {
-                  setSearchTerm('');
-                  setFilterCategory('all');
-                }}
-                className="mt-2 text-[#0066FF] hover:text-[#0052CC] font-medium text-sm"
-              >
-                Reset pencarian
-              </button>
-            ) : (
-              <button
-                onClick={handleOpenAdd}
-                className="mt-2 text-[#0066FF] hover:text-[#0052CC] font-medium text-sm"
-              >
-                Buat kursus pertama
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Desktop Header */}
-      <div className="hidden md:block bg-white border-b border-gray-200 p-4 md:px-8 md:py-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-black">Kelola Kursus</h1>
-            <p className="text-gray-600 mt-1">Buat dan kelola materi pembelajaran</p>
-          </div>
-          <button 
-            onClick={handleOpenAdd}
-            className="flex items-center space-x-2 bg-[#0066FF] text-black px-5 py-2.5 rounded-lg hover:bg-[#0052CC] transition-colors font-semibold shadow-md"
-          >
-            <Plus size={20} />
-            <span>Buat Kursus Baru</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Desktop Content */}
-      <div className="hidden md:block p-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredCourses.map((course) => (
-            <div key={course.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow group">
-              <div className="h-48 bg-gray-200 relative">
-                <img 
-                  src={course.thumbnail || course.coverImage || '/LOGO INTER.png'} 
-                  alt={course.title} 
-                  className="w-full h-full object-cover" 
-                  crossOrigin="anonymous"
-                  onError={(e) => { e.currentTarget.src = "/LOGO INTER.png"; }}
-                />
-                <span className={`absolute top-3 left-3 px-2 py-1 rounded text-xs font-bold ${course.status === 'active' ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'}`}>
-                  {course.status === 'active' ? 'Aktif' : 'Draft'}
-                </span>
-                <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-[#0066FF] shadow-sm">
-                  {course.categoryName}
-                </div>
-              </div>
-              <div className="p-5">
-                <h3 className="font-bold text-lg text-black mb-2 line-clamp-1" title={course.title}>
-                  {course.title}
-                </h3>
-                <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                  <span className="flex items-center">
-                    <Video size={14} className="mr-1"/> 
-                    {course.sections?.reduce((acc, s) => acc + s.lessons.length, 0) || 0} Materi
-                  </span>
-                  <span className="flex items-center">
-                    <Users size={14} className="mr-1"/> 
-                    {course.totalStudents} Peserta
-                  </span>
-                </div>
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => handleOpenPreview(course)}
-                    className="flex-1 py-2 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 font-medium text-sm flex items-center justify-center"
-                  >
-                    <Eye size={16} className="mr-1" /> Preview
-                  </button>
-                  <button 
-                    onClick={() => handleOpenEdit(course)}
-                    className="flex-1 py-2 bg-[#E6F0FF] text-[#0066FF] rounded hover:bg-[#CCE0FF] font-medium text-sm flex items-center justify-center"
-                  >
-                    <Edit size={16} className="mr-1" /> Edit
-                  </button>
-                  <button 
-                    onClick={() => handleDelete(course.id, course.title)}
-                    className="p-2 bg-red-50 text-red-600 rounded hover:bg-red-100"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Modal untuk Create/Edit Course */}
-      <div className="hidden">
-          <div className="bg-white w-full h-full md:w-full md:max-w-5xl md:h-[90vh] md:rounded-xl flex flex-col shadow-2xl">
-            <div className="flex items-center justify-between p-4 md:p-6 border-b">
-              <h2 className="text-lg md:text-xl font-bold text-black">
-                {isEditing ? 'Edit Kursus' : 'Buat Kursus Baru'}
-              </h2>
-              <button 
-                onClick={() => setShowModal(false)}
-                disabled={isLoading || isUploadingLesson}
-                className="p-2 rounded-full hover:bg-gray-100 disabled:opacity-50"
-              >
-                <X size={20} className="text-gray-400 hover:text-red-500" />
-              </button>
-            </div>
+      {/* Main Body container */}
+      <div className="flex-1 max-w-5xl w-full mx-auto px-6 py-8">
+        <div className="bg-white border border-gray-200 rounded-2xl flex flex-col shadow-sm overflow-hidden">
             
             {/* Stepper */}
             <div className="flex justify-center py-4 bg-gray-50 border-b">
@@ -1496,7 +1373,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                               <button 
                                 onClick={() => handleSaveLesson(section.id)}
                                 disabled={isLoading || isUploadingLesson}
-                                className="w-full md:w-auto px-3 py-1.5 text-xs bg-[#0066FF] text-black rounded font-bold hover:bg-[#0052CC]"
+                                className="w-full md:w-auto px-3 py-1.5 text-xs bg-[#0066FF] text-white rounded font-bold hover:bg-[#0052CC]"
                               >
                                 {isUploadingLesson ? (
                                   <span className="flex items-center gap-1">
@@ -1687,7 +1564,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                   <button 
                     onClick={() => setCurrentStep(prev => prev + 1)}
                     disabled={isLoading || isUploadingLesson}
-                    className="w-full md:w-auto px-4 md:px-6 py-2.5 bg-[#0066FF] text-black rounded-lg hover:bg-[#0052CC] font-bold text-sm disabled:opacity-50"
+                    className="w-full md:w-auto px-4 md:px-6 py-2.5 bg-[#0066FF] text-white rounded-lg hover:bg-[#0052CC] font-bold text-sm disabled:opacity-50"
                   >
                     Lanjut
                   </button>
@@ -1696,7 +1573,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                 <button 
                   onClick={handleSaveCourse}
                   disabled={isLoading || isUploadingLesson || (!isDirty && isEditing)}
-                  className="w-full md:w-auto px-4 md:px-6 py-2.5 bg-[#0066FF] text-black rounded-lg hover:bg-[#0052CC] font-bold flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                  className="w-full md:w-auto px-4 md:px-6 py-2.5 bg-[#0066FF] text-white rounded-lg hover:bg-[#0052CC] font-bold flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
                   {isLoading ? (
                     <Loader2 size={16} className="mr-2 animate-spin" />
@@ -1709,16 +1586,8 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
             </div>
           </div>
         </div>
-
-      {/* Preview Modal */}
-      {showPreview && previewData && (
-        <CoursePreviewModal 
-          previewData={previewData} 
-          onClose={() => setShowPreview(false)} 
-        />
-      )}
     </div>
   );
 };
 
-export default CourseManagement;
+export default CourseForm;

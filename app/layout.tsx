@@ -59,7 +59,7 @@ export default function RootLayout({
               // 1. DOMAIN MIGRATION REDIRECT (Anti-Redownload)
               // ============================================
               const currentHost = window.location.hostname;
-              const targetHost = 'elearningalfajrumroh.com';
+              const targetHost = 'elearninginternasionalkomp.web.id';
               if (currentHost.includes('vercel.app')) {
                 window.location.replace('https://' + targetHost + window.location.pathname + window.location.search);
               }
@@ -72,10 +72,10 @@ export default function RootLayout({
                                  ua.indexOf('capacitor') > -1 ||
                                  ua.indexOf('wv') > -1 ||
                                  localStorage.getItem('alfajr_is_native') === 'true';
-                  window.__ALFAJR_NATIVE_APP = !!isNative;
+                  window.__INTERNASIONAL KOMPUTER_NATIVE_APP = !!isNative;
                   if (isNative) window.__isNativeApp = true;
                 } catch(e) {
-                  window.__ALFAJR_NATIVE_APP = false;
+                  window.__INTERNASIONAL KOMPUTER_NATIVE_APP = false;
                 }
               })();
 

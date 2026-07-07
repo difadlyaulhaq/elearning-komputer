@@ -1,7 +1,5 @@
-'use client';
-
-import DivisionManagement from '@/components/admin/DivisionManagement';
+import DivisionForm from '@/components/admin/DivisionForm';
 
 export default function CreateDivisionPage() {
-  return <DivisionManagement forceAction="create" />;
+  return <DivisionForm />;
 }

@@ -16,13 +16,12 @@ const CourseCard: React.FC<{ course: Course; progress?: Progress }> = ({ course,
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow group h-full flex flex-col">
         <div className="h-40 bg-gray-200 relative">
           <img 
-            src={course.thumbnail || course.coverImage || '/logo-alfajr.png'} 
+            src={course.thumbnail || course.coverImage || '/LOGO INTER.png'} 
             alt={course.title} 
             className="w-full h-full object-cover" 
-            crossOrigin="anonymous"
-            onError={(e) => { e.currentTarget.src = "/logo-alfajr.png"; }}
+            onError={(e) => { e.currentTarget.src = "/LOGO INTER.png"; }}
           />
-          <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-[#0284c7] shadow-sm">
+          <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-[#0066FF] shadow-sm">
             {course.categoryName}
           </div>
           {isCompleted && (
@@ -144,14 +143,14 @@ const CourseCatalogPage = () => {
                     placeholder="Cari judul kursus..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#0284c7] outline-none text-black"
+                    className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#0066FF] outline-none text-black"
                 />
             </div>
             <div className="flex flex-wrap gap-2">
                 <button
                     onClick={() => setActiveCategory('all')}
                     className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-colors ${
-                        activeCategory === 'all' ? 'bg-[#0284c7] text-white' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-100'
+                        activeCategory === 'all' ? 'bg-[#0066FF] text-white' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-100'
                     }`}
                 >
                     Semua
@@ -161,7 +160,7 @@ const CourseCatalogPage = () => {
                         key={cat.id}
                         onClick={() => setActiveCategory(cat.name)}
                         className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-colors ${
-                            activeCategory === cat.name ? 'bg-[#0284c7] text-white' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-100'
+                            activeCategory === cat.name ? 'bg-[#0066FF] text-white' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-100'
                         }`}
                     >
                         {cat.name}
@@ -173,7 +172,7 @@ const CourseCatalogPage = () => {
         {/* Course Grid */}
         {isLoading ? (
           <div className="flex items-center justify-center h-64">
-            <Loader2 className="w-12 h-12 text-[#0284c7] animate-spin" />
+            <Loader2 className="w-12 h-12 text-[#0066FF] animate-spin" />
           </div>
         ) : (
             filteredCourses.length > 0 ? (

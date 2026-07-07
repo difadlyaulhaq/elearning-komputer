@@ -72,10 +72,10 @@ export default async function CourseDetailPage({
         }
       }
     }
-    return '/logo-alfajr.png';
+    return '/LOGO INTER.png';
   };
 
-  const thumbnailSrc = getFirstYouTubeThumbnail() || '/logo-alfajr.png';
+  const thumbnailSrc = getFirstYouTubeThumbnail() || '/LOGO INTER.png';
 
   return (
     <div className="min-h-screen bg-[#F8F9FA]">

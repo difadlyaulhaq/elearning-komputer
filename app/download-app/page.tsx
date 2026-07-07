@@ -9,7 +9,7 @@ export default function DownloadPage() {
     <div className="flex flex-col h-screen items-center justify-center p-4 bg-gray-100">
         <div className="bg-white p-6 rounded-xl shadow-lg text-center max-w-sm w-full">
             <img 
-                src="/logo-alfajr.png" 
+                src="/LOGO INTER.png" 
                 alt="Alfajr Umroh Logo" 
                 className="w-32 h-auto object-contain mx-auto mb-4"
             />
@@ -31,7 +31,7 @@ export default function DownloadPage() {
               <DownloadAppButton 
                   variant="primary" 
                   className="w-full py-3.5" 
-                  apkUrl="https://alfajr-cdn.b-cdn.net/alfajr-elearning.apk"
+                  apkUrl="https://internasionalkomp-cdn.b-cdn.net/alfajr-elearning.apk"
               />
               
               <div className="flex items-center justify-center gap-2 text-[10px] text-gray-400 font-medium tracking-wider uppercase">
@@ -43,7 +43,7 @@ export default function DownloadPage() {
         
         {/* Footer info */}
         <p className="mt-8 text-gray-400 text-[10px] uppercase tracking-widest">
-          © 2026 Alfajr E-Learning • Internal App
+          © 2026 Internasional Komputer E-Learning • Internal App
         </p>
     </div>
   );

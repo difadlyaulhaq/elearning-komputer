@@ -1,7 +1,5 @@
-'use client';
-
-import UserManagement from '@/components/admin/UserManagement';
+import UserForm from '@/components/admin/UserForm';
 
 export default function CreateUserPage() {
-  return <UserManagement forceAction="create" />;
+  return <UserForm />;
 }

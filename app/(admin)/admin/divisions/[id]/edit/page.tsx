@@ -1,13 +1,10 @@
-'use client';
+import DivisionForm from '@/components/admin/DivisionForm';
 
-import DivisionManagement from '@/components/admin/DivisionManagement';
-
-interface EditPageProps {
-  params: {
-    id: string;
-  };
+interface EditDivisionPageProps {
+  params: Promise<{ id: string }>;
 }
 
-export default function EditDivisionPage({ params }: EditPageProps) {
-  return <DivisionManagement forceAction="edit" forceId={params.id} />;
+export default async function EditDivisionPage({ params }: EditDivisionPageProps) {
+  const { id } = await params;
+  return <DivisionForm id={id} />;
 }

@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Data tidak lengkap' }, { status: 400 });
     }
 
-    const userPassword = password && password.trim() !== '' ? password : 'Alfajr123!';
+    const userPassword = password && password.trim() !== '' ? password : 'Pegawai123!';
 
     const userRecord = await adminAuth.createUser({
       email,

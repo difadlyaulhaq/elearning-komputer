@@ -29,8 +29,8 @@ const Button: React.FC<ButtonProps> = ({
   const baseStyles = 'font-semibold rounded-lg transition-all transform active:scale-[0.98] flex items-center justify-center space-x-2';
   
   const variants = {
-    primary: 'bg-[#0284c7] text-white hover:bg-[#0369a1] shadow-md hover:shadow-lg',
-    secondary: 'bg-white border-2 border-[#0284c7] text-[#0284c7] hover:bg-[#f0f9ff]',
+    primary: 'bg-[#0066FF] text-white hover:bg-[#0052CC] shadow-md hover:shadow-lg',
+    secondary: 'bg-white border-2 border-[#0066FF] text-[#0066FF] hover:bg-[#E6F0FF]',
     danger: 'bg-brand-danger text-white hover:bg-brand-danger/80 shadow-md',
     success: 'bg-brand-success text-white hover:bg-brand-success/80 shadow-md',
     ghost: 'bg-transparent border border-gray-300 text-gray-700 hover:bg-gray-50',

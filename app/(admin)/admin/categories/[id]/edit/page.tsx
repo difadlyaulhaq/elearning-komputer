@@ -1,13 +1,10 @@
-'use client';
+import CategoryForm from '@/components/admin/CategoryForm';
 
-import CategoryManagement from '@/components/admin/CategoryManagement';
-
-interface EditPageProps {
-  params: {
-    id: string;
-  };
+interface EditCategoryPageProps {
+  params: Promise<{ id: string }>;
 }
 
-export default function EditCategoryPage({ params }: EditPageProps) {
-  return <CategoryManagement forceAction="edit" forceId={params.id} />;
+export default async function EditCategoryPage({ params }: EditCategoryPageProps) {
+  const { id } = await params;
+  return <CategoryForm id={id} />;
 }

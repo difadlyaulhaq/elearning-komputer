@@ -291,7 +291,7 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
       let isScreenshotAttempt = false;
       let detectedShortcut = '';
       
-      const key = e.key.toUpperCase();
+      const key = (e.key || '').toUpperCase();
       const code = e.code || '';
 
       // ─── PrintScreen variants (ALL platforms) ───
