@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, Download, FileText, Loader2, RefreshCw } from 'lucide-react';
 
@@ -13,6 +13,7 @@ export function FileViewerClient({ initialUrl, initialName }: FileViewerClientPr
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isAndroid, setIsAndroid] = useState(false);
 
   // Clean and validate URL
   const fileUrl = initialUrl.trim();
@@ -20,6 +21,12 @@ export function FileViewerClient({ initialUrl, initialName }: FileViewerClientPr
 
   // Detect file type
   const isImage = /\.(png|jpe?g|gif|webp|svg|bmp)$/i.test(fileUrl);
+  const isPdf = /\.pdf$/i.test(fileUrl);
+
+  useEffect(() => {
+    const ua = navigator.userAgent.toLowerCase();
+    setIsAndroid(/android/i.test(ua));
+  }, []);
 
   const handleRefresh = () => {
     setIsLoading(true);
@@ -30,8 +37,10 @@ export function FileViewerClient({ initialUrl, initialName }: FileViewerClientPr
     router.back();
   };
 
-  // Google Docs Viewer URL
+  // Optimize PDF viewing: Use direct iframe for non-Android devices, fallback to Google Docs Viewer
+  const useDirectIframe = isPdf && !isAndroid;
   const googleDocsViewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`;
+  const viewerUrl = useDirectIframe ? fileUrl : googleDocsViewerUrl;
 
   return (
     <div className="flex flex-col w-full h-screen bg-slate-950 text-slate-100 font-sans select-none">
@@ -101,20 +110,28 @@ export function FileViewerClient({ initialUrl, initialName }: FileViewerClientPr
             />
           </div>
         ) : (
-          /* Document Viewer (Google Docs Viewer iframe) */
+          /* Document Viewer (Direct Iframe or Google Docs Viewer iframe) */
           <div className="w-full h-full relative">
             {isLoading && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950 z-20 gap-3">
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950 z-20 gap-3 p-4">
                 <Loader2 size={32} className="text-[#0284c7] animate-spin" />
                 <p className="text-xs text-slate-400">Sedang memuat dokumen...</p>
                 <p className="text-[10px] text-slate-500 max-w-[200px] text-center mt-1">
-                  Jika memuat terlalu lama, klik tombol refresh di kanan atas.
+                  Jika memuat terlalu lama, Anda dapat membukanya secara langsung atau menyegarkan halaman.
                 </p>
+                <a
+                  href={fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 px-4 py-2 text-xs font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-700/50 transition-all active:scale-95 cursor-pointer text-center"
+                >
+                  Buka Langsung di Perangkat
+                </a>
               </div>
             )}
             <iframe
               key={refreshKey}
-              src={googleDocsViewerUrl}
+              src={viewerUrl}
               className="w-full h-full border-none"
               onLoad={() => setIsLoading(false)}
               onError={() => setIsLoading(false)}
