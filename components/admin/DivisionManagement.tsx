@@ -200,7 +200,7 @@ const DivisionManagement: React.FC<DivisionManagementProps> = ({ forceAction, fo
     if (forceAction) {
       router.push('/admin/divisions');
     } else {
-      handleCloseModal();
+      setIsModalOpen(false);
     }
   };
   const [divisions, setDivisions] = useState<Division[]>([]);
@@ -251,6 +251,33 @@ const DivisionManagement: React.FC<DivisionManagementProps> = ({ forceAction, fo
       setIsLoading(false);
     }
   };
+
+  // Handle forceAction and forceId for direct routing (Create / Edit Pages)
+  useEffect(() => {
+    if (isLoading) return;
+
+    if (forceAction === 'create') {
+      setFormData(initialFormState);
+      setEditingId(null);
+      setIsModalOpen(true);
+    } else if (forceAction === 'edit' && forceId) {
+      const divisionToEdit = divisions.find(d => d.id === forceId);
+      if (divisionToEdit) {
+        setFormData({
+          name: divisionToEdit.name,
+          description: divisionToEdit.description || '',
+          head: divisionToEdit.head || '',
+          icon: divisionToEdit.icon || '🏢',
+          color: divisionToEdit.color || '#C5A059'
+        });
+        setEditingId(forceId);
+        setIsModalOpen(true);
+      } else {
+        toast.error('Divisi tidak ditemukan');
+        router.push('/admin/divisions');
+      }
+    }
+  }, [forceAction, forceId, divisions, isLoading]);
 
   const handleAddClick = () => {
     router.push('/admin/divisions/create');

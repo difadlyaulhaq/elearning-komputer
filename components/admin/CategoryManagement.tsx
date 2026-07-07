@@ -184,7 +184,7 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({ forceAction, fo
     if (forceAction) {
       router.push('/admin/categories');
     } else {
-      handleCloseModal();
+      setIsModalOpen(false);
     }
   };
   const [categories, setCategories] = useState<Category[]>([]);
@@ -237,6 +237,32 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({ forceAction, fo
       setIsLoading(false);
     }
   };
+
+  // Handle forceAction and forceId for direct routing (Create / Edit Pages)
+  useEffect(() => {
+    if (isLoading) return;
+
+    if (forceAction === 'create') {
+      setFormData(initialFormState);
+      setEditingId(null);
+      setIsModalOpen(true);
+    } else if (forceAction === 'edit' && forceId) {
+      const categoryToEdit = categories.find(cat => cat.id === forceId);
+      if (categoryToEdit) {
+        setFormData({
+          name: categoryToEdit.name,
+          description: categoryToEdit.description || '',
+          icon: categoryToEdit.icon || '📚',
+          color: categoryToEdit.color || '#C5A059'
+        });
+        setEditingId(forceId);
+        setIsModalOpen(true);
+      } else {
+        toast.error('Kategori tidak ditemukan');
+        router.push('/admin/categories');
+      }
+    }
+  }, [forceAction, forceId, categories, isLoading]);
 
   const handleAddClick = () => {
     router.push('/admin/categories/create');

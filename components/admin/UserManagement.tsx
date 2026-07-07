@@ -252,6 +252,33 @@ const UserManagement: React.FC<UserManagementProps> = ({ forceAction, forceId })
     }
   };
 
+  // Handle forceAction and forceId for direct routing (Create / Edit Pages)
+  useEffect(() => {
+    if (isLoading) return;
+
+    if (forceAction === 'create') {
+      setFormData(initialFormState);
+      setEditingId(null);
+      setIsModalOpen(true);
+    } else if (forceAction === 'edit' && forceId) {
+      const userToEdit = users.find(u => u.id === forceId);
+      if (userToEdit) {
+        setFormData({
+          name: userToEdit.name,
+          email: userToEdit.email,
+          division: userToEdit.division || '',
+          role: userToEdit.role || 'user',
+          password: ''
+        });
+        setEditingId(forceId);
+        setIsModalOpen(true);
+      } else {
+        toast.error('User tidak ditemukan');
+        router.push('/admin/users');
+      }
+    }
+  }, [forceAction, forceId, users, isLoading]);
+
   const handleAddClick = () => {
     router.push('/admin/users/create');
   };

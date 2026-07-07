@@ -336,7 +336,7 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
     if (forceAction) {
       router.push('/admin/courses');
     } else {
-      handleCloseModal();
+      setShowModal(false);
     }
   };
   const [courses, setCourses] = useState<Course[]>(initialCourses);
@@ -518,6 +518,27 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
     setIsEditing(false);
     setEditId(null);
   };
+
+  // Handle forceAction and forceId for direct routing (Create / Edit Pages)
+  useEffect(() => {
+    if (forceAction === 'create') {
+      resetForm();
+      setShowModal(true);
+      setIsEditing(false);
+    } else if (forceAction === 'edit' && forceId) {
+      const courseToEdit = courses.find(c => c.id === forceId);
+      if (courseToEdit) {
+        setFormData(courseToEdit);
+        setInitialFormData(courseToEdit);
+        setEditId(forceId);
+        setIsEditing(true);
+        setShowModal(true);
+      } else {
+        toast.error('Kursus tidak ditemukan');
+        router.push('/admin/courses');
+      }
+    }
+  }, [forceAction, forceId, courses]);
 
   const showConfirmationToast = (message: string, onConfirm: () => void) => {
     toast(
