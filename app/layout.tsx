@@ -21,6 +21,11 @@ export const metadata: Metadata = {
   title: " E-learning Portal",
   description: "Platform E-learning E-learning Portal",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/LOGO INTER.png",
+    shortcut: "/LOGO INTER.png",
+    apple: "/LOGO INTER.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
