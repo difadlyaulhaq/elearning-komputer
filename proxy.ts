@@ -162,8 +162,8 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - alfajr-elearning.apk (direct download)
+     * - internasionalkomputer-elearning.apk (direct download)
      */
-    '/((?!_next/static|_next/image|favicon.ico|alfajr-elearning.apk).*)',
+    '/((?!_next/static|_next/image|favicon.ico|internasionalkomputer-elearning.apk).*)',
   ],
 };

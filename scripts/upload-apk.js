@@ -16,8 +16,8 @@ if (!bunnyStorageZoneName || !bunnyStorageAccessKey || !bunnyCdnHostname) {
   process.exit(1);
 }
 
-const filePath = path.join(__dirname, '../public/alfajr-elearning.apk');
-const destination = 'alfajr-elearning.apk';
+const filePath = path.join(__dirname, '../public/internasionalkomputer-elearning.apk');
+const destination = 'internasionalkomputer-elearning.apk';
 
 if (!fs.existsSync(filePath)) {
   console.error(`❌ Local APK file not found at: ${filePath}`);

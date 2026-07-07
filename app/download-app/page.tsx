@@ -31,7 +31,7 @@ export default function DownloadPage() {
               <DownloadAppButton 
                   variant="primary" 
                   className="w-full py-3.5" 
-                  apkUrl="https://elearning-komputer.b-cdn.net/alfajr-elearning.apk"
+                  apkUrl="https://elearning-komputer.b-cdn.net/internasionalkomputer-elearning.apk"
               />
               
               <div className="flex items-center justify-center gap-2 text-[10px] text-gray-400 font-medium tracking-wider uppercase">
