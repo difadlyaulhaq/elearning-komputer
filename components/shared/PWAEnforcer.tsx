@@ -83,7 +83,7 @@ export default function PWAEnforcer({ children }: { children: React.ReactNode })
              variant="primary" 
              className="w-full py-3.5 text-sm font-bold bg-[#0284c7] hover:bg-[#0369a1] text-white rounded-xl shadow-lg shadow-[#0284c7]/20 transition-all active:scale-95" 
              text="Download Aplikasi Android"
-             apkUrl="https://internasionalkomp-cdn.b-cdn.net/alfajr-elearning.apk"
+             apkUrl="https://elearning-komputer.b-cdn.net/alfajr-elearning.apk"
            /> 
 
            {/* Divider */}
