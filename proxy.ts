@@ -41,8 +41,10 @@ export function proxy(request: NextRequest) {
   if (pathname.startsWith('/api/')) {
     const isAllowedOrigin =
       origin.includes('elearningalfajrumroh.com') ||
+      origin.includes('elearninginternasionalkomp.web.id') ||
       origin.includes('localhost') ||
       referer.includes('elearningalfajrumroh.com') ||
+      referer.includes('elearninginternasionalkomp.web.id') ||
       referer.includes('localhost');
     // Block if request comes from outside the app (e.g., Postman or other sites)
     // but allow during development if needed. 
