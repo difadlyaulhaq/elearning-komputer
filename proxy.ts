@@ -164,6 +164,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * - internasionalkomputer-elearning.apk (direct download)
      */
-    '/((?!_next/static|_next/image|favicon.ico|internasionalkomputer-elearning.apk).*)',
+    '/((?!_next/static|_next/image|favicon.ico|internasionalkomputer-elearning-v2.apk).*)',
   ],
 };

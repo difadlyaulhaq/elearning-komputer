@@ -17,7 +17,7 @@ if (!bunnyStorageZoneName || !bunnyStorageAccessKey || !bunnyCdnHostname) {
 }
 
 const filePath = path.join(__dirname, '../public/internasionalkomputer-elearning.apk');
-const destination = 'internasionalkomputer-elearning.apk';
+const destination = 'internasionalkomputer-elearning-v2.apk';
 
 if (!fs.existsSync(filePath)) {
   console.error(`❌ Local APK file not found at: ${filePath}`);
