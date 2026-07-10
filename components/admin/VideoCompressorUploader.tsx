@@ -25,6 +25,7 @@ export const VideoCompressorUploader: React.FC<VideoCompressorUploaderProps> = (
   const [fileName, setFileName] = useState<string | null>(null);
   const [originalSize, setOriginalSize] = useState<number>(0);
   const [compressedSize, setCompressedSize] = useState<number>(0);
+  const [skipCompression, setSkipCompression] = useState(false);
   
   const ffmpegRef = useRef(new FFmpeg());
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -67,7 +68,13 @@ export const VideoCompressorUploader: React.FC<VideoCompressorUploaderProps> = (
 
     setFileName(file.name);
     setOriginalSize(file.size);
-    processAndUpload(file);
+    
+    if (skipCompression) {
+      setGlobalUploadingState(true);
+      uploadToServer(file, file.name);
+    } else {
+      processAndUpload(file);
+    }
   };
 
   const processAndUpload = async (file: File) => {
@@ -100,7 +107,7 @@ export const VideoCompressorUploader: React.FC<VideoCompressorUploaderProps> = (
         '-i', inputName,
         '-vcodec', 'libx264',
         '-crf', '28',
-        '-preset', 'superfast',
+        '-preset', 'ultrafast', // Changed from superfast to ultrafast for faster browser-side processing
         '-acodec', 'aac',
         '-b:a', '128k',
         '-movflags', '+faststart',
@@ -202,7 +209,7 @@ export const VideoCompressorUploader: React.FC<VideoCompressorUploaderProps> = (
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full space-y-3">
       <div 
         className={`relative border-2 border-dashed rounded-xl p-6 transition-all ${
           (isCompressing || isUploading) ? 'border-yellow-400 bg-yellow-50' : 'border-gray-200 hover:border-[#0284c7] bg-white'
@@ -293,6 +300,22 @@ export const VideoCompressorUploader: React.FC<VideoCompressorUploaderProps> = (
           )}
         </div>
       </div>
+
+      {/* Option to skip compression if the video is already compressed on PC */}
+      {!(isCompressing || isUploading) && (
+        <label className="flex items-center gap-2.5 p-3 bg-gray-50 rounded-xl border border-gray-150 cursor-pointer select-none hover:bg-gray-100 transition-colors">
+          <input
+            type="checkbox"
+            checked={skipCompression}
+            onChange={(e) => setSkipCompression(e.target.checked)}
+            className="w-4 h-4 text-[#0066FF] border-gray-300 rounded focus:ring-[#0066FF] transition-colors"
+          />
+          <div className="text-left">
+            <p className="text-xs font-bold text-gray-800">Lewati kompresi browser</p>
+            <p className="text-[10px] text-gray-500 mt-0.5">Centang ini jika file video Anda sudah kecil atau sudah dikompres manual di PC (Handbrake/CapCut).</p>
+          </div>
+        </label>
+      )}
       
       {/* Client-side only warning for large files */}
       <div className="mt-2 flex items-start gap-2 p-2 bg-blue-50 rounded-lg border border-blue-100">

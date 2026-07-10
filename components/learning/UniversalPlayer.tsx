@@ -318,7 +318,7 @@ const NativeVideoPlayer: React.FC<{
 }> = ({ src, onEnded, onTimeUpdate, watermark, disableSeeking, user }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const maxTimeReachedRef = useRef(0);
-  const [isBuffering, setIsBuffering] = useState(true); // start true so spinner shows
+  const [isBuffering, setIsBuffering] = useState(false); // Initialize as false to show play controls on mobile immediately
   const [bufferPercent, setBufferPercent] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
@@ -399,6 +399,22 @@ const NativeVideoPlayer: React.FC<{
         cache: 'force-cache',
       }).catch(() => {}); // Fire and forget
     }
+
+    const onPlay = () => {
+      setIsBuffering(true);
+    };
+
+    const onPause = () => {
+      setIsBuffering(false);
+    };
+
+    const onSeeking = () => {
+      setIsBuffering(true);
+    };
+
+    const onSeeked = () => {
+      setIsBuffering(false);
+    };
 
     const onWaiting = () => {
       setIsBuffering(true);
@@ -486,6 +502,10 @@ const NativeVideoPlayer: React.FC<{
 
     const onContextMenu = (e: MouseEvent) => e.preventDefault();
 
+    video.addEventListener('play', onPlay);
+    video.addEventListener('pause', onPause);
+    video.addEventListener('seeking', onSeeking);
+    video.addEventListener('seeked', onSeeked);
     video.addEventListener('waiting', onWaiting);
     video.addEventListener('canplay', onCanPlay);
     video.addEventListener('canplaythrough', onCanPlay);
@@ -499,6 +519,10 @@ const NativeVideoPlayer: React.FC<{
 
     return () => {
       clearStallTimer();
+      video.removeEventListener('play', onPlay);
+      video.removeEventListener('pause', onPause);
+      video.removeEventListener('seeking', onSeeking);
+      video.removeEventListener('seeked', onSeeked);
       video.removeEventListener('waiting', onWaiting);
       video.removeEventListener('canplay', onCanPlay);
       video.removeEventListener('canplaythrough', onCanPlay);
@@ -529,8 +553,8 @@ const NativeVideoPlayer: React.FC<{
         playsInline
         controls
         controlsList="nodownload noremoteplayback"
-        // ── CRITICAL: crossOrigin enables Range requests + proper CORS ──
-        crossOrigin="anonymous"
+        // ── crossOrigin is only set for Firebase Storage to prevent CORS issues on other CDNs like Bunny ──
+        crossOrigin={src.includes('firebasestorage.googleapis.com') ? 'anonymous' : undefined}
         style={{ background: '#000' }}
       />
 

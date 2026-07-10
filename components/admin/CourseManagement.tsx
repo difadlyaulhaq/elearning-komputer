@@ -792,6 +792,9 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
   const handleSaveLesson = (sectionId: string) => {
     if (!tempLesson.title) return toast.error('Judul materi wajib diisi', { duration: 3000 });
     if (tempLesson.contentType === 'text' && !tempLesson.textContent) return toast.error('Konten artikel wajib diisi', { duration: 3000 });
+    if (tempLesson.contentType && ['video-upload', 'image-upload', 'file-upload'].includes(tempLesson.contentType) && !tempLesson.url) {
+      return toast.error(`File ${tempLesson.contentType === 'video-upload' ? 'video' : tempLesson.contentType === 'image-upload' ? 'gambar' : 'berkas'} wajib diunggah terlebih dahulu`, { duration: 3000 });
+    }
 
     const lessonData = { ...tempLesson, id: editingLessonId || Date.now().toString() } as Lesson;
     

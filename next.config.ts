@@ -27,6 +27,9 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
+  experimental: {
+    // Limit file uploads to 200mb to protect VPS RAM while allowing compressed video uploads
+    proxyClientMaxBodySize: '200mb',
   },
   output: 'standalone',
   async headers() {
