@@ -6,6 +6,8 @@ import { fetchFile, toBlobURL } from '@ffmpeg/util';
 import { Video, X, CheckCircle2, Loader2, Sparkles, AlertCircle, Info } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import { useAuth } from '@/context/AuthContext';
+
 interface VideoCompressorUploaderProps {
   onUploadSuccess: (url: string, fileName: string) => void;
   onIsUploadingChange?: (isUploading: boolean) => void;
@@ -17,6 +19,7 @@ export const VideoCompressorUploader: React.FC<VideoCompressorUploaderProps> = (
   onIsUploadingChange,
   folder,
 }) => {
+  const { authFetch } = useAuth();
   const [isLoaded, setIsLoaded] = useState(false);
   const [isCompressing, setIsCompressing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -130,63 +133,74 @@ export const VideoCompressorUploader: React.FC<VideoCompressorUploaderProps> = (
     }
   };
 
-  const uploadToServer = (fileBlob: Blob | File, originalName: string) => {
+  const uploadToServer = async (fileBlob: Blob | File, originalName: string) => {
     setIsUploading(true);
     setProgress(0);
 
-    const xhr = new XMLHttpRequest();
-    xhrRef.current = xhr;
-
-    // Track upload progress
-    xhr.upload.addEventListener('progress', (event) => {
-      if (event.lengthComputable) {
-        const percent = (event.loaded / event.total) * 100;
-        setProgress(Math.round(percent));
+    try {
+      // 1. Fetch secure upload config from Next.js
+      const configRes = await authFetch('/api/upload/config');
+      if (!configRes.ok) {
+        const errData = await configRes.json();
+        throw new Error(errData.error || 'Gagal memuat konfigurasi upload.');
       }
-    });
+      const config = await configRes.json();
+      const { storageZoneName, accessKey, region, cdnHostname } = config;
 
-    // Handle completed request
-    xhr.addEventListener('load', () => {
-      setIsUploading(false);
-      setGlobalUploadingState(false);
-      xhrRef.current = null;
-      
-      if (xhr.status >= 200 && xhr.status < 300) {
-        try {
-          const response = JSON.parse(xhr.responseText);
-          onUploadSuccess(response.url, originalName);
+      // 2. Prepare Direct Upload details
+      const uploadName = fileBlob instanceof Blob && !(fileBlob instanceof File) 
+        ? `opt-${originalName}` 
+        : originalName;
+      const sanitizedFileName = `${Date.now()}-${uploadName.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      const remotePath = `${folder}/${sanitizedFileName}`;
+      const bunnyUrl = `https://${region}/${storageZoneName}/${remotePath}`;
+      const cdnUrl = `https://${cdnHostname}/${remotePath}`;
+
+      const xhr = new XMLHttpRequest();
+      xhrRef.current = xhr;
+
+      // Track upload progress
+      xhr.upload.addEventListener('progress', (event) => {
+        if (event.lengthComputable) {
+          const percent = (event.loaded / event.total) * 100;
+          setProgress(Math.round(percent));
+        }
+      });
+
+      // Handle completed request
+      xhr.addEventListener('load', () => {
+        setIsUploading(false);
+        setGlobalUploadingState(false);
+        xhrRef.current = null;
+        
+        if (xhr.status >= 200 && xhr.status < 300) {
+          onUploadSuccess(cdnUrl, originalName);
           toast.success('Video berhasil dioptimasi & diunggah!');
-        } catch (e) {
-          toast.error('Gagal memproses respon server');
+        } else {
+          toast.error(`Gagal mengunggah ke Bunny Storage: Status ${xhr.status}`);
         }
-      } else {
-        try {
-          const response = JSON.parse(xhr.responseText);
-          toast.error(response.error || `Gagal mengunggah: Status ${xhr.status}`);
-        } catch (e) {
-          toast.error(`Gagal mengunggah: Status ${xhr.status}`);
-        }
-      }
-    });
+      });
 
-    // Handle network errors
-    xhr.addEventListener('error', () => {
+      // Handle network errors
+      xhr.addEventListener('error', () => {
+        setIsUploading(false);
+        setGlobalUploadingState(false);
+        xhrRef.current = null;
+        toast.error('Terjadi kesalahan jaringan saat mengunggah');
+      });
+
+      // Send PUT request directly to Bunny.net Storage
+      xhr.open('PUT', bunnyUrl);
+      xhr.setRequestHeader('AccessKey', accessKey);
+      xhr.setRequestHeader('Content-Type', fileBlob.type || 'application/octet-stream');
+      xhr.send(fileBlob);
+
+    } catch (error: any) {
+      console.error('❌ Direct Upload Error:', error);
+      toast.error(error.message || 'Gagal memulai unggahan langsung ke Bunny.');
       setIsUploading(false);
       setGlobalUploadingState(false);
-      xhrRef.current = null;
-      toast.error('Terjadi kesalahan jaringan saat mengunggah');
-    });
-
-    // Send payload
-    xhr.open('POST', '/api/upload');
-    const formData = new FormData();
-    const uploadName = fileBlob instanceof Blob && !(fileBlob instanceof File) 
-      ? `opt-${originalName}` 
-      : originalName;
-      
-    formData.append('file', fileBlob, uploadName);
-    formData.append('folder', folder);
-    xhr.send(formData);
+    }
   };
 
   const formatSize = (bytes: number) => {

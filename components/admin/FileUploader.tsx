@@ -4,6 +4,8 @@ import React, { useState, useRef } from 'react';
 import { Upload, X, CheckCircle2, Loader2, FileIcon, ImageIcon, VideoIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import { useAuth } from '@/context/AuthContext';
+
 interface FileUploaderProps {
   onUploadSuccess: (url: string, fileName: string) => void;
   onIsUploadingChange?: (isUploading: boolean) => void;
@@ -19,6 +21,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
   accept = "*/*",
   label = "Upload File",
 }) => {
+  const { authFetch } = useAuth();
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -51,57 +54,68 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
     }
   };
 
-  const uploadFile = (file: File) => {
+  const uploadFile = async (file: File) => {
     setUploadingState(true);
     setProgress(0);
 
-    const xhr = new XMLHttpRequest();
-    xhrRef.current = xhr;
-
-    // Track upload progress
-    xhr.upload.addEventListener('progress', (event) => {
-      if (event.lengthComputable) {
-        const percent = (event.loaded / event.total) * 100;
-        setProgress(Math.round(percent));
+    try {
+      // 1. Fetch secure upload config from Next.js
+      const configRes = await authFetch('/api/upload/config');
+      if (!configRes.ok) {
+        const errData = await configRes.json();
+        throw new Error(errData.error || 'Gagal memuat konfigurasi upload.');
       }
-    });
+      const config = await configRes.json();
+      const { storageZoneName, accessKey, region, cdnHostname } = config;
 
-    // Handle completed request
-    xhr.addEventListener('load', () => {
-      setUploadingState(false);
-      xhrRef.current = null;
-      
-      if (xhr.status >= 200 && xhr.status < 300) {
-        try {
-          const response = JSON.parse(xhr.responseText);
-          onUploadSuccess(response.url, file.name);
+      // 2. Prepare Direct Upload details
+      const sanitizedFileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      const remotePath = `${folder}/${sanitizedFileName}`;
+      const bunnyUrl = `https://${region}/${storageZoneName}/${remotePath}`;
+      const cdnUrl = `https://${cdnHostname}/${remotePath}`;
+
+      const xhr = new XMLHttpRequest();
+      xhrRef.current = xhr;
+
+      // Track upload progress
+      xhr.upload.addEventListener('progress', (event) => {
+        if (event.lengthComputable) {
+          const percent = (event.loaded / event.total) * 100;
+          setProgress(Math.round(percent));
+        }
+      });
+
+      // Handle completed request
+      xhr.addEventListener('load', () => {
+        setUploadingState(false);
+        xhrRef.current = null;
+        
+        if (xhr.status >= 200 && xhr.status < 300) {
+          onUploadSuccess(cdnUrl, file.name);
           toast.success('File berhasil diunggah!');
-        } catch (e) {
-          toast.error('Gagal memproses respon server');
+        } else {
+          toast.error(`Gagal mengunggah ke Bunny Storage: Status ${xhr.status}`);
         }
-      } else {
-        try {
-          const response = JSON.parse(xhr.responseText);
-          toast.error(response.error || `Gagal mengunggah: Status ${xhr.status}`);
-        } catch (e) {
-          toast.error(`Gagal mengunggah: Status ${xhr.status}`);
-        }
-      }
-    });
+      });
 
-    // Handle network errors
-    xhr.addEventListener('error', () => {
+      // Handle network errors
+      xhr.addEventListener('error', () => {
+        setUploadingState(false);
+        xhrRef.current = null;
+        toast.error('Terjadi kesalahan jaringan saat mengunggah');
+      });
+
+      // Send PUT request directly to Bunny.net Storage
+      xhr.open('PUT', bunnyUrl);
+      xhr.setRequestHeader('AccessKey', accessKey);
+      xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+      xhr.send(file);
+
+    } catch (error: any) {
+      console.error('❌ File Direct Upload Error:', error);
+      toast.error(error.message || 'Gagal memulai unggahan langsung ke Bunny.');
       setUploadingState(false);
-      xhrRef.current = null;
-      toast.error('Terjadi kesalahan jaringan saat mengunggah');
-    });
-
-    // Send payload
-    xhr.open('POST', '/api/upload');
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('folder', folder);
-    xhr.send(formData);
+    }
   };
 
   const getIcon = () => {
