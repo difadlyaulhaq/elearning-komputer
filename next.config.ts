@@ -26,6 +26,16 @@ const nextConfig: NextConfig = {
         hostname: 'alfajr-cdn.b-cdn.net',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'vz-1fd68911-c97.b-cdn.net',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.b-cdn.net',
+        pathname: '/**',
+      },
     ],
   },
   experimental: {

@@ -138,23 +138,24 @@ export const VideoCompressorUploader: React.FC<VideoCompressorUploaderProps> = (
     setProgress(0);
 
     try {
-      // 1. Fetch secure upload config from Next.js
-      const configRes = await authFetch('/api/upload/config');
+      // 1. Fetch secure video creation config from Next.js
+      const configRes = await authFetch('/api/video/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ title: originalName }),
+      });
       if (!configRes.ok) {
         const errData = await configRes.json();
-        throw new Error(errData.error || 'Gagal memuat konfigurasi upload.');
+        throw new Error(errData.error || 'Gagal membuat video placeholder di Bunny Stream.');
       }
       const config = await configRes.json();
-      const { storageZoneName, accessKey, region, cdnHostname } = config;
+      const { videoId, libraryId, accessKey } = config;
 
-      // 2. Prepare Direct Upload details
-      const uploadName = fileBlob instanceof Blob && !(fileBlob instanceof File) 
-        ? `opt-${originalName}` 
-        : originalName;
-      const sanitizedFileName = `${Date.now()}-${uploadName.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-      const remotePath = `${folder}/${sanitizedFileName}`;
-      const bunnyUrl = `https://${region}/${storageZoneName}/${remotePath}`;
-      const cdnUrl = `https://${cdnHostname}/${remotePath}`;
+      // 2. Prepare Direct Upload details for Bunny Stream
+      const bunnyUrl = `https://video.bunnycdn.com/library/${libraryId}/videos/${videoId}`;
+      const bunnyStreamUrl = `bunny-stream://${libraryId}/${videoId}`;
 
       const xhr = new XMLHttpRequest();
       xhrRef.current = xhr;
@@ -174,10 +175,10 @@ export const VideoCompressorUploader: React.FC<VideoCompressorUploaderProps> = (
         xhrRef.current = null;
         
         if (xhr.status >= 200 && xhr.status < 300) {
-          onUploadSuccess(cdnUrl, originalName);
-          toast.success('Video berhasil dioptimasi & diunggah!');
+          onUploadSuccess(bunnyStreamUrl, originalName);
+          toast.success('Video berhasil dioptimasi & diunggah ke Bunny Stream!');
         } else {
-          toast.error(`Gagal mengunggah ke Bunny Storage: Status ${xhr.status}`);
+          toast.error(`Gagal mengunggah ke Bunny Stream: Status ${xhr.status}`);
         }
       });
 
@@ -189,15 +190,15 @@ export const VideoCompressorUploader: React.FC<VideoCompressorUploaderProps> = (
         toast.error('Terjadi kesalahan jaringan saat mengunggah');
       });
 
-      // Send PUT request directly to Bunny.net Storage
+      // Send PUT request directly to Bunny Stream Storage
       xhr.open('PUT', bunnyUrl);
       xhr.setRequestHeader('AccessKey', accessKey);
-      xhr.setRequestHeader('Content-Type', fileBlob.type || 'application/octet-stream');
+      xhr.setRequestHeader('Content-Type', 'application/octet-stream');
       xhr.send(fileBlob);
 
     } catch (error: any) {
-      console.error('❌ Direct Upload Error:', error);
-      toast.error(error.message || 'Gagal memulai unggahan langsung ke Bunny.');
+      console.error('❌ Direct Bunny Stream Upload Error:', error);
+      toast.error(error.message || 'Gagal memulai unggahan langsung ke Bunny Stream.');
       setIsUploading(false);
       setGlobalUploadingState(false);
     }

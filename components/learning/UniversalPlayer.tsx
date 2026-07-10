@@ -5,6 +5,7 @@ import ReactDOM from 'react-dom';
 import { useAuth } from '@/context/AuthContext';
 import { isMobileDevice } from '@/lib/security/mobileProtection';
 import toast from 'react-hot-toast';
+import { Loader2 } from 'lucide-react';
 
 // ─── YouTube URL Parser ───────────────────────────────────────────────────────
 function getYouTubeId(url: string): string | null {
@@ -640,6 +641,143 @@ const NativeVideoPlayer: React.FC<{
   );
 };
 
+// ─── Bunny Stream DRM HTML5 Iframe Player (Adaptive Bitrate DRM Protected) ───
+const BunnyStreamPlayer: React.FC<{
+  src: string;
+  onEnded?: () => void;
+  onTimeUpdate?: (currentTime: number, duration: number) => void;
+  watermark?: boolean;
+  user: any;
+}> = ({ src, onEnded, onTimeUpdate, watermark, user }) => {
+  const { authFetch } = useAuth();
+  const [embedUrl, setEmbedUrl] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchEmbedUrl = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Parse: bunny-stream://{libraryId}/{videoId}
+        const cleanPath = src.replace('bunny-stream://', '');
+        const parts = cleanPath.split('/');
+        if (parts.length < 2) {
+          throw new Error('Format URL Bunny Stream tidak valid.');
+        }
+        const videoId = parts[1];
+
+        // Fetch secure embed url
+        const res = await authFetch(`/api/video/embed-url?videoId=${videoId}`);
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.error || 'Gagal memuat player video aman.');
+        }
+        const data = await res.json();
+        setEmbedUrl(data.embedUrl);
+      } catch (err: any) {
+        console.error('Error fetching embed URL:', err);
+        setError(err.message || 'Gagal menyiapkan pemutar video.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (src) {
+      fetchEmbedUrl();
+    }
+  }, [src, authFetch]);
+
+  // Listen to Bunny Stream Player iframe postMessage events for progress/ended tracking
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      // Validate origin to ensure it's from Bunny Stream embed domain
+      if (!event.origin.includes('mediadelivery.net')) return;
+
+      try {
+        const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+        
+        // Handle player.js events
+        if (data.event === 'ended' && onEnded) {
+          onEnded();
+        } else if (data.event === 'timeupdate' && onTimeUpdate && data.value) {
+          // Bunny stream player.js format for timeupdate: data.value is { seconds, duration } or similar
+          const currentTime = data.value.seconds || 0;
+          const duration = data.value.duration || 0;
+          onTimeUpdate(currentTime, duration);
+        }
+      } catch (e) {
+        // Ignored
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, [onEnded, onTimeUpdate]);
+
+  return (
+    <div
+      className="relative w-full aspect-video select-none rounded-2xl overflow-hidden shadow-lg bg-black"
+      onContextMenu={(e) => {
+        e.preventDefault();
+        toast.error('Klik kanan dinonaktifkan untuk keamanan.');
+      }}
+    >
+      {loading ? (
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black">
+          <Loader2 className="animate-spin text-[#0284c7] mb-2" size={32} />
+          <p className="text-white/60 text-xs">Menghubungkan video aman...</p>
+        </div>
+      ) : error ? (
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black p-4 text-center">
+          <svg className="w-12 h-12 text-red-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <p className="text-sm font-medium text-red-300 mb-3">{error}</p>
+        </div>
+      ) : (
+        <iframe
+          src={embedUrl}
+          loading="lazy"
+          style={{ border: 'none', position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+          allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+          allowFullScreen={true}
+        />
+      )}
+
+      {/* ── Watermark ── */}
+      {watermark && user && (
+        <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden select-none touch-none">
+          <div
+            className="absolute text-white/10 font-bold text-sm whitespace-nowrap mix-blend-overlay"
+            style={{ top: '12%', left: '8%', transform: 'rotate(-15deg)' }}
+          >
+            {user.email}
+          </div>
+          <div
+            className="absolute text-white/5 font-bold text-[10px] whitespace-nowrap mix-blend-overlay"
+            style={{ bottom: '20%', right: '10%', transform: 'rotate(-10deg)' }}
+          >
+            PROPERTY OF INTERNASIONAL KOMPUTER • {user.name}
+          </div>
+          <div
+            className="absolute text-white/8 font-bold text-xs whitespace-nowrap mix-blend-overlay"
+            style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(-45deg)' }}
+          >
+            {user.email}
+          </div>
+        </div>
+      )}
+
+      {/* ── Desktop Screenshot Violation Overlay (works in fullscreen too) ── */}
+      <DesktopViolationOverlay />
+    </div>
+  );
+};
+
 // ─── Main UniversalPlayer ─────────────────────────────────────────────────────
 const UniversalPlayer = React.forwardRef<any, UniversalPlayerProps>(({
   src,
@@ -660,6 +798,22 @@ const UniversalPlayer = React.forwardRef<any, UniversalPlayerProps>(({
         watermark={watermark}
         user={user}
       />
+    );
+  }
+
+  // Handle Bunny Stream DRM-protected streaming
+  if (src?.startsWith('bunny-stream://')) {
+    return (
+      <>
+        {watermark && <FullscreenWatermark user={user} />}
+        <BunnyStreamPlayer
+          src={src}
+          onEnded={onEnded}
+          onTimeUpdate={onTimeUpdate}
+          watermark={watermark}
+          user={user}
+        />
+      </>
     );
   }
 
