@@ -277,6 +277,8 @@ const YouTubePlayer: React.FC<{
         referrerPolicy="strict-origin-when-cross-origin"
         loading="lazy"
         title="Video pembelajaran"
+        // @ts-ignore
+        credentialless="true"
       />
       {/* Watermark overlay */}
       {watermark && user && (
@@ -736,6 +738,8 @@ const BunnyStreamPlayer: React.FC<{
           style={{ border: 'none', position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
           allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
           allowFullScreen={true}
+          // @ts-ignore
+          credentialless="true"
         />
       )}
 
