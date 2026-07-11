@@ -29,7 +29,8 @@ export async function GET(req: NextRequest) {
     }
 
     // 3. Bunny Stream Configuration
-    const libraryId = process.env.BUNNY_STREAM_LIBRARY_ID;
+    const libraryIdRaw = process.env.BUNNY_STREAM_LIBRARY_ID;
+    const libraryId = libraryIdRaw ? libraryIdRaw.replace(/\D/g, '') : '';
     const tokenKey = process.env.BUNNY_STREAM_TOKEN_KEY;
 
     if (!libraryId || !tokenKey) {
