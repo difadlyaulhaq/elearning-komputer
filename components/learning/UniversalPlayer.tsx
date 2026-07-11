@@ -546,8 +546,10 @@ const NativeVideoPlayer: React.FC<{
         playsInline
         controls
         controlsList="nodownload noremoteplayback"
-        // ── crossOrigin is only set for Firebase Storage to prevent CORS issues on other CDNs like Bunny ──
-        crossOrigin={src.includes('firebasestorage.googleapis.com') ? 'anonymous' : undefined}
+        // ── crossOrigin hanya diset untuk Firebase Storage secara langsung. ──
+        // ── Jika kita menggunakan proxy (useProxy === true), jangan gunakan "anonymous" ──
+        // ── agar browser mengirimkan cookie sesi autentikasi ke rute API proxy kita. ──
+        crossOrigin={(!useProxy && src.includes('firebasestorage.googleapis.com')) ? 'anonymous' : undefined}
         style={{ background: '#000' }}
       />
 
