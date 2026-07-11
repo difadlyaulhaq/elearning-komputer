@@ -419,14 +419,9 @@ const NativeVideoPlayer: React.FC<{
 
     const onWaiting = () => {
       setIsBuffering(true);
-      // If stalled for too long on mobile, retry
-      clearStallTimer();
-      stallTimerRef.current = setTimeout(() => {
-        if (retryCount < 3) {
-          setRetryCount((c) => c + 1);
-          handleRetry();
-        }
-      }, isMobile ? 6000 : 12000);
+      // Jika buffering terhenti (waiting), cukup tampilkan loading spinner di UI.
+      // Jangan paksa muat ulang source video (handleRetry) karena akan membuang buffer yang sudah diunduh 
+      // dan justru membuat loading berulang-ulang secara terus-menerus.
     };
 
     const onCanPlay = () => {
@@ -442,11 +437,8 @@ const NativeVideoPlayer: React.FC<{
     };
 
     const onStalled = () => {
-      // Stalled = browser stopped fetching data
-      if (!video.paused) {
-        clearStallTimer();
-        stallTimerRef.current = setTimeout(handleRetry, isMobile ? 4000 : 8000);
-      }
+      // Stalled dipicu saat browser menghentikan sementara pengunduhan data (misal ketika buffer sudah penuh).
+      // Jangan pernah memanggil handleRetry di sini karena ini perilaku normal browser dan bukan error fatal.
     };
 
     const onProgress = () => {
