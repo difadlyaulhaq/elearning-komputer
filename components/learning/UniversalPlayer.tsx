@@ -401,10 +401,6 @@ const NativeVideoPlayer: React.FC<{
       }).catch(() => {}); // Fire and forget
     }
 
-    const onPlay = () => {
-      setIsBuffering(true);
-    };
-
     const onPause = () => {
       setIsBuffering(false);
     };
@@ -451,6 +447,9 @@ const NativeVideoPlayer: React.FC<{
       const current = video.currentTime;
       const duration = video.duration || 0;
 
+      // Jaminan/Safety Net: jika video terbukti berjalan (currentTime bertambah), hilangkan loader buffering
+      setIsBuffering(false);
+
       if (disableSeeking) {
         if (current > maxTimeReachedRef.current + 2) {
           video.currentTime = maxTimeReachedRef.current;
@@ -495,7 +494,6 @@ const NativeVideoPlayer: React.FC<{
 
     const onContextMenu = (e: MouseEvent) => e.preventDefault();
 
-    video.addEventListener('play', onPlay);
     video.addEventListener('pause', onPause);
     video.addEventListener('seeking', onSeeking);
     video.addEventListener('seeked', onSeeked);
@@ -512,7 +510,6 @@ const NativeVideoPlayer: React.FC<{
 
     return () => {
       clearStallTimer();
-      video.removeEventListener('play', onPlay);
       video.removeEventListener('pause', onPause);
       video.removeEventListener('seeking', onSeeking);
       video.removeEventListener('seeked', onSeeked);
