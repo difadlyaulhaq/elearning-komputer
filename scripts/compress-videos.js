@@ -58,11 +58,13 @@ function compressNext() {
   console.log(`[${currentIndex + 1}/${files.length}] Mengompres: ${fileName} (${originalSizeMB} MB)...`);
 
   // Perintah FFmpeg Optimal (Super Cepat): 
+  // -vf "scale='min(1920,iw)':-2": Membatasi resolusi lebar maksimal ke 1080p (1920px) secara proporsional agar video tidak terlalu berat
   // -vcodec libx264: codec standar kompatibel dengan semua browser
   // -crf 24: Kualitas visual sangat baik (18-28 rentang normal, 24 sangat optimal & efisien)
-  // -preset ultrafast: Menggunakan preset tercepat untuk memangkas waktu kompresi secara drastis (hingga 5x-10x lebih cepat)
+  // -preset ultrafast: Menggunakan preset tercepat untuk memangkas waktu kompresi secara drastis
+  // -movflags +faststart: Memindahkan metadata (moov atom) ke awal file agar video bisa langsung diputar tanpa menunggu download selesai
   // -acodec aac -b:a 128k: Kompresi audio standar berkualitas tinggi
-  const ffmpegCmd = `ffmpeg -y -i "${inputFilePath}" -vcodec libx264 -crf 24 -preset ultrafast -acodec aac -b:a 128k "${outputFilePath}"`;
+  const ffmpegCmd = `ffmpeg -y -i "${inputFilePath}" -vf "scale='min(1920,iw)':-2" -vcodec libx264 -crf 24 -preset ultrafast -movflags +faststart -acodec aac -b:a 128k "${outputFilePath}"`;
 
   const startTime = Date.now();
 

@@ -472,7 +472,7 @@ const NativeVideoPlayer: React.FC<{
       clearStallTimer();
 
       // If direct access fails and we haven't tried proxy yet, try proxy
-      if (!useProxy && src.includes('firebasestorage.googleapis.com')) {
+      if (!useProxy) {
         console.warn('[VIDEO PLAYER] Direct access failed, trying proxy fallback...');
         setUseProxy(true);
         setRetryCount(0);
