@@ -1301,7 +1301,11 @@ const CourseForm: React.FC<CourseFormProps> = ({ id }) => {
                                                                                                                       <VideoCompressorUploader 
                                                                                                                         folder="videos"
                                                                                                                         onIsUploadingChange={setIsUploadingLesson}
-                                                                                                                        onUploadSuccess={(url) => setTempLesson(prev => ({ ...prev, url }))}
+                                                                                                                        onUploadSuccess={(url, fileName, duration) => setTempLesson(prev => ({ 
+                                                                                                                          ...prev, 
+                                                                                                                          url,
+                                                                                                                          duration: duration || prev.duration
+                                                                                                                        }))}
                                                                                                                       />
                                                                                                                     ) : (
                                                                                                                       <FileUploader 

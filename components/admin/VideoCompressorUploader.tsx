@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 import { useAuth } from '@/context/AuthContext';
 
 interface VideoCompressorUploaderProps {
-  onUploadSuccess: (url: string, fileName: string) => void;
+  onUploadSuccess: (url: string, fileName: string, duration?: string) => void;
   onIsUploadingChange?: (isUploading: boolean) => void;
   folder: string;
 }
@@ -29,6 +29,7 @@ export const VideoCompressorUploader: React.FC<VideoCompressorUploaderProps> = (
   const [originalSize, setOriginalSize] = useState<number>(0);
   const [compressedSize, setCompressedSize] = useState<number>(0);
   const [skipCompression, setSkipCompression] = useState(false);
+  const [videoDuration, setVideoDuration] = useState<string>('');
   
   const ffmpegRef = useRef(new FFmpeg());
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -71,6 +72,25 @@ export const VideoCompressorUploader: React.FC<VideoCompressorUploaderProps> = (
 
     setFileName(file.name);
     setOriginalSize(file.size);
+    setVideoDuration(''); // Reset duration state
+
+    // Dapatkan durasi video secara otomatis dari metadata file
+    try {
+      const videoElement = document.createElement('video');
+      videoElement.preload = 'metadata';
+      videoElement.src = URL.createObjectURL(file);
+      videoElement.onloadedmetadata = () => {
+        URL.revokeObjectURL(videoElement.src);
+        const durationSeconds = videoElement.duration;
+        if (!isNaN(durationSeconds)) {
+          // Hitung durasi dalam menit, minimal 1 menit
+          const durationMinutes = Math.max(1, Math.round(durationSeconds / 60));
+          setVideoDuration(durationMinutes.toString());
+        }
+      };
+    } catch (err) {
+      console.error('Gagal membaca metadata durasi video:', err);
+    }
     
     if (skipCompression) {
       setGlobalUploadingState(true);
@@ -175,7 +195,7 @@ export const VideoCompressorUploader: React.FC<VideoCompressorUploaderProps> = (
         xhrRef.current = null;
         
         if (xhr.status >= 200 && xhr.status < 300) {
-          onUploadSuccess(bunnyStreamUrl, originalName);
+          onUploadSuccess(bunnyStreamUrl, originalName, videoDuration);
           toast.success('Video berhasil dioptimasi & diunggah ke Bunny Stream!');
         } else {
           toast.error(`Gagal mengunggah ke Bunny Stream: Status ${xhr.status}`);

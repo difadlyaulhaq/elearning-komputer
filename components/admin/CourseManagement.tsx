@@ -1424,7 +1424,11 @@ const CourseManagement: React.FC<CourseManagementProps> = ({ initialCourses, ini
                                                                                                                       <VideoCompressorUploader 
                                                                                                                         folder="videos"
                                                                                                                         onIsUploadingChange={setIsUploadingLesson}
-                                                                                                                        onUploadSuccess={(url) => setTempLesson(prev => ({ ...prev, url }))}
+                                                                                                                        onUploadSuccess={(url, fileName, duration) => setTempLesson(prev => ({ 
+                                                                                                                          ...prev, 
+                                                                                                                          url,
+                                                                                                                          duration: duration || prev.duration
+                                                                                                                        }))}
                                                                                                                       />
                                                                                                                     ) : (
                                                                                                                       <FileUploader 
