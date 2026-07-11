@@ -126,8 +126,10 @@ export const VideoCompressorUploader: React.FC<VideoCompressorUploaderProps> = (
       });
 
       // 3. Compress and optimize (+faststart)
+      // Batasi resolusi lebar maksimal ke 1080p (1920px) secara proporsional agar video tidak terlalu berat saat distreaming
       await ffmpeg.exec([
         '-i', inputName,
+        '-vf', "scale='min(1920,iw)':-2",
         '-vcodec', 'libx264',
         '-crf', '28',
         '-preset', 'ultrafast', // Changed from superfast to ultrafast for faster browser-side processing
