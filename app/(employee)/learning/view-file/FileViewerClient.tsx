@@ -14,6 +14,7 @@ export function FileViewerClient({ initialUrl, initialName }: FileViewerClientPr
   const [isLoading, setIsLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isAndroid, setIsAndroid] = useState(false);
+  const [origin, setOrigin] = useState('');
 
   // Clean and validate URL
   const fileUrl = initialUrl.trim();
@@ -26,6 +27,9 @@ export function FileViewerClient({ initialUrl, initialName }: FileViewerClientPr
   useEffect(() => {
     const ua = navigator.userAgent.toLowerCase();
     setIsAndroid(/android/i.test(ua));
+    if (typeof window !== 'undefined') {
+      setOrigin(window.location.origin);
+    }
   }, []);
 
   const handleRefresh = () => {
@@ -37,10 +41,16 @@ export function FileViewerClient({ initialUrl, initialName }: FileViewerClientPr
     router.back();
   };
 
+  const proxiedUrl = origin 
+    ? `${origin}/api/learning/view-file?url=${encodeURIComponent(fileUrl)}`
+    : '';
+
   // Optimize PDF viewing: Use direct iframe for non-Android devices, fallback to Google Docs Viewer
   const useDirectIframe = isPdf && !isAndroid;
-  const googleDocsViewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`;
-  const viewerUrl = useDirectIframe ? fileUrl : googleDocsViewerUrl;
+  const googleDocsViewerUrl = proxiedUrl 
+    ? `https://docs.google.com/viewer?url=${encodeURIComponent(proxiedUrl)}&embedded=true`
+    : '';
+  const viewerUrl = useDirectIframe ? proxiedUrl : googleDocsViewerUrl;
 
   return (
     <div className="flex flex-col w-full h-screen bg-slate-950 text-slate-100 font-sans select-none">
@@ -72,7 +82,7 @@ export function FileViewerClient({ initialUrl, initialName }: FileViewerClientPr
             </button>
           )}
           <a
-            href={fileUrl}
+            href={proxiedUrl ? `${proxiedUrl}&download=true` : fileUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-300 hover:text-white bg-slate-800/50 hover:bg-slate-800 rounded-xl border border-slate-700/50 transition-all active:scale-95 cursor-pointer"
@@ -129,13 +139,15 @@ export function FileViewerClient({ initialUrl, initialName }: FileViewerClientPr
                 </a>
               </div>
             )}
-            <iframe
-              key={refreshKey}
-              src={viewerUrl}
-              className="w-full h-full border-none"
-              onLoad={() => setIsLoading(false)}
-              onError={() => setIsLoading(false)}
-            />
+            {viewerUrl && (
+              <iframe
+                key={`${refreshKey}-${viewerUrl}`}
+                src={viewerUrl}
+                className="w-full h-full border-none"
+                onLoad={() => setIsLoading(false)}
+                onError={() => setIsLoading(false)}
+              />
+            )}
           </div>
         )}
       </main>

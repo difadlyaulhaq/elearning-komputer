@@ -17,6 +17,7 @@ const PUBLIC_API_ROUTES = [
   '/api/auth/check',
   '/api/admin',
   '/api/auth/login-native',
+  '/api/learning/view-file',
 ];
 
 // Routes that are only accessible when NOT authenticated
