@@ -220,14 +220,25 @@ export function LessonPlayerDesktop({
                 </div>
                 <h2 className="text-lg font-bold text-gray-900 mb-1">File Materi</h2>
                 <p className="text-sm text-gray-500 mb-5">Silakan unduh atau buka file materi melalui tombol di bawah.</p>
-                <a
-                  href={lesson.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-[#0284c7] text-white font-bold rounded-xl hover:bg-[#D4AF6A] transition-colors"
-                >
-                  <Download size={18} /> Buka / Unduh File
-                </a>
+                {(() => {
+                  const isPdf = /\.pdf$/i.test(lesson.url || '');
+                  const isImage = /\.(png|jpe?g|gif|webp|svg|bmp)$/i.test(lesson.url || '');
+                  const isViewable = isPdf || isImage;
+                  const href = isViewable 
+                    ? `/learning/view-file?url=${encodeURIComponent(lesson.url)}&name=${encodeURIComponent(lesson.title)}` 
+                    : lesson.url;
+                  
+                  return (
+                    <a
+                      href={href}
+                      target={isViewable ? undefined : '_blank'}
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-[#0284c7] text-white font-bold rounded-xl hover:bg-[#D4AF6A] transition-colors"
+                    >
+                      <Download size={18} /> {isViewable ? 'Buka File Materi' : 'Buka / Unduh File'}
+                    </a>
+                  );
+                })()}
               </div>
             )}
 
@@ -255,21 +266,31 @@ export function LessonPlayerDesktop({
                 <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
                   <LinkIcon size={12} /> Materi Pendukung
                 </h3>
-                <a
-                  href={getIsNativeApp() ? `/learning/view-file?url=${encodeURIComponent(lesson.attachmentUrl)}&name=${encodeURIComponent(lesson.attachmentName)}` : lesson.attachmentUrl}
-                  target={getIsNativeApp() ? undefined : '_blank'}
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 p-3.5 bg-gray-50 hover:bg-sky-50 hover:border-[#0284c7]/20 rounded-xl border border-gray-100 transition-all group"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-sky-50 flex items-center justify-center flex-shrink-0 group-hover:bg-sky-100 transition-colors">
-                    <FileText size={18} className="text-[#0284c7]" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900 truncate">{lesson.attachmentName}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">Klik untuk mengunduh</p>
-                  </div>
-                  <Download size={16} className="text-gray-500 flex-shrink-0 group-hover:text-[#0284c7] transition-colors" />
-                </a>
+                {(() => {
+                  const isNative = getIsNativeApp();
+                  const isPdf = /\.pdf$/i.test(lesson.attachmentUrl || '');
+                  const isImage = /\.(png|jpe?g|gif|webp|svg|bmp)$/i.test(lesson.attachmentUrl || '');
+                  const isViewable = isPdf || isImage;
+                  const useViewer = isNative || isViewable;
+                  
+                  return (
+                    <a
+                      href={useViewer ? `/learning/view-file?url=${encodeURIComponent(lesson.attachmentUrl)}&name=${encodeURIComponent(lesson.attachmentName)}` : lesson.attachmentUrl}
+                      target={useViewer ? undefined : '_blank'}
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3.5 bg-gray-50 hover:bg-sky-50 hover:border-[#0284c7]/20 rounded-xl border border-gray-100 transition-all group"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-sky-50 flex items-center justify-center flex-shrink-0 group-hover:bg-sky-100 transition-colors">
+                        <FileText size={18} className="text-[#0284c7]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-gray-900 truncate">{lesson.attachmentName}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{useViewer ? 'Klik untuk membuka' : 'Klik untuk mengunduh'}</p>
+                      </div>
+                      <Download size={16} className="text-gray-500 flex-shrink-0 group-hover:text-[#0284c7] transition-colors" />
+                    </a>
+                  );
+                })()}
               </div>
             )}
 

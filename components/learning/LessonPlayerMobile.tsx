@@ -301,14 +301,25 @@ export function LessonPlayerMobile({
             <p className="text-xs text-gray-400 mb-5">
               Unduh atau buka file materi di bawah.
             </p>
-            <a
-              href={lesson.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0284c7] text-white text-sm font-bold rounded-xl hover:bg-[#0369a1] transition-colors"
-            >
-              <Download size={15} /> Buka / Unduh File
-            </a>
+            {(() => {
+              const isPdf = /\.pdf$/i.test(lesson.url || '');
+              const isImage = /\.(png|jpe?g|gif|webp|svg|bmp)$/i.test(lesson.url || '');
+              const isViewable = isPdf || isImage;
+              const href = isViewable 
+                ? `/learning/view-file?url=${encodeURIComponent(lesson.url)}&name=${encodeURIComponent(lesson.title)}` 
+                : lesson.url;
+              
+              return (
+                <a
+                  href={href}
+                  target={isViewable ? undefined : '_blank'}
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0284c7] text-white text-sm font-bold rounded-xl hover:bg-[#0369a1] transition-colors"
+                >
+                  <Download size={15} /> {isViewable ? 'Buka File Materi' : 'Buka / Unduh File'}
+                </a>
+              );
+            })()}
           </div>
         ) : (
           /* Video: padded so rounded shadow is visible */
@@ -521,25 +532,35 @@ export function LessonPlayerMobile({
                 <LinkIcon size={11} />
                 Materi Pendukung
               </h4>
-              <a
-                href={getIsNativeApp() ? `/learning/view-file?url=${encodeURIComponent(lesson.attachmentUrl)}&name=${encodeURIComponent(lesson.attachmentName)}` : lesson.attachmentUrl}
-                target={getIsNativeApp() ? undefined : '_blank'}
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-[#0284c7]/5 border border-gray-100 hover:border-[#0284c7]/30 rounded-xl transition-all"
-              >
-                <div className="w-9 h-9 rounded-lg bg-sky-50 flex items-center justify-center flex-shrink-0">
-                  <FileText size={16} className="text-[#0284c7]" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-900 text-sm truncate">
-                    {lesson.attachmentName}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    Klik untuk mengunduh
-                  </p>
-                </div>
-                <Download size={15} className="text-gray-300 flex-shrink-0" />
-              </a>
+              {(() => {
+                const isNative = getIsNativeApp();
+                const isPdf = /\.pdf$/i.test(lesson.attachmentUrl || '');
+                const isImage = /\.(png|jpe?g|gif|webp|svg|bmp)$/i.test(lesson.attachmentUrl || '');
+                const isViewable = isPdf || isImage;
+                const useViewer = isNative || isViewable;
+                
+                return (
+                  <a
+                    href={useViewer ? `/learning/view-file?url=${encodeURIComponent(lesson.attachmentUrl)}&name=${encodeURIComponent(lesson.attachmentName)}` : lesson.attachmentUrl}
+                    target={useViewer ? undefined : '_blank'}
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-[#0284c7]/5 border border-gray-100 hover:border-[#0284c7]/30 rounded-xl transition-all"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-sky-50 flex items-center justify-center flex-shrink-0">
+                      <FileText size={16} className="text-[#0284c7]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-gray-900 text-sm truncate">
+                        {lesson.attachmentName}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {useViewer ? 'Klik untuk membuka' : 'Klik untuk mengunduh'}
+                      </p>
+                    </div>
+                    <Download size={15} className="text-gray-300 flex-shrink-0" />
+                  </a>
+                );
+              })()}
             </div>
           )}
 

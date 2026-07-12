@@ -10,10 +10,15 @@ interface LessonAttachmentProps {
 
 export function LessonAttachment({ url, name }: LessonAttachmentProps) {
   const isNative = getIsNativeApp();
+  const isPdf = /\.pdf$/i.test(url || '');
+  const isImage = /\.(png|jpe?g|gif|webp|svg|bmp)$/i.test(url || '');
+  const isViewable = isPdf || isImage;
+  const useViewer = isNative || isViewable;
+
   return (
     <a
-      href={isNative ? `/learning/view-file?url=${encodeURIComponent(url)}&name=${encodeURIComponent(name || 'Lampiran')}` : url}
-      target={isNative ? undefined : '_blank'}
+      href={useViewer ? `/learning/view-file?url=${encodeURIComponent(url)}&name=${encodeURIComponent(name || 'Lampiran')}` : url}
+      target={useViewer ? undefined : '_blank'}
       rel="noopener noreferrer"
       className="inline-flex items-center text-xs text-blue-600 hover:text-blue-800 mt-1 cursor-pointer"
     >
