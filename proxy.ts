@@ -40,23 +40,27 @@ export function proxy(request: NextRequest) {
   // 0. API SECURITY GUARD (Anti-Direct Access)
   // ============================================
   if (pathname.startsWith('/api/')) {
-    const isAllowedOrigin =
-      origin.includes('elearningalfajrumroh.com') ||
-      origin.includes('elearninginternasionalkomp.web.id') ||
-      origin.includes('localhost') ||
-      referer.includes('elearningalfajrumroh.com') ||
-      referer.includes('elearninginternasionalkomp.web.id') ||
-      referer.includes('localhost');
-    // Block if request comes from outside the app (e.g., Postman or other sites)
-    // but allow during development if needed. 
-    // Note: Some native app requests might not have origin/referer, so be careful.
-    const isNativeApp = userAgent.toLowerCase().includes('alfajrapp');
+    const isPublicApiRoute = PUBLIC_API_ROUTES.some(route => pathname.startsWith(route));
     
-    if (!isAllowedOrigin && !isNativeApp && process.env.NODE_ENV === 'production') {
-      return new NextResponse(JSON.stringify({ error: 'Direct API access is prohibited.' }), { 
-        status: 403,
-        headers: { 'Content-Type': 'application/json' }
-      });
+    if (!isPublicApiRoute) {
+      const isAllowedOrigin =
+        origin.includes('elearningalfajrumroh.com') ||
+        origin.includes('elearninginternasionalkomp.web.id') ||
+        origin.includes('localhost') ||
+        referer.includes('elearningalfajrumroh.com') ||
+        referer.includes('elearninginternasionalkomp.web.id') ||
+        referer.includes('localhost');
+      // Block if request comes from outside the app (e.g., Postman or other sites)
+      // but allow during development if needed. 
+      // Note: Some native app requests might not have origin/referer, so be careful.
+      const isNativeApp = userAgent.toLowerCase().includes('alfajrapp');
+      
+      if (!isAllowedOrigin && !isNativeApp && process.env.NODE_ENV === 'production') {
+        return new NextResponse(JSON.stringify({ error: 'Direct API access is prohibited.' }), { 
+          status: 403,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
     }
   }
 
