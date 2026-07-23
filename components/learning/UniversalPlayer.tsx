@@ -390,6 +390,26 @@ const NativeVideoPlayer: React.FC<{
     // 3. Disable picture-in-picture (security)
     (video as any).disablePictureInPicture = true;
 
+    // 4. Redirect fullscreen request from video element to its parent container
+    // This allows watermark and screenshot protection overlays to display correctly in fullscreen
+    if (video.parentElement) {
+      const parent = video.parentElement;
+      video.requestFullscreen = async function(options) {
+        if (parent.requestFullscreen) return parent.requestFullscreen(options);
+        if ((parent as any).webkitRequestFullscreen) return (parent as any).webkitRequestFullscreen(options);
+        if ((parent as any).mozRequestFullScreen) return (parent as any).mozRequestFullScreen(options);
+        if ((parent as any).msRequestFullscreen) return (parent as any).msRequestFullscreen(options);
+      };
+      (video as any).webkitRequestFullscreen = async function() {
+        if ((parent as any).webkitRequestFullscreen) return (parent as any).webkitRequestFullscreen();
+        if (parent.requestFullscreen) return parent.requestFullscreen();
+      };
+      (video as any).webkitRequestFullScreen = async function() {
+        if ((parent as any).webkitRequestFullscreen) return (parent as any).webkitRequestFullscreen();
+        if (parent.requestFullscreen) return parent.requestFullscreen();
+      };
+    }
+
     // ── HTTP Range Request hint via fetch (warms the connection) ───────────
     // Fire a small HEAD request so the browser opens a connection to Firebase
     // Storage before the user presses play. This eliminates DNS+TLS handshake
