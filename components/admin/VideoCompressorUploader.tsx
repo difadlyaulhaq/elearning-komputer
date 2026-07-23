@@ -42,14 +42,25 @@ export const VideoCompressorUploader: React.FC<VideoCompressorUploaderProps> = (
 
   const loadFFmpeg = async () => {
     try {
-      const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+      const isMultiThreadSupported = typeof SharedArrayBuffer !== 'undefined';
       const ffmpeg = ffmpegRef.current;
       
-      // Load ffmpeg.wasm from CDN
-      await ffmpeg.load({
-        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-      });
+      if (isMultiThreadSupported) {
+        console.log('⚡ Loading multi-threaded FFmpeg.wasm...');
+        const baseURL = 'https://unpkg.com/@ffmpeg/core-mt@0.12.6/dist/umd';
+        await ffmpeg.load({
+          coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+          wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+          workerURL: await toBlobURL(`${baseURL}/ffmpeg-core.worker.js`, 'text/javascript'),
+        });
+      } else {
+        console.log('🐢 SharedArrayBuffer not supported. Loading single-threaded FFmpeg.wasm...');
+        const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+        await ffmpeg.load({
+          coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+          wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+        });
+      }
       
       setIsLoaded(true);
     } catch (error) {
