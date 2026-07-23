@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
+import { verifyAdmin } from '@/app/api/helpers';
 
 // PATCH: Update data user (Edit)
 export async function PATCH(
@@ -7,6 +8,10 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const admin = await verifyAdmin(request);
+    if (!admin) {
+      return NextResponse.json({ success: false, error: 'Unauthorized: Admin access required' }, { status: 401 });
+    }
     const { id } = await params;
     const body = await request.json();
     const { email, password, name, division, role } = body;
@@ -58,6 +63,10 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const admin = await verifyAdmin(request);
+    if (!admin) {
+      return NextResponse.json({ success: false, error: 'Unauthorized: Admin access required' }, { status: 401 });
+    }
     const { id } = await params;
 
     // 1. Hapus dari Auth

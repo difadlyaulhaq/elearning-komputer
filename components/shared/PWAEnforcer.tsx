@@ -30,8 +30,8 @@ export default function PWAEnforcer({ children }: { children: React.ReactNode })
 
   // --- LOGIC AREA ---
 
-  // 1. Developer Backdoor (?dev=true)
-  const isDevMode = searchParams.get('dev') === 'true';
+  // 1. Developer Backdoor (?dev=true) - Only allowed in development
+  const isDevMode = process.env.NODE_ENV !== 'production' && searchParams.get('dev') === 'true';
 
   // 2. Halaman yang Dikecualikan (Login & Auth Callback)
   // Penting agar "Login with Google" bisa redirect kembali ke sini sebelum deep link ke aplikasi.

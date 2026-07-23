@@ -1,10 +1,15 @@
 // app/api/admin/divisions/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
+import { verifyAdmin } from '@/app/api/helpers';
 
 // GET: Ambil semua divisi
 export async function GET(request: NextRequest) {
   try {
+    const admin = await verifyAdmin(request);
+    if (!admin) {
+      return NextResponse.json({ success: false, error: 'Unauthorized: Admin access required' }, { status: 401 });
+    }
     if (!adminDb) {
       throw new Error('Firebase Admin belum siap');
     }
@@ -32,6 +37,10 @@ export async function GET(request: NextRequest) {
 // POST: Tambah divisi baru
 export async function POST(request: NextRequest) {
   try {
+    const admin = await verifyAdmin(request);
+    if (!admin) {
+      return NextResponse.json({ success: false, error: 'Unauthorized: Admin access required' }, { status: 401 });
+    }
     if (!adminDb) {
       throw new Error('Firebase Admin belum siap');
     }

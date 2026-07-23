@@ -32,6 +32,32 @@ export async function POST(request: NextRequest) {
                 }
                 
                 const googleData = await googleRes.json();
+                
+                // Security Check 1: Verify Email is verified
+                if (googleData.email_verified !== 'true' && googleData.email_verified !== true) {
+                    throw new Error('Google email is not verified');
+                }
+                
+                // Security Check 2: Verify Issuer
+                const allowedIssuers = ['accounts.google.com', 'https://accounts.google.com'];
+                if (!allowedIssuers.includes(googleData.iss)) {
+                    throw new Error('Invalid token issuer');
+                }
+
+                // Security Check 3: Verify Audience to prevent cross-app token reuse
+                const allowedClientIds = process.env.GOOGLE_CLIENT_IDS?.split(',').map(id => id.trim()) || [];
+                if (allowedClientIds.length > 0) {
+                    if (!allowedClientIds.includes(googleData.aud)) {
+                        console.error(`[AUTH ERROR] Google ID Token audience mismatch: ${googleData.aud}`);
+                        throw new Error('Google ID Token audience mismatch (Potential Cross-App Attack)');
+                    }
+                } else if (process.env.NODE_ENV === 'production') {
+                    console.error('[AUTH ERROR] GOOGLE_CLIENT_IDS is not configured in production. Blocking raw Google ID Token fallback.');
+                    throw new Error('Google Sign-In validation is misconfigured on the server');
+                } else {
+                    console.warn('[AUTH WARNING] GOOGLE_CLIENT_IDS is not configured. Allowing token verification without audience check in development.');
+                }
+
                 email = googleData.email;
                 if (!email) throw new Error('Email tidak ditemukan di token Google');
 

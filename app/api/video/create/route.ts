@@ -70,7 +70,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       videoId,
       libraryId,
-      accessKey: streamApiKey,
     });
 
   } catch (error: any) {

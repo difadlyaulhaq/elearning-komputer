@@ -1,10 +1,15 @@
 // app/api/admin/reports/route.ts
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { Course } from '@/types';
+import { verifyAdmin } from '@/app/api/helpers';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const admin = await verifyAdmin(request);
+    if (!admin) {
+      return NextResponse.json({ success: false, error: 'Unauthorized: Admin access required' }, { status: 401 });
+    }
     // 1. Ambil semua kursus dan user secara paralel
     const [coursesSnap, usersSnap] = await Promise.all([
         adminDb.collection('courses').get(),

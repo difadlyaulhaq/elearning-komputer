@@ -29,7 +29,7 @@ const GUEST_ONLY_ROUTES = [
 // Admin routes prefix
 const ADMIN_ROUTES = '/admin';
 
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const userAgent = request.headers.get('user-agent') || '';
   const origin = request.headers.get('origin') || '';
@@ -167,7 +167,7 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - internasionalkomputer-elearning.apk (direct download)
+     * - internasionalkomputer-elearning-v2.apk (direct download)
      */
     '/((?!_next/static|_next/image|favicon.ico|internasionalkomputer-elearning-v2.apk).*)',
   ],

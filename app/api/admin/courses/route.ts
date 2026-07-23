@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { Course, Section, Lesson } from '@/types';
+import { verifyAdmin, verifyUser } from '@/app/api/helpers';
 
 function getYouTubeVideoId(url: string): string | null {
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
@@ -16,6 +17,10 @@ function generateYouTubeThumbnailUrl(videoId: string): string {
 // GET: Mengambil semua data kursus
 export async function GET(request: NextRequest) {
   try {
+    const user = await verifyUser(request);
+    if (!user) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
     if (!adminDb) {
       throw new Error('Firebase Admin not initialized');
     }
@@ -45,6 +50,10 @@ export async function GET(request: NextRequest) {
 // POST: Membuat kursus baru
 export async function POST(request: NextRequest) {
   try {
+    const admin = await verifyAdmin(request);
+    if (!admin) {
+      return NextResponse.json({ success: false, error: 'Unauthorized: Admin access required' }, { status: 401 });
+    }
     if (!adminDb) {
       throw new Error('Firebase Admin not initialized');
     }

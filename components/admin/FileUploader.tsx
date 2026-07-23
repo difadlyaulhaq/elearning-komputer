@@ -5,6 +5,7 @@ import { Upload, X, CheckCircle2, Loader2, FileIcon, ImageIcon, VideoIcon } from
 import toast from 'react-hot-toast';
 
 import { useAuth } from '@/context/AuthContext';
+import { auth } from '@/lib/firebase/config';
 
 interface FileUploaderProps {
   onUploadSuccess: (url: string, fileName: string) => void;
@@ -59,20 +60,9 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
     setProgress(0);
 
     try {
-      // 1. Fetch secure upload config from Next.js
-      const configRes = await authFetch('/api/upload/config');
-      if (!configRes.ok) {
-        const errData = await configRes.json();
-        throw new Error(errData.error || 'Gagal memuat konfigurasi upload.');
-      }
-      const config = await configRes.json();
-      const { storageZoneName, accessKey, region, cdnHostname } = config;
-
-      // 2. Prepare Direct Upload details
-      const sanitizedFileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-      const remotePath = `${folder}/${sanitizedFileName}`;
-      const bunnyUrl = `https://${region}/${storageZoneName}/${remotePath}`;
-      const cdnUrl = `https://${cdnHostname}/${remotePath}`;
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', folder);
 
       const xhr = new XMLHttpRequest();
       xhrRef.current = xhr;
@@ -91,10 +81,15 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
         xhrRef.current = null;
         
         if (xhr.status >= 200 && xhr.status < 300) {
-          onUploadSuccess(cdnUrl, file.name);
-          toast.success('File berhasil diunggah!');
+          try {
+            const resData = JSON.parse(xhr.responseText);
+            onUploadSuccess(resData.url, file.name);
+            toast.success('File berhasil diunggah!');
+          } catch (e) {
+            toast.error('Respons server tidak valid');
+          }
         } else {
-          toast.error(`Gagal mengunggah ke Bunny Storage: Status ${xhr.status}`);
+          toast.error(`Gagal mengunggah file: Status ${xhr.status}`);
         }
       });
 
@@ -105,15 +100,19 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
         toast.error('Terjadi kesalahan jaringan saat mengunggah');
       });
 
-      // Send PUT request directly to Bunny.net Storage
-      xhr.open('PUT', bunnyUrl);
-      xhr.setRequestHeader('AccessKey', accessKey);
-      xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
-      xhr.send(file);
+      // Send POST request directly to server upload proxy
+      xhr.open('POST', '/api/upload');
+      
+      const token = await auth.currentUser?.getIdToken();
+      if (token) {
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      }
+
+      xhr.send(formData);
 
     } catch (error: any) {
-      console.error('❌ File Direct Upload Error:', error);
-      toast.error(error.message || 'Gagal memulai unggahan langsung ke Bunny.');
+      console.error('❌ File Upload Error:', error);
+      toast.error(error.message || 'Gagal memulai unggahan file.');
       setUploadingState(false);
     }
   };

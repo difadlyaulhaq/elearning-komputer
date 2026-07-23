@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { Section, Lesson } from '@/types';
+import { verifyAdmin, verifyUser } from '@/app/api/helpers';
 
 function getYouTubeVideoId(url: string): string | null {
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
@@ -18,6 +19,10 @@ export async function GET(
   { params }: { params: Promise<{ courseId: string }> }
 ) {
   try {
+    const user = await verifyUser(request);
+    if (!user) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
     const { courseId } = await params;
 
     if (!adminDb) {
@@ -67,6 +72,10 @@ export async function PATCH(
   { params }: { params: Promise<{ courseId: string }> }
 ) {
   try {
+    const admin = await verifyAdmin(request);
+    if (!admin) {
+      return NextResponse.json({ success: false, error: 'Unauthorized: Admin access required' }, { status: 401 });
+    }
     const { courseId } = await params;
     const body = await request.json();
 
@@ -170,6 +179,10 @@ export async function DELETE(
   { params }: { params: Promise<{ courseId: string }> }
 ) {
   try {
+    const admin = await verifyAdmin(request);
+    if (!admin) {
+      return NextResponse.json({ success: false, error: 'Unauthorized: Admin access required' }, { status: 401 });
+    }
     const { courseId } = await params;
 
     if (!adminDb) {

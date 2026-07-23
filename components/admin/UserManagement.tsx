@@ -3,7 +3,7 @@ import { useRouter } from 'next/navigation';
 import { Listbox } from '@headlessui/react';
 import { CheckIcon, ChevronUpDownIcon } from '@heroicons/react/20/solid';
 import { Menu, Transition } from '@headlessui/react';
-import { Plus, Search, Edit, Trash2, UserX, UserCheck, Mail, Building, Loader, X, MoreVertical, Filter } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, UserX, UserCheck, Mail, Building, Loader, X, MoreVertical, Filter, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Button from '@/components/shared/Button';
 import { ResponsiveTable } from '@/components/shared/ResponsiveTable';
@@ -39,6 +39,14 @@ interface UserFormModalProps {
 }
 
 const UserFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, isSubmitting, isEditing, divisions }: UserFormModalProps) => {
+  const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setShowPassword(false);
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
@@ -129,13 +137,22 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, isSub
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               {isEditing ? 'Password Baru (Opsional)' : 'Password Default'}
             </label>
-            <input
-              type="password"
-              placeholder={isEditing ? "Kosongkan jika tidak ingin mengganti" : "Opsional (default: Alfajr123!)"}
-              value={formData.password}
-              onChange={(e) => setFormData({...formData, password: e.target.value})}
-              className="w-full text-black px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066FF]/50 focus:border-[#0066FF] outline-none transition-all"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                placeholder={isEditing ? "Kosongkan jika tidak ingin mengganti" : "Opsional (default: Alfajr123!)"}
+                value={formData.password}
+                onChange={(e) => setFormData({...formData, password: e.target.value})}
+                className="w-full text-black px-4 pr-12 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066FF]/50 focus:border-[#0066FF] outline-none transition-all"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
 
           <div className="flex flex-col-reverse md:flex-row md:space-x-3 gap-3 md:gap-0 pt-4 mt-2 border-t border-gray-100">

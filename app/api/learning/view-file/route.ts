@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyUser } from '@/app/api/helpers';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
+    const user = await verifyUser(req);
+    if (!user) {
+      return new NextResponse('Unauthorized', { status: 401 });
+    }
     const { searchParams } = new URL(req.url);
     const fileUrl = searchParams.get('url');
 

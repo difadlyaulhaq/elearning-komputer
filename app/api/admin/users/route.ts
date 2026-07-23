@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
+import { verifyAdmin } from '@/app/api/helpers';
 
 // GET: Ambil daftar semua pegawai
 export async function GET(request: NextRequest) {
   try {
+    const admin = await verifyAdmin(request);
+    if (!admin) {
+      return NextResponse.json({ success: false, error: 'Unauthorized: Admin access required' }, { status: 401 });
+    }
+
     // Cek apakah adminDb berhasil diinisialisasi
     if (!adminDb) {
       throw new Error('Koneksi database (Firebase Admin) belum siap. Cek server logs.');
@@ -29,6 +35,10 @@ export async function GET(request: NextRequest) {
 // POST: Tambah pegawai baru
 export async function POST(request: NextRequest) {
   try {
+    const admin = await verifyAdmin(request);
+    if (!admin) {
+      return NextResponse.json({ success: false, error: 'Unauthorized: Admin access required' }, { status: 401 });
+    }
     if (!adminAuth || !adminDb) {
       throw new Error('Firebase Admin belum siap.');
     }

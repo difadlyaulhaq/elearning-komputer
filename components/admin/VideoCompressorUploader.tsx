@@ -7,6 +7,7 @@ import { Video, X, CheckCircle2, Loader2, Sparkles, AlertCircle, Info } from 'lu
 import toast from 'react-hot-toast';
 
 import { useAuth } from '@/context/AuthContext';
+import { auth } from '@/lib/firebase/config';
 
 interface VideoCompressorUploaderProps {
   onUploadSuccess: (url: string, fileName: string, duration?: string) => void;
@@ -173,11 +174,13 @@ export const VideoCompressorUploader: React.FC<VideoCompressorUploaderProps> = (
         throw new Error(errData.error || 'Gagal membuat video placeholder di Bunny Stream.');
       }
       const config = await configRes.json();
-      const { videoId, libraryId, accessKey } = config;
+      const { videoId, libraryId } = config;
 
       // 2. Prepare Direct Upload details for Bunny Stream
-      const bunnyUrl = `https://video.bunnycdn.com/library/${libraryId}/videos/${videoId}`;
       const bunnyStreamUrl = `bunny-stream://${libraryId}/${videoId}`;
+      const formData = new FormData();
+      formData.append('file', fileBlob);
+      formData.append('videoId', videoId);
 
       const xhr = new XMLHttpRequest();
       xhrRef.current = xhr;
@@ -212,11 +215,15 @@ export const VideoCompressorUploader: React.FC<VideoCompressorUploaderProps> = (
         toast.error('Terjadi kesalahan jaringan saat mengunggah');
       });
 
-      // Send PUT request directly to Bunny Stream Storage
-      xhr.open('PUT', bunnyUrl);
-      xhr.setRequestHeader('AccessKey', accessKey);
-      xhr.setRequestHeader('Content-Type', 'application/octet-stream');
-      xhr.send(fileBlob);
+      // Send POST request directly to server video upload proxy
+      xhr.open('POST', '/api/video/upload');
+      
+      const token = await auth.currentUser?.getIdToken();
+      if (token) {
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      }
+
+      xhr.send(formData);
 
     } catch (error: any) {
       console.error('❌ Direct Bunny Stream Upload Error:', error);

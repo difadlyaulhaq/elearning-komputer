@@ -1,6 +1,7 @@
 // app/api/admin/categories/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
+import { verifyAdmin } from '@/app/api/helpers';
 
 // PATCH: Update kategori
 export async function PATCH(
@@ -8,6 +9,10 @@ export async function PATCH(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const admin = await verifyAdmin(request);
+    if (!admin) {
+      return NextResponse.json({ success: false, error: 'Unauthorized: Admin access required' }, { status: 401 });
+    }
     const { id } = await context.params;
     const body = await request.json();
     const { name, description, icon, color, status } = body;
@@ -95,6 +100,10 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const admin = await verifyAdmin(request);
+    if (!admin) {
+      return NextResponse.json({ success: false, error: 'Unauthorized: Admin access required' }, { status: 401 });
+    }
     const { id } = await context.params;
 
     console.log('[API CATEGORY DELETE] Deleting category:', id);
