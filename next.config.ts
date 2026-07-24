@@ -39,8 +39,8 @@ const nextConfig: NextConfig = {
     ],
   },
   experimental: {
-    // Limit file uploads to 200mb to protect VPS RAM while allowing compressed video uploads
-    proxyClientMaxBodySize: '200mb',
+    // Limit file uploads to 1000mb to allow large uncompressed video uploads
+    proxyClientMaxBodySize: '1000mb',
   },
   output: 'standalone',
   async headers() {

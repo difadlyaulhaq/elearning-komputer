@@ -168,7 +168,9 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - internasionalkomputer-elearning-v2.apk (direct download)
+     * - api/upload (large file upload bypass)
+     * - api/video/upload (large video upload bypass)
      */
-    '/((?!_next/static|_next/image|favicon.ico|internasionalkomputer-elearning-v2.apk).*)',
+    '/((?!_next/static|_next/image|favicon.ico|internasionalkomputer-elearning-v2.apk|api/upload|api/video/upload).*)',
   ],
 };
