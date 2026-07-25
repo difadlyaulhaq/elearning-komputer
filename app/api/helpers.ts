@@ -142,8 +142,12 @@ export async function verifyAdmin(request: Request) {
     }
 
     return null;
-  } catch (error) {
-    console.error('[VERIFY_ADMIN_ERROR]', error);
+  } catch (error: any) {
+    if (error?.code === 'auth/id-token-expired') {
+      console.warn('[VERIFY_ADMIN_ERROR] Firebase ID token has expired.');
+    } else {
+      console.error('[VERIFY_ADMIN_ERROR]', error);
+    }
     return null;
   }
 }
@@ -199,8 +203,12 @@ export async function verifyUser(request: Request) {
     }
 
     return decodedToken;
-  } catch (error) {
-    console.error('[VERIFY_USER_ERROR]', error);
+  } catch (error: any) {
+    if (error?.code === 'auth/id-token-expired') {
+      console.warn('[VERIFY_USER_ERROR] Firebase ID token has expired.');
+    } else {
+      console.error('[VERIFY_USER_ERROR]', error);
+    }
     return null;
   }
 }

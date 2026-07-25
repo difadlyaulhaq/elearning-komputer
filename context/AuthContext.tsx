@@ -9,7 +9,7 @@ import React, {
   useCallback,
 } from 'react';
 import { logoutUser } from '@/lib/firebase/auth';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onIdTokenChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import { App } from '@capacitor/app';
 import { useRouter } from 'next/navigation';
@@ -133,11 +133,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     setupDeepLinks();
 
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsubscribe = onIdTokenChanged(auth, async (firebaseUser) => {
       try {
         if (firebaseUser) {
           setIsSyncing(true);
-          const token = await firebaseUser.getIdToken(true);
+          const token = await firebaseUser.getIdToken(false);
           _cachedToken = token;
 
           const userData = await syncSession(token);
