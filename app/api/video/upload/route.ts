@@ -1,22 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdmin } from '@/app/api/helpers';
 import https from 'https';
+import { Readable } from 'stream';
 
 export const dynamic = 'force-dynamic';
 
-export async function POST(req: NextRequest) {
+async function handleUploadProxy(req: NextRequest) {
   try {
     const admin = await verifyAdmin(req);
     if (!admin) {
       return NextResponse.json({ error: 'Unauthorized: Admin access required' }, { status: 401 });
     }
 
-    const formData = await req.formData();
-    const file = formData.get('file') as File;
-    const videoId = formData.get('videoId') as string;
+    const { searchParams } = new URL(req.url);
+    let videoId = searchParams.get('videoId') || req.headers.get('x-video-id');
 
-    if (!file || !videoId) {
-      return NextResponse.json({ error: 'Missing file or videoId' }, { status: 400 });
+    let buffer: Buffer | null = null;
+    let stream: Readable | null = null;
+    let contentLength: number = 0;
+
+    const contentType = req.headers.get('content-type') || '';
+
+    if (contentType.includes('multipart/form-data')) {
+      const formData = await req.formData();
+      const file = formData.get('file') as File;
+      const formVideoId = formData.get('videoId') as string;
+      if (formVideoId) videoId = formVideoId;
+
+      if (!file || !videoId) {
+        return NextResponse.json({ error: 'Missing file or videoId' }, { status: 400 });
+      }
+
+      const arrayBuffer = await file.arrayBuffer();
+      buffer = Buffer.from(arrayBuffer);
+      contentLength = buffer.length;
+    } else {
+      // Direct binary stream upload
+      if (!videoId) {
+        return NextResponse.json({ error: 'Missing videoId parameter' }, { status: 400 });
+      }
+      const lenHeader = req.headers.get('content-length');
+      if (lenHeader) {
+        contentLength = parseInt(lenHeader, 10);
+      }
+      if (req.body) {
+        stream = Readable.fromWeb(req.body as any);
+      }
     }
 
     const libraryIdRaw = process.env.BUNNY_STREAM_LIBRARY_ID;
@@ -30,24 +59,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
     const bunnyUrl = `https://video.bunnycdn.com/library/${libraryId}/videos/${videoId}`;
-    console.log(`📤 Proxying video upload to Bunny Stream: ${bunnyUrl} (${(buffer.length / (1024 * 1024)).toFixed(2)} MB)`);
+    console.log(`📤 Proxying video upload to Bunny Stream: ${bunnyUrl} (${contentLength ? (contentLength / (1024 * 1024)).toFixed(2) + ' MB' : 'Stream Mode'})`);
 
     const result = await new Promise<{ ok: boolean; status: number; text: string }>((resolve, reject) => {
       const url = new URL(bunnyUrl);
+      const headers: Record<string, string | number> = {
+        'AccessKey': streamApiKey,
+        'Content-Type': 'application/octet-stream',
+      };
+
+      if (contentLength > 0) {
+        headers['Content-Length'] = contentLength;
+      }
+
       const options = {
         hostname: url.hostname,
         path: url.pathname,
         method: 'PUT',
-        headers: {
-          'AccessKey': streamApiKey,
-          'Content-Type': 'application/octet-stream',
-          'Content-Length': buffer.length,
-        },
-        timeout: 7200000, // 2 hours timeout to accommodate very large videos or slow connections
+        headers,
+        timeout: 7200000, // 2 hours timeout
       };
 
       const request = https.request(options, (res) => {
@@ -75,9 +106,14 @@ export async function POST(req: NextRequest) {
         reject(err);
       });
 
-      // Write video buffer to request stream
-      request.write(buffer);
-      request.end();
+      if (stream) {
+        stream.pipe(request);
+      } else if (buffer) {
+        request.write(buffer);
+        request.end();
+      } else {
+        request.end();
+      }
     });
 
     if (!result.ok) {
@@ -89,7 +125,7 @@ export async function POST(req: NextRequest) {
     }
 
     console.log('✅ Video upload proxy successful');
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, videoId });
 
   } catch (error: any) {
     console.error('❌ Video Upload Proxy Error:', error);
@@ -99,3 +135,12 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+export async function POST(req: NextRequest) {
+  return handleUploadProxy(req);
+}
+
+export async function PUT(req: NextRequest) {
+  return handleUploadProxy(req);
+}
+

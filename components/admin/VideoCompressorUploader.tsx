@@ -31,10 +31,32 @@ export const VideoCompressorUploader: React.FC<VideoCompressorUploaderProps> = (
   const [compressedSize, setCompressedSize] = useState<number>(0);
   const [skipCompression, setSkipCompression] = useState(false);
   const [videoDuration, setVideoDuration] = useState<string>('');
-  
+  const [existingUrlInput, setExistingUrlInput] = useState('');
+  const [showExistingInput, setShowExistingInput] = useState(false);
+
   const ffmpegRef = useRef(new FFmpeg());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const xhrRef = useRef<XMLHttpRequest | null>(null);
+
+  const handleApplyExistingBunny = () => {
+    if (!existingUrlInput.trim()) {
+      toast.error('Masukkan URL atau ID Video Bunny.');
+      return;
+    }
+    let finalUrl = existingUrlInput.trim();
+    // Jika user menginput UUID GUID (misal: 0c3a728a-c08b-4efb-96a0-5f8d5199b270)
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(finalUrl)) {
+      const libraryId = process.env.NEXT_PUBLIC_BUNNY_STREAM_LIBRARY_ID || '701408';
+      finalUrl = `bunny-stream://${libraryId}/${finalUrl}`;
+    } else if (!finalUrl.startsWith('bunny-stream://') && !finalUrl.startsWith('http')) {
+      const parts = finalUrl.split('/');
+      if (parts.length === 2) {
+        finalUrl = `bunny-stream://${finalUrl}`;
+      }
+    }
+    onUploadSuccess(finalUrl, 'Video Bunny CDN', videoDuration);
+    toast.success('Video Bunny berhasil dihubungkan ke materi!');
+  };
 
   useEffect(() => {
     loadFFmpeg();
@@ -172,11 +194,15 @@ export const VideoCompressorUploader: React.FC<VideoCompressorUploaderProps> = (
     setProgress(0);
 
     try {
-      // 1. Fetch secure video creation config from Next.js
+      // 1. Force refresh Firebase ID Token to prevent expiration during long upload/compression
+      const token = await auth.currentUser?.getIdToken(true);
+
+      // 2. Fetch secure video creation config from Next.js
       const configRes = await authFetch('/api/video/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
         body: JSON.stringify({ title: originalName }),
       });
@@ -187,11 +213,8 @@ export const VideoCompressorUploader: React.FC<VideoCompressorUploaderProps> = (
       const config = await configRes.json();
       const { videoId, libraryId } = config;
 
-      // 2. Prepare Direct Upload details for Bunny Stream
+      // 3. Prepare Direct Upload details for Bunny Stream
       const bunnyStreamUrl = `bunny-stream://${libraryId}/${videoId}`;
-      const formData = new FormData();
-      formData.append('file', fileBlob);
-      formData.append('videoId', videoId);
 
       const xhr = new XMLHttpRequest();
       xhrRef.current = xhr;
@@ -226,15 +249,16 @@ export const VideoCompressorUploader: React.FC<VideoCompressorUploaderProps> = (
         toast.error('Terjadi kesalahan jaringan saat mengunggah');
       });
 
-      // Send POST request directly to server video upload proxy
-      xhr.open('POST', '/api/video/upload');
+      // Send PUT request directly as binary stream to server video upload proxy
+      xhr.open('PUT', `/api/video/upload?videoId=${encodeURIComponent(videoId)}`);
+      xhr.setRequestHeader('Content-Type', 'application/octet-stream');
       
-      const token = await auth.currentUser?.getIdToken();
-      if (token) {
-        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      const freshToken = await auth.currentUser?.getIdToken(true);
+      if (freshToken) {
+        xhr.setRequestHeader('Authorization', `Bearer ${freshToken}`);
       }
 
-      xhr.send(formData);
+      xhr.send(fileBlob);
 
     } catch (error: any) {
       console.error('❌ Direct Bunny Stream Upload Error:', error);
@@ -358,18 +382,53 @@ export const VideoCompressorUploader: React.FC<VideoCompressorUploaderProps> = (
 
       {/* Option to skip compression if the video is already compressed on PC */}
       {!(isCompressing || isUploading) && (
-        <label className="flex items-center gap-2.5 p-3 bg-gray-50 rounded-xl border border-gray-150 cursor-pointer select-none hover:bg-gray-100 transition-colors">
-          <input
-            type="checkbox"
-            checked={skipCompression}
-            onChange={(e) => setSkipCompression(e.target.checked)}
-            className="w-4 h-4 text-[#0066FF] border-gray-300 rounded focus:ring-[#0066FF] transition-colors"
-          />
-          <div className="text-left">
-            <p className="text-xs font-bold text-gray-800">Lewati kompresi browser</p>
-            <p className="text-[10px] text-gray-500 mt-0.5">Centang ini jika file video Anda sudah kecil atau sudah dikompres manual di PC (Handbrake/CapCut).</p>
+        <div className="space-y-2">
+          <label className="flex items-center gap-2.5 p-3 bg-gray-50 rounded-xl border border-gray-150 cursor-pointer select-none hover:bg-gray-100 transition-colors">
+            <input
+              type="checkbox"
+              checked={skipCompression}
+              onChange={(e) => setSkipCompression(e.target.checked)}
+              className="w-4 h-4 text-[#0066FF] border-gray-300 rounded focus:ring-[#0066FF] transition-colors"
+            />
+            <div className="text-left">
+              <p className="text-xs font-bold text-gray-800">Lewati kompresi browser</p>
+              <p className="text-[10px] text-gray-500 mt-0.5">Centang ini jika file video Anda sudah kecil atau sudah dikompres manual di PC (Handbrake/CapCut).</p>
+            </div>
+          </label>
+
+          {/* Input manual untuk Bunny Video ID / URL yang sudah ada */}
+          <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-100 space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-bold text-gray-800">Atau Gunakan Video Bunny yang Sudah Ada</p>
+              <button
+                type="button"
+                onClick={() => setShowExistingInput(!showExistingInput)}
+                className="text-[11px] font-semibold text-[#0284c7] hover:underline"
+              >
+                {showExistingInput ? 'Sembunyikan' : 'Tempel ID/URL'}
+              </button>
+            </div>
+
+            {showExistingInput && (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Contoh: 0c3a728a-c08b-4efb... atau bunny-stream://701408/..."
+                  value={existingUrlInput}
+                  onChange={(e) => setExistingUrlInput(e.target.value)}
+                  className="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-xs outline-none text-black bg-white focus:ring-1 focus:ring-[#0284c7]"
+                />
+                <button
+                  type="button"
+                  onClick={handleApplyExistingBunny}
+                  className="px-3 py-1.5 bg-[#0284c7] text-white text-xs font-bold rounded-lg hover:bg-blue-700 transition-colors shrink-0"
+                >
+                  Gunakan
+                </button>
+              </div>
+            )}
           </div>
-        </label>
+        </div>
       )}
       
       {/* Client-side only warning for large files */}
