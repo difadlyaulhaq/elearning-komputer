@@ -1,10 +1,10 @@
-# Alfajr E-Learning
+# E-Learning Internasional Komputer
 
 A comprehensive E-Learning management system built with **Next.js 16 (App Router)** and **Capacitor**, optimized for both web and mobile experiences.
 
 ## 🚀 Overview
 
-Alfajr E-Learning provides a seamless educational platform with advanced video protection, progress tracking, and an intuitive administrative interface. It's designed to be used as a progressive web app and a native mobile application (Android).
+E-Learning Internasional Komputer provides a seamless educational platform with advanced video protection, progress tracking, and an intuitive administrative interface. It's designed to be used as a progressive web app and a native mobile application (Android).
 
 ## 🛠 Tech Stack
 
@@ -42,7 +42,7 @@ See [STRUCTURE.md](./STRUCTURE.md) for a detailed breakdown of the codebase and 
 1. **Clone the repository**:
    ```bash
    git clone <repository-url>
-   cd alfajr-elearning
+   cd Elearning-komputer
    ```
 
 2. **Install dependencies**:
@@ -107,4 +107,4 @@ This project implements several layers of content protection:
 
 ---
 
-© 2026 Alfajr E-Learning. All rights reserved.
+© 2026 E-Learning Internasional Komputer. All rights reserved.

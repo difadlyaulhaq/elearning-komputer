@@ -1,6 +1,6 @@
 # Bunny.net Storage & CDN Integration Guide
 
-This document outlines the architecture, setup, and maintenance of the **Bunny.net Storage & CDN** system, which replaces Firebase Storage as the primary file hosting engine for Alfajr E-Learning.
+This document outlines the architecture, setup, and maintenance of the **Bunny.net Storage & CDN** system, which replaces Firebase Storage as the primary file hosting engine for E-Learning Internasional Komputer.
 
 ---
 
@@ -86,4 +86,4 @@ Located in the `scripts/` directory:
 
 ---
 
-© 2026 Alfajr E-Learning - Bunny.net Integration Documentation
+© 2026 E-Learning Internasional Komputer - Bunny.net Integration Documentation

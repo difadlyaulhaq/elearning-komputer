@@ -1,6 +1,6 @@
 # Codebase Structure & Architecture
 
-This document provides a technical map of the **Alfajr E-Learning** repository, explaining the purpose of key directories and the overall architectural patterns.
+This document provides a technical map of the **E-Learning Internasional Komputer** repository, explaining the purpose of key directories and the overall architectural patterns.
 
 ## 🏗 Directory Overview
 
@@ -66,4 +66,4 @@ The system uses a `UniversalPlayer` wrapper based on `Plyr`. It dynamically hand
 - `Progress`: Real-time tracking of user completion.
 
 ---
-© 2026 Alfajr E-Learning Architecture Guide
+© 2026 E-Learning Internasional Komputer Architecture Guide
