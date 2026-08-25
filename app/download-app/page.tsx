@@ -10,7 +10,7 @@ export default function DownloadPage() {
         <div className="bg-white p-6 rounded-xl shadow-lg text-center max-w-sm w-full">
             <img 
                 src="/LOGO INTER.png" 
-                alt="Alfajr Umroh Logo" 
+                alt="Logo" 
                 className="w-32 h-auto object-contain mx-auto mb-4"
             />
             <h1 className="text-xl font-bold text-gray-900 mb-2">Download Aplikasi</h1>

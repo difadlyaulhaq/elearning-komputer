@@ -83,7 +83,7 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, isSub
               type="email"
               required
               disabled={isEditing}
-              placeholder="nama@alfajrumroh.com"
+              placeholder="nama@internasionalkomputer.com"
               value={formData.email}
               onChange={(e) => setFormData({...formData, email: e.target.value})}
               className={`w-full text-black px-4 py-2.5 border border-gray-300 rounded-lg outline-none transition-all ${
@@ -140,7 +140,7 @@ const UserFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, isSub
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
-                placeholder={isEditing ? "Kosongkan jika tidak ingin mengganti" : "Opsional (default: Alfajr123!)"}
+                placeholder={isEditing ? "Kosongkan jika tidak ingin mengganti" : "Opsional (default: Inter123!)"}
                 value={formData.password}
                 onChange={(e) => setFormData({...formData, password: e.target.value})}
                 className="w-full text-black px-4 pr-12 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0066FF]/50 focus:border-[#0066FF] outline-none transition-all"

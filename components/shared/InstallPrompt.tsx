@@ -54,7 +54,7 @@ export default function InstallPrompt() {
     <div className="fixed bottom-4 left-4 right-4 bg-white text-black p-4 rounded-lg shadow-2xl z-[100] border border-gray-200">
       <div className="flex flex-col gap-3">
         <div>
-          <h3 className="font-bold text-lg">Install Aplikasi Alfajr</h3>
+          <h3 className="font-bold text-lg">Install Aplikasi Elearning Internasional Komputer</h3>
           <p className="text-sm text-gray-600">
             {isIOS 
               ? "Untuk pengalaman terbaik, tambahkan ke Home Screen." 

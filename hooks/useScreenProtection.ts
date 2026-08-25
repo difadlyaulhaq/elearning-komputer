@@ -64,7 +64,7 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
     const intervalId = setInterval(() => {
       try {
         if (typeof navigator !== 'undefined' && navigator.clipboard) {
-          navigator.clipboard.writeText('⚠️ ALFAJR SECURITY: Pelanggaran terdeteksi! Konten ini dilindungi hak cipta eksklusif. Dilarang melakukan screenshot atau perekaman layar.');
+            navigator.clipboard.writeText('⚠️ SECURITY: Pelanggaran terdeteksi! Konten ini dilindungi hak cipta eksklusif. Dilarang melakukan screenshot atau perekaman layar.');
         }
       } catch (e) {}
       
@@ -266,11 +266,11 @@ export const useScreenProtection = (options: ScreenProtectionOptions = {}) => {
       clipboardPollutionInterval = setInterval(() => {
         try {
           if (typeof navigator !== 'undefined' && navigator.clipboard) {
-            navigator.clipboard.writeText('⚠️ ALFAJR SECURITY: Pelanggaran terdeteksi! Konten ini dilindungi hak cipta eksklusif. Screenshot/rekaman layar DILARANG KERAS.');
+            navigator.clipboard.writeText('⚠️ SECURITY: Pelanggaran terdeteksi! Konten ini dilindungi hak cipta eksklusif. Screenshot/rekaman layar DILARANG KERAS.');
           }
           // Also try to clear via execCommand as fallback
           const textarea = document.createElement('textarea');
-          textarea.value = '⚠️ KONTEN DILINDUNGI - ALFAJR E-LEARNING';
+          textarea.value = '⚠️ KONTEN DILINDUNGI - E-LEARNING INTERNASIONAL KOMPUTER';
           textarea.style.position = 'fixed';
           textarea.style.left = '-9999px';
           document.body.appendChild(textarea);

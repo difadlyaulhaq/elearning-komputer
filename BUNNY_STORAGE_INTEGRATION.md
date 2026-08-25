@@ -84,6 +84,16 @@ Located in the `scripts/` directory:
 *   **Compress local files**: `node scripts/compress-videos.js`
     *   Locally batch compresses raw videos using FFmpeg with `ultrafast` preset and optimal E-learning configurations to prepare them for uploading. Automatically skips already compressed files.
 
+### 4. Video Cleanup & Orphan Garbage Collector
+*   **Audit (Dry Run)**: `node scripts/clean-unused-videos.js`
+    *   Scans Firestore and Bunny (Stream & Storage), detects unused/orphan videos without deleting anything.
+*   **Live Cleanup**: `node scripts/clean-unused-videos.js --delete`
+    *   Safely purges unused and duplicate videos from Bunny Stream and Bunny Storage.
+
+### 5. Website Video Health Check
+*   **Verify All Videos**: `node scripts/verify-all-materials.js`
+    *   Performs automated health checks across all active courses and lessons to guarantee 100% video playback readiness.
+
 ---
 
 © 2026 E-Learning Internasional Komputer - Bunny.net Integration Documentation
