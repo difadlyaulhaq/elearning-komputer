@@ -56,8 +56,8 @@ const ReportsPage = () => {
       setIsLoading(true);
       try {
         const [usersRes, progressRes] = await Promise.all([
-          fetch('/api/admin/users'),
-          fetch('/api/progress')
+          fetch('/api/admin/users', { cache: 'no-store' }),
+          fetch('/api/progress', { cache: 'no-store' })
         ]);
 
         const usersData = await usersRes.json();
@@ -72,15 +72,24 @@ const ReportsPage = () => {
         }
 
         if (progressData.success) {
-          const combinedData = progressData.data.map((progress: ProgressItem) => {
-            const user = fetchedUsers.find((u: User) => u.id === progress.userId);
+          const combinedData = progressData.data.map((progress: any) => {
+            const user = fetchedUsers.find((u: any) => u.id === progress.userId || u.uid === progress.userId);
             return {
               ...progress,
+              lastAccess: progress.lastAccess || progress.lastAccessed || '',
               userName: user?.name || 'Unknown User',
               userDivision: user?.division || 'No Division',
               userEmail: user?.email || '-'
             };
           });
+
+          // Sort by latest access
+          combinedData.sort((a: any, b: any) => {
+            const dateA = a.lastAccess ? new Date(a.lastAccess).getTime() : 0;
+            const dateB = b.lastAccess ? new Date(b.lastAccess).getTime() : 0;
+            return dateB - dateA;
+          });
+
           setAllReports(combinedData);
         }
       } catch (error) {
@@ -162,9 +171,18 @@ const ReportsPage = () => {
     );
   };
   
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+  const formatDate = (dateVal?: any) => {
+    if (!dateVal) return '-';
+    try {
+      if (typeof dateVal?.toDate === 'function') {
+        return dateVal.toDate().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+      }
+      const d = new Date(dateVal);
+      if (isNaN(d.getTime())) return '-';
+      return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+    } catch {
+      return '-';
+    }
   };
 
   const handleExportExcel = () => {

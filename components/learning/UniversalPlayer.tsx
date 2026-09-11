@@ -251,9 +251,133 @@ const YouTubePlayer: React.FC<{
   onTimeUpdate?: (currentTime: number, duration: number) => void;
   watermark?: boolean;
   user: any;
-}> = ({ src, watermark, user }) => {
+}> = ({ src, onEnded, onTimeUpdate, watermark, user }) => {
   const embedUrl = buildYouTubeEmbedUrl(src);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const playerRef = useRef<any>(null);
+
+  // 1. Listen for postMessage from YouTube iframe
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (!event.origin.includes('youtube.com') && !event.origin.includes('youtube-nocookie.com')) return;
+
+      try {
+        const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+        if (!data) return;
+
+        // Check onStateChange
+        if (data.event === 'onStateChange') {
+          const state = typeof data.info === 'number' ? data.info : data.info?.playerState;
+          if (state === 0) { // 0 = YT.PlayerState.ENDED
+            onEnded?.();
+          }
+        }
+
+        // Check infoDelivery
+        if (data.event === 'infoDelivery' && data.info) {
+          const current = data.info.currentTime;
+          const duration = data.info.duration;
+          if (typeof current === 'number' && typeof duration === 'number' && duration > 0) {
+            onTimeUpdate?.(current, duration);
+            if (current / duration >= 0.9) {
+              onEnded?.();
+            }
+          }
+          if (data.info.playerState === 0) {
+            onEnded?.();
+          }
+        }
+      } catch (e) {
+        // Ignored
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, [onEnded, onTimeUpdate]);
+
+  // 2. Ping YouTube iframe to start listening and streaming event data
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+
+    const ping = () => {
+      if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.postMessage(JSON.stringify({ event: 'listening' }), '*');
+      }
+    };
+
+    const interval = setInterval(ping, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // 3. YouTube Iframe API fallback for precise state & time tracking
+  useEffect(() => {
+    let pollTimer: any = null;
+
+    const setupPlayer = () => {
+      if (!(window as any).YT || !(window as any).YT.Player) return;
+      if (!iframeRef.current) return;
+
+      try {
+        if (!playerRef.current) {
+          playerRef.current = new (window as any).YT.Player(iframeRef.current, {
+            events: {
+              onStateChange: (e: any) => {
+                if (e.data === 0) { // ENDED
+                  onEnded?.();
+                }
+              }
+            }
+          });
+        }
+
+        pollTimer = setInterval(() => {
+          if (playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
+            try {
+              const cur = playerRef.current.getCurrentTime();
+              const dur = playerRef.current.getDuration();
+              if (typeof cur === 'number' && typeof dur === 'number' && dur > 0) {
+                onTimeUpdate?.(cur, dur);
+                if (cur / dur >= 0.9) {
+                  onEnded?.();
+                }
+              }
+            } catch {}
+          }
+        }, 1000);
+      } catch {}
+    };
+
+    if (!(window as any).YT) {
+      const existingScript = document.getElementById('youtube-iframe-api-script');
+      if (!existingScript) {
+        const tag = document.createElement('script');
+        tag.id = 'youtube-iframe-api-script';
+        tag.src = 'https://www.youtube.com/iframe_api';
+        document.body.appendChild(tag);
+      }
+      const prevCallback = (window as any).onYouTubeIframeAPIReady;
+      (window as any).onYouTubeIframeAPIReady = () => {
+        if (typeof prevCallback === 'function') prevCallback();
+        setupPlayer();
+      };
+    } else {
+      setupPlayer();
+    }
+
+    return () => {
+      if (pollTimer) clearInterval(pollTimer);
+      if (playerRef.current && typeof playerRef.current.destroy === 'function') {
+        try {
+          playerRef.current.destroy();
+          playerRef.current = null;
+        } catch {}
+      }
+    };
+  }, [onEnded, onTimeUpdate, src]);
 
   if (!embedUrl) {
     return (
@@ -702,23 +826,63 @@ const BunnyStreamPlayer: React.FC<{
     }
   }, [src, authFetch]);
 
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  // Ping Bunny Stream iframe to register player.js event listeners
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe || !embedUrl) return;
+
+    const ping = () => {
+      if (iframe && iframe.contentWindow) {
+        // Standard player.js addEventListener commands
+        iframe.contentWindow.postMessage(JSON.stringify({ context: 'player.js', method: 'addEventListener', value: 'ended' }), '*');
+        iframe.contentWindow.postMessage(JSON.stringify({ context: 'player.js', method: 'addEventListener', value: 'timeupdate' }), '*');
+        iframe.contentWindow.postMessage(JSON.stringify({ context: 'player.js', method: 'addEventListener', value: 'play' }), '*');
+      }
+    };
+
+    // Ping every 1 second while mounted
+    const interval = setInterval(ping, 1000);
+    return () => clearInterval(interval);
+  }, [embedUrl]);
+
   // Listen to Bunny Stream Player iframe postMessage events for progress/ended tracking
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       // Validate origin to ensure it's from Bunny Stream embed domain
-      if (!event.origin.includes('mediadelivery.net')) return;
+      if (!event.origin.includes('mediadelivery.net') && !event.origin.includes('bunnycdn.com')) return;
 
       try {
         const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+        if (!data) return;
         
         // Handle player.js events
-        if (data.event === 'ended' && onEnded) {
+        const isEnded = 
+          data.event === 'ended' || 
+          data.type === 'ended' || 
+          data.type === 'player:ended' ||
+          data.event === 'player:ended' ||
+          data.event === 'video:ended';
+
+        if (isEnded && onEnded) {
           onEnded();
-        } else if (data.event === 'timeupdate' && onTimeUpdate && data.value) {
-          // Bunny stream player.js format for timeupdate: data.value is { seconds, duration } or similar
-          const currentTime = data.value.seconds || 0;
-          const duration = data.value.duration || 0;
+        }
+
+        const isTimeUpdate = 
+          data.event === 'timeupdate' || 
+          data.type === 'timeupdate' || 
+          data.type === 'player:timeupdate' ||
+          data.event === 'player:timeupdate';
+
+        if (isTimeUpdate && onTimeUpdate) {
+          const val = data.value || data.data || {};
+          const currentTime = typeof val === 'number' ? val : (val.seconds ?? val.currentTime ?? 0);
+          const duration = val.duration ?? 0;
           onTimeUpdate(currentTime, duration);
+          if (duration > 0 && currentTime / duration >= 0.9) {
+            onEnded?.();
+          }
         }
       } catch (e) {
         // Ignored
@@ -753,6 +917,7 @@ const BunnyStreamPlayer: React.FC<{
         </div>
       ) : (
         <iframe
+          ref={iframeRef}
           src={embedUrl}
           loading="lazy"
           style={{ border: 'none', position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}

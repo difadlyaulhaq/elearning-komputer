@@ -19,6 +19,8 @@ import {
   Lock,
   FileText,
   BookOpen,
+  Save,
+  BookmarkCheck,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { MarkdownRenderer } from "@/components/shared/MarkdownRenderer";
@@ -52,19 +54,31 @@ export function LessonPlayerDesktop({
 
   const [isVideoCompleted, setIsVideoCompleted] = useState(initialCompleted);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [currentCompletedLessons, setCurrentCompletedLessons] = useState<string[]>(completedLessons);
+  const hasAutoSavedRef = useRef<boolean>(false);
 
   useEffect(() => {
+    setCurrentCompletedLessons(completedLessons);
+  }, [completedLessons]);
+
+  useEffect(() => {
+    hasAutoSavedRef.current = false;
     if (['text', 'image-upload', 'file-upload'].includes(lesson.contentType)) {
       setIsVideoCompleted(true);
     } else {
-      setIsVideoCompleted(initialCompleted);
+      setIsVideoCompleted(initialCompleted || completedLessons.includes(lesson.id));
     }
-  }, [lesson.id, initialCompleted, lesson.contentType]);
+  }, [lesson.id, initialCompleted, lesson.contentType, completedLessons]);
 
-  const handleMarkComplete = async () => {
-    if (!user || !isVideoCompleted) return;
-    setIsUpdating(true);
-    toast.loading('Menyimpan progress...');
+  const saveProgress = async (isManualClick: boolean = false) => {
+    if (!user) return;
+    if (!isManualClick && hasAutoSavedRef.current) return;
+    hasAutoSavedRef.current = true;
+
+    if (isManualClick) {
+      setIsUpdating(true);
+      toast.loading('Menyimpan progress...');
+    }
 
     try {
       const res = await authFetch('/api/progress/lesson', {
@@ -79,25 +93,41 @@ export function LessonPlayerDesktop({
       }
 
       const data = await res.json();
-      toast.dismiss();
-      toast.success('Progress berhasil disimpan!');
+      setIsVideoCompleted(true);
+      setCurrentCompletedLessons(prev => prev.includes(lesson.id) ? prev : [...prev, lesson.id]);
 
-      const isCourseCompleted = data.data.status === 'completed';
-      if (isCourseCompleted) {
-        router.push(`/learning/course/${courseId}/complete`);
-      } else if (nextLesson) {
-        router.push(`/learning/course/${courseId}/lesson/${nextLesson.id}`);
+      if (isManualClick) {
+        toast.dismiss();
+        toast.success('Progress berhasil disimpan!');
+
+        const isCourseCompleted = data.data?.status === 'completed';
+        if (isCourseCompleted) {
+          router.push(`/learning/course/${courseId}/complete`);
+        } else if (nextLesson) {
+          router.push(`/learning/course/${courseId}/lesson/${nextLesson.id}`);
+        } else {
+          router.push('/learning/dashboard');
+        }
+        router.refresh();
       } else {
-        router.push('/learning/dashboard');
+        toast.success('Video selesai & progress tersimpan!', { id: `auto-save-${lesson.id}` });
+        router.refresh();
       }
-      router.refresh();
     } catch (error: any) {
-      console.error(error);
-      toast.dismiss();
-      toast.error(`Terjadi kesalahan: ${error.message}`);
+      console.error('Error saving progress:', error);
+      if (isManualClick) {
+        toast.dismiss();
+        toast.error(`Terjadi kesalahan: ${error.message}`);
+      }
     } finally {
-      setIsUpdating(false);
+      if (isManualClick) {
+        setIsUpdating(false);
+      }
     }
+  };
+
+  const handleMarkComplete = () => {
+    saveProgress(true);
   };
 
   if (authLoading) {
@@ -158,7 +188,7 @@ export function LessonPlayerDesktop({
             courseId={courseId}
             sections={sections}
             currentLessonId={lesson.id}
-            completedLessons={completedLessons}
+            completedLessons={currentCompletedLessons}
           />
         </div>
 
@@ -171,10 +201,14 @@ export function LessonPlayerDesktop({
                 <UniversalPlayer
                   src={lesson.url}
                   contentType={lesson.contentType as any}
-                  onEnded={() => setIsVideoCompleted(true)}
+                  onEnded={() => {
+                    setIsVideoCompleted(true);
+                    saveProgress(false);
+                  }}
                   onTimeUpdate={(currentTime, duration) => {
                     if (duration > 0 && (currentTime / duration) >= 0.9) {
                       setIsVideoCompleted(true);
+                      saveProgress(false);
                     }
                   }}
                   watermark={lesson.watermark}
@@ -245,7 +279,26 @@ export function LessonPlayerDesktop({
             {/* Lesson Info (for video content) */}
             {isVideoContent && (
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 mb-4">
-                <h3 className="text-lg font-bold text-gray-900 mb-2">{lesson.title}</h3>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
+                  <h3 className="text-lg font-bold text-gray-900">{lesson.title}</h3>
+                  <button
+                    onClick={() => saveProgress(false)}
+                    disabled={!isVideoCompleted || isUpdating}
+                    className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border transition-all ${
+                      currentCompletedLessons.includes(lesson.id)
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                        : isVideoCompleted
+                          ? "bg-sky-50 text-[#0284c7] border-sky-200 hover:bg-sky-100 cursor-pointer"
+                          : "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                    }`}
+                  >
+                    {currentCompletedLessons.includes(lesson.id) ? (
+                      <><BookmarkCheck size={14} className="text-emerald-600" /> Progress Tersimpan</>
+                    ) : (
+                      <><Save size={14} /> Simpan Progress</>
+                    )}
+                  </button>
+                </div>
                 <div className={`flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-xl w-fit ${
                   isVideoCompleted
                     ? 'bg-green-50 text-green-700 border border-green-200'
@@ -328,24 +381,51 @@ export function LessonPlayerDesktop({
                   )}
                 </div>
 
-                {/* Complete button */}
-                <button
-                  onClick={handleMarkComplete}
-                  disabled={!isVideoCompleted || isUpdating}
-                  className={`flex items-center justify-center gap-2 px-6 py-3 font-bold text-sm rounded-xl transition-all duration-300 ${
-                    isVideoCompleted && !isUpdating
-                      ? "bg-[#0284c7] hover:bg-[#0369a1] text-white shadow-lg shadow-[#0284c7]/20 hover:shadow-[#0284c7]/30 hover:scale-[1.02]"
-                      : "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
-                  }`}
-                >
-                  {isUpdating ? (
-                    <><Loader2 size={16} className="animate-spin" /><span>Menyimpan...</span></>
-                  ) : isVideoCompleted ? (
-                    <><CheckCircle size={16} /><span>{nextLesson ? "Selesai & Lanjut" : "Selesaikan Kursus"}</span></>
-                  ) : (
-                    <><Lock size={15} /><span>Selesaikan video dulu</span></>
-                  )}
-                </button>
+                {/* Complete & Save buttons */}
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => saveProgress(false)}
+                    disabled={!isVideoCompleted || isUpdating}
+                    className={`flex items-center justify-center gap-2 px-4 py-3 font-semibold text-sm rounded-xl border transition-all duration-200 ${
+                      currentCompletedLessons.includes(lesson.id)
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                        : isVideoCompleted
+                          ? "bg-white text-slate-800 border-slate-300 hover:bg-slate-50 shadow-xs"
+                          : "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                    }`}
+                    title="Simpan progres materi ini tanpa berpindah halaman"
+                  >
+                    {currentCompletedLessons.includes(lesson.id) ? (
+                      <>
+                        <BookmarkCheck size={16} className="text-emerald-600" />
+                        <span>Tersimpan</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save size={16} className={isVideoCompleted ? "text-[#0284c7]" : "text-gray-400"} />
+                        <span>Simpan Progress</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={handleMarkComplete}
+                    disabled={!isVideoCompleted || isUpdating}
+                    className={`flex items-center justify-center gap-2 px-6 py-3 font-bold text-sm rounded-xl transition-all duration-300 ${
+                      isVideoCompleted && !isUpdating
+                        ? "bg-[#0284c7] hover:bg-[#0369a1] text-white shadow-lg shadow-[#0284c7]/20 hover:shadow-[#0284c7]/30 hover:scale-[1.02]"
+                        : "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+                    }`}
+                  >
+                    {isUpdating ? (
+                      <><Loader2 size={16} className="animate-spin" /><span>Menyimpan...</span></>
+                    ) : isVideoCompleted ? (
+                      <><CheckCircle size={16} /><span>{nextLesson ? "Selesai & Lanjut" : "Selesaikan Kursus"}</span></>
+                    ) : (
+                      <><Lock size={15} /><span>Selesaikan video dulu</span></>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

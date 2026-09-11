@@ -2,10 +2,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 
+export const dynamic = 'force-dynamic';
+
 // POST: Tandai lesson sebagai selesai
 export async function POST(request: NextRequest) {
   try {
     const { userId, courseId, lessonId } = await request.json();
+
+    if (!userId || !courseId || !lessonId) {
+      return NextResponse.json(
+        { success: false, error: 'Parameter userId, courseId, dan lessonId wajib diisi' },
+        { status: 400 }
+      );
+    }
 
     if (!adminDb) {
       throw new Error('Firebase Admin belum siap');
@@ -66,10 +75,20 @@ export async function POST(request: NextRequest) {
 
       // Check if lesson already completed
       if (completedLessons.includes(lessonId)) {
+        await progressRef.update({
+          lastAccess: new Date().toISOString(),
+          lastAccessedLessonId: lessonId,
+          totalLessons: totalLessons > 0 ? totalLessons : existingProgress?.totalLessons || 0,
+        });
+
         return NextResponse.json({
           success: true,
           message: 'Lesson sudah diselesaikan sebelumnya',
-          data: existingProgress
+          data: {
+            ...existingProgress,
+            lastAccess: new Date().toISOString(),
+            lastAccessedLessonId: lessonId
+          }
         });
       }
 
@@ -81,6 +100,9 @@ export async function POST(request: NextRequest) {
       const newStatus = newProgress >= 100 ? 'completed' : 'in-progress';
 
       const updateData = {
+        userId,
+        courseId,
+        courseName: existingProgress?.courseName || courseData?.title || '',
         completedLessons: updatedCompletedLessons,
         progress: newProgress,
         status: newStatus,
@@ -88,7 +110,7 @@ export async function POST(request: NextRequest) {
         totalLessons: totalLessons,
         lastAccessedLessonId: lessonId,
         ...(newStatus === 'completed' && {
-          completedAt: new Date().toISOString()
+          completedAt: existingProgress?.completedAt || new Date().toISOString()
         })
       };
 

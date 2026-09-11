@@ -4,68 +4,64 @@ import { adminDb } from '@/lib/firebase/admin';
 import { Course } from '@/types';
 import { verifyAdmin } from '@/app/api/helpers';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const admin = await verifyAdmin(request);
     if (!admin) {
       return NextResponse.json({ success: false, error: 'Unauthorized: Admin access required' }, { status: 401 });
     }
-    // 1. Ambil semua kursus dan user secara paralel
-    const [coursesSnap, usersSnap] = await Promise.all([
-        adminDb.collection('courses').get(),
-        adminDb.collection('users').where('role', '==', 'user').get()
+
+    if (!adminDb) {
+      throw new Error('Firebase Admin belum siap');
+    }
+
+    // 1. Ambil semua kursus, user, dan progress secara paralel
+    const [coursesSnap, usersSnap, progressSnap] = await Promise.all([
+      adminDb.collection('courses').get(),
+      adminDb.collection('users').get(),
+      adminDb.collection('progress').get()
     ]);
 
-    // Buat map untuk akses cepat by ID
     const coursesMap = new Map(coursesSnap.docs.map(doc => [doc.id, doc.data() as Course]));
     const usersMap = new Map(usersSnap.docs.map(doc => [doc.id, doc.data()]));
 
-    // 2. Gunakan collectionGroup untuk mengambil semua progress dari semua user dalam satu query
-    const progressGroupSnap = await adminDb.collectionGroup('courses').get();
-
     const reports = [];
 
-    // 3. Proses hasil query collectionGroup
-    for (const progDoc of progressGroupSnap.docs) {
-        const progData = progDoc.data();
-        const userId = progDoc.ref.parent.parent?.id; // Dapatkan userId dari path
+    // 2. Format progress reports
+    for (const progDoc of progressSnap.docs) {
+      const progData = progDoc.data();
+      const userId = progData.userId;
 
-        if (!userId || !usersMap.has(userId)) {
-            continue; // Skip jika progress tidak terhubung ke user yang valid
-        }
+      if (!userId || !usersMap.has(userId)) {
+        continue;
+      }
 
-        const userData = usersMap.get(userId);
-        const course = coursesMap.get(progData.courseId);
+      const userData = usersMap.get(userId);
+      const course = coursesMap.get(progData.courseId);
 
-        reports.push({
-            id: `${userId}_${progDoc.id}`,
-            name: userData?.name || 'Unnamed',
-            division: userData?.division || '-',
-            course: course?.title || 'Unknown Course',
-            progress: progData.progress || 0,
-            status: progData.status || 'not-started',
-            lastAccess: progData.lastAccessed ? new Date(progData.lastAccessed.toDate()).toLocaleString('id-ID') : '-',
-            completedDate: progData.completedAt ? new Date(progData.completedAt.toDate()).toLocaleDateString('id-ID') : '-'
-        });
+      const lastAccessStr = progData.lastAccess 
+        ? new Date(progData.lastAccess).toLocaleString('id-ID')
+        : progData.lastAccessed 
+          ? (typeof progData.lastAccessed.toDate === 'function' ? progData.lastAccessed.toDate().toLocaleString('id-ID') : new Date(progData.lastAccessed).toLocaleString('id-ID'))
+          : '-';
+
+      const completedDateStr = progData.completedAt
+        ? (typeof progData.completedAt.toDate === 'function' ? progData.completedAt.toDate().toLocaleDateString('id-ID') : new Date(progData.completedAt).toLocaleDateString('id-ID'))
+        : '-';
+
+      reports.push({
+        id: progDoc.id,
+        name: userData?.name || 'Unnamed',
+        division: userData?.division || '-',
+        course: course?.title || progData.courseName || 'Unknown Course',
+        progress: progData.progress || 0,
+        status: progData.status || 'not-started',
+        lastAccess: lastAccessStr,
+        completedDate: completedDateStr
+      });
     }
-    
-    // Tambahkan user yang belum mulai kursus sama sekali
-    const userIdsWithProgress = new Set(progressGroupSnap.docs.map(doc => doc.ref.parent.parent?.id));
-    for(const [userId, userData] of usersMap.entries()){
-        if(!userIdsWithProgress.has(userId)){
-            reports.push({
-                id: userId,
-                name: userData.name || 'Unnamed',
-                division: userData.division || '-',
-                course: '-',
-                progress: 0,
-                status: 'not-started',
-                lastAccess: '-',
-                completedDate: '-'
-              });
-        }
-    }
-
 
     return NextResponse.json(reports);
 

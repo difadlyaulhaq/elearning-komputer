@@ -26,6 +26,8 @@ import {
   Minimize2,
   Smartphone,
   Monitor,
+  Save,
+  BookmarkCheck,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import { MarkdownRenderer } from "@/components/shared/MarkdownRenderer";
@@ -59,11 +61,94 @@ export function LessonPlayerMobile({
 
   const [isVideoCompleted, setIsVideoCompleted] = useState(initialCompleted);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [currentCompletedLessons, setCurrentCompletedLessons] = useState<string[]>(completedLessons);
+  const hasAutoSavedRef = useRef<boolean>(false);
   const [showLessonMenu, setShowLessonMenu] = useState(false);
   const [isLandscape, setIsLandscape] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isFullscreenLandscape, setIsFullscreenLandscape] = useState(true);
   const videoContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setCurrentCompletedLessons(completedLessons);
+  }, [completedLessons]);
+
+  useEffect(() => {
+    hasAutoSavedRef.current = false;
+    if (
+      lesson.contentType === "text" ||
+      lesson.contentType === "image-upload" ||
+      lesson.contentType === "file-upload"
+    ) {
+      setIsVideoCompleted(true);
+    } else {
+      setIsVideoCompleted(initialCompleted || completedLessons.includes(lesson.id));
+    }
+  }, [lesson.id, initialCompleted, lesson.contentType, completedLessons]);
+
+  const saveProgress = async (isManualClick: boolean = false) => {
+    if (!user) return;
+    if (!isManualClick && hasAutoSavedRef.current) return;
+    hasAutoSavedRef.current = true;
+
+    if (isManualClick) {
+      setIsUpdating(true);
+      toast.loading("Menyimpan progress...");
+    }
+
+    try {
+      const res = await authFetch("/api/progress/lesson", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.id,
+          courseId,
+          lessonId: lesson.id,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Gagal update progress");
+      }
+
+      const data = await res.json();
+      setIsVideoCompleted(true);
+      setCurrentCompletedLessons(prev => prev.includes(lesson.id) ? prev : [...prev, lesson.id]);
+
+      if (isManualClick) {
+        toast.dismiss();
+        toast.success("Progress berhasil disimpan!");
+
+        const isCourseCompleted = data.data?.status === "completed";
+        if (isCourseCompleted) {
+          router.push(`/learning/course/${courseId}/complete`);
+        } else if (nextLesson) {
+          router.push(`/learning/course/${courseId}/lesson/${nextLesson.id}`);
+        } else {
+          router.push("/learning/dashboard");
+        }
+        router.refresh();
+      } else {
+        toast.success("Video selesai & progress tersimpan!", { id: `auto-save-${lesson.id}` });
+        router.refresh();
+      }
+    } catch (error: any) {
+      console.error("Error saving progress:", error);
+      if (isManualClick) {
+        toast.dismiss();
+        toast.error(`Terjadi kesalahan: ${error.message}`);
+      }
+    } finally {
+      if (isManualClick) {
+        setIsUpdating(false);
+      }
+    }
+  };
+
+  const handleMarkComplete = () => {
+    saveProgress(true);
+  };
 
   // ─── Fullscreen Management ──────────────────────────────────────────
   const enterFullscreen = useCallback(async () => {
@@ -162,18 +247,6 @@ export function LessonPlayerMobile({
   }, []);
 
   useEffect(() => {
-    if (
-      lesson.contentType === "text" ||
-      lesson.contentType === "image-upload" ||
-      lesson.contentType === "file-upload"
-    ) {
-      setIsVideoCompleted(true);
-    } else {
-      setIsVideoCompleted(initialCompleted);
-    }
-  }, [lesson.id, initialCompleted, lesson.contentType]);
-
-  useEffect(() => {
     const checkOrientation = () => {
       setIsLandscape(
         window.innerWidth > window.innerHeight && window.innerHeight < 600
@@ -183,49 +256,6 @@ export function LessonPlayerMobile({
     window.addEventListener("resize", checkOrientation);
     return () => window.removeEventListener("resize", checkOrientation);
   }, []);
-
-  const handleMarkComplete = async () => {
-    if (!user || !isVideoCompleted) return;
-    setIsUpdating(true);
-    toast.loading("Menyimpan progress...");
-
-    try {
-      const res = await authFetch("/api/progress/lesson", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: user.id,
-          courseId,
-          lessonId: lesson.id,
-        }),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Gagal update progress");
-      }
-
-      const data = await res.json();
-      toast.dismiss();
-      toast.success("Progress berhasil disimpan!");
-
-      const isCourseCompleted = data.data.status === "completed";
-      if (isCourseCompleted) {
-        router.push(`/learning/course/${courseId}/complete`);
-      } else if (nextLesson) {
-        router.push(`/learning/course/${courseId}/lesson/${nextLesson.id}`);
-      } else {
-        router.push("/learning/dashboard");
-      }
-      router.refresh();
-    } catch (error: any) {
-      console.error(error);
-      toast.dismiss();
-      toast.error(`Terjadi kesalahan: ${error.message}`);
-    } finally {
-      setIsUpdating(false);
-    }
-  };
 
   if (authLoading) {
     return <LessonSkeleton />;
@@ -339,10 +369,14 @@ export function LessonPlayerMobile({
             <UniversalPlayer
               src={lesson.url}
               contentType={lesson.contentType as any}
-              onEnded={() => setIsVideoCompleted(true)}
+              onEnded={() => {
+                setIsVideoCompleted(true);
+                saveProgress(false);
+              }}
               onTimeUpdate={(currentTime, duration) => {
                 if (duration > 0 && currentTime / duration >= 0.9) {
                   setIsVideoCompleted(true);
+                  saveProgress(false);
                 }
               }}
               watermark={lesson.watermark}
@@ -503,25 +537,45 @@ export function LessonPlayerMobile({
               </div>
             </div>
 
-            {/* Status badge */}
-            <div
-              className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full ${
-                isVideoCompleted
-                  ? "bg-green-50 text-green-700 border border-green-200"
-                  : "bg-amber-50 text-amber-700 border border-amber-200"
-              }`}
-            >
-              {isVideoCompleted ? (
-                <>
-                  <CheckCircle size={12} />
-                  Materi sudah selesai
-                </>
-              ) : (
-                <>
-                  <Play size={11} />
-                  Tonton video hingga selesai untuk melanjutkan
-                </>
-              )}
+            {/* Status badge and quick save */}
+            <div className="flex items-center justify-between gap-2 pt-1">
+              <div
+                className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full ${
+                  isVideoCompleted
+                    ? "bg-green-50 text-green-700 border border-green-200"
+                    : "bg-amber-50 text-amber-700 border border-amber-200"
+                }`}
+              >
+                {isVideoCompleted ? (
+                  <>
+                    <CheckCircle size={12} />
+                    Materi sudah selesai
+                  </>
+                ) : (
+                  <>
+                    <Play size={11} />
+                    Tonton video hingga selesai
+                  </>
+                )}
+              </div>
+
+              <button
+                onClick={() => saveProgress(false)}
+                disabled={!isVideoCompleted || isUpdating}
+                className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border transition-all ${
+                  currentCompletedLessons.includes(lesson.id)
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                    : isVideoCompleted
+                      ? "bg-sky-50 text-[#0284c7] border-sky-200 active:scale-[0.98]"
+                      : "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                }`}
+              >
+                {currentCompletedLessons.includes(lesson.id) ? (
+                  <><BookmarkCheck size={13} className="text-emerald-600" /> Tersimpan</>
+                ) : (
+                  <><Save size={13} /> Simpan Progress</>
+                )}
+              </button>
             </div>
           </div>
 
@@ -613,35 +667,64 @@ export function LessonPlayerMobile({
 
       {/* Sticky Bottom Action Bar */}
       {!isLandscape && !isFullscreen && (
-        <div className="fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-100 px-4 py-3 shadow-lg">
-          <button
-            onClick={handleMarkComplete}
-            disabled={!isVideoCompleted || isUpdating}
-            className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-sm transition-all duration-200 ${
-              isVideoCompleted && !isUpdating
-                ? "bg-[#0284c7] hover:bg-[#0369a1] text-white shadow-sm active:scale-[0.98]"
-                : "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
-            }`}
-          >
-            {isUpdating ? (
-              <>
-                <Loader2 size={16} className="animate-spin" />
-                <span>Menyimpan...</span>
-              </>
-            ) : isVideoCompleted ? (
-              <>
-                <CheckCircle size={16} />
-                <span>
-                  {nextLesson ? "Selesai & Lanjut" : "Selesaikan Kursus"}
-                </span>
-              </>
-            ) : (
-              <>
-                <Lock size={15} />
-                <span>Selesaikan video untuk melanjutkan</span>
-              </>
-            )}
-          </button>
+        <div className="fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-100 px-3 py-2.5 shadow-lg">
+          <div className="flex items-center gap-2 max-w-md mx-auto">
+            {/* Quick save button */}
+            <button
+              onClick={() => saveProgress(false)}
+              disabled={!isVideoCompleted || isUpdating}
+              className={`flex items-center justify-center gap-1.5 px-3.5 py-3 rounded-2xl font-semibold text-xs border transition-all shrink-0 ${
+                currentCompletedLessons.includes(lesson.id)
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                  : isVideoCompleted
+                    ? "bg-white text-slate-800 border-slate-300 active:scale-[0.98]"
+                    : "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+              }`}
+              title="Simpan Progress"
+            >
+              {currentCompletedLessons.includes(lesson.id) ? (
+                <>
+                  <BookmarkCheck size={16} className="text-emerald-600" />
+                  <span>Tersimpan</span>
+                </>
+              ) : (
+                <>
+                  <Save size={16} className={isVideoCompleted ? "text-[#0284c7]" : "text-gray-400"} />
+                  <span>Simpan</span>
+                </>
+              )}
+            </button>
+
+            {/* Complete & Next button */}
+            <button
+              onClick={handleMarkComplete}
+              disabled={!isVideoCompleted || isUpdating}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl font-bold text-xs transition-all duration-200 ${
+                isVideoCompleted && !isUpdating
+                  ? "bg-[#0284c7] hover:bg-[#0369a1] text-white shadow-sm active:scale-[0.98]"
+                  : "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+              }`}
+            >
+              {isUpdating ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  <span>Menyimpan...</span>
+                </>
+              ) : isVideoCompleted ? (
+                <>
+                  <CheckCircle size={16} />
+                  <span>
+                    {nextLesson ? "Selesai & Lanjut" : "Selesaikan Kursus"}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Lock size={15} />
+                  <span>Selesaikan video dulu</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       )}
 
@@ -759,7 +842,7 @@ export function LessonPlayerMobile({
                     courseId={courseId}
                     sections={sections}
                     currentLessonId={lesson.id}
-                    completedLessons={completedLessons}
+                    completedLessons={currentCompletedLessons}
                     onItemClick={() => setShowLessonMenu(false)}
                   />
                 </div>
