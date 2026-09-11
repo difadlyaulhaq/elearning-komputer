@@ -98,22 +98,30 @@ const LoginForm = () => {
             body: JSON.stringify({ token: idToken }),
           });
 
-          if (res.ok) {
+          const resData = await res.json().catch(() => ({}));
+
+          if (res.ok && resData.success) {
             sessionStorage.setItem('showLoginWarning', 'true'); // Flag to show warning on dashboard
-            const resData = await res.json(); // Assuming res.json() will contain user data
-            const userRole = resData.user?.role?.trim().toLowerCase();
+            const userRole = resData.user?.role?.trim().toLowerCase() || 'employee';
             sessionStorage.setItem('loggedInUserRole', userRole); // Store user role for dashboard logic
             window.location.href = '/learning/dashboard'; // Native langsung ke dashboard
             return;
+          } else {
+            setError(resData.error || 'Autentikasi native gagal diverifikasi di server.');
+            setIsLoading(false);
+            return;
           }
+        } else {
+          setError('Gagal mendapatkan ID Token dari Google. Periksa koneksi internet atau Google Play Services.');
+          setIsLoading(false);
+          return;
         }
-        setIsLoading(false);
-        return;
       }
 
       const userCredential = await nativeSignInWithGoogle();
       
       if (!userCredential || !userCredential.user) {
+        setError('Login Google dibatalkan atau tidak ada respon.');
         setIsLoading(false);
         return;
       }
@@ -126,11 +134,11 @@ const LoginForm = () => {
         body: JSON.stringify({ token }),
       });
 
-      const result = await response.json();
+      const result = await response.json().catch(() => ({}));
 
       if (response.ok && result.success) {
         sessionStorage.setItem('showLoginWarning', 'true'); // Flag to show warning on dashboard
-        const userRole = result.user?.role?.trim().toLowerCase();
+        const userRole = result.user?.role?.trim().toLowerCase() || 'employee';
         sessionStorage.setItem('loggedInUserRole', userRole); // Store user role for dashboard logic
         router.replace('/learning/dashboard'); // Always redirect to learning dashboard first
       } else {
@@ -139,7 +147,7 @@ const LoginForm = () => {
       }
     } catch (error: any) {
       console.error('Google SSO error:', error);
-      const errCode = error?.code || error?.message || String(error);
+      const errCode = error?.code || error?.message || (typeof error === 'object' ? JSON.stringify(error) : String(error));
       setError(getErrorMessage(errCode));
       setIsLoading(false);
     }

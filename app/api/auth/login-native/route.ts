@@ -45,21 +45,27 @@ export async function POST(request: NextRequest) {
                 }
 
                 // Security Check 3: Verify Audience to prevent cross-app token reuse
-                const allowedClientIds = process.env.GOOGLE_CLIENT_IDS?.split(',').map(id => id.trim()) || [];
-                if (allowedClientIds.length > 0) {
-                    if (!allowedClientIds.includes(googleData.aud)) {
-                        console.error(`[AUTH ERROR] Google ID Token audience mismatch: ${googleData.aud}`);
-                        throw new Error('Google ID Token audience mismatch (Potential Cross-App Attack)');
-                    }
-                } else if (process.env.NODE_ENV === 'production') {
-                    console.error('[AUTH ERROR] GOOGLE_CLIENT_IDS is not configured in production. Blocking raw Google ID Token fallback.');
-                    throw new Error('Google Sign-In validation is misconfigured on the server');
-                } else {
-                    console.warn('[AUTH WARNING] GOOGLE_CLIENT_IDS is not configured. Allowing token verification without audience check in development.');
+                // Sanitasi dan parsing GOOGLE_CLIENT_IDS dari environment variable
+                const rawEnvIds = (process.env.GOOGLE_CLIENT_IDS || '')
+                    .replace(/[\r\n\t\s]+/g, ' ')
+                    .split(',')
+                    .map(id => id.trim())
+                    .filter(Boolean);
+
+                const defaultClientIds = [
+                    '237681279253-tu2j5l7pdpti9lsm707c429gkvc0bqai.apps.googleusercontent.com',
+                    '237681279253-t11m0c79iqegehnjq6u1inh2nqdtaho8.apps.googleusercontent.com',
+                ];
+
+                const allowedClientIds = Array.from(new Set([...defaultClientIds, ...rawEnvIds]));
+
+                if (!allowedClientIds.includes(googleData.aud)) {
+                    console.error('[AUTH ERROR] Google ID Token audience mismatch');
+                    throw new Error('Google ID Token audience tidak valid.');
                 }
 
                 email = googleData.email;
-                if (!email) throw new Error('Email tidak ditemukan di token Google');
+                if (!email) throw new Error('Email tidak ditemukan di token Google.');
 
                 // Cari User di Firebase Auth berdasarkan Email
                 try {
@@ -67,9 +73,8 @@ export async function POST(request: NextRequest) {
                     uid = userRecord.uid;
                 } catch (userError: any) {
                     if (userError.code === 'auth/user-not-found') {
-                        // User TIDAK ditemukan di Auth -> TOLAK LOGIN
                         return NextResponse.json({ 
-                            error: 'Akun tidak terdaftar. Silakan hubungi admin.' 
+                            error: 'Akun Google Anda belum terdaftar di sistem. Silakan hubungi admin.' 
                         }, { status: 403 });
                     }
                     throw userError;
@@ -86,7 +91,15 @@ export async function POST(request: NextRequest) {
     
     // --- CEK FIRESTORE (Database) ---
     // Pastikan user benar-benar ada di collection 'users'
-    const userDoc = await adminDb.collection('users').doc(uid).get();
+    let userDoc = await adminDb.collection('users').doc(uid).get();
+
+    // Fallback: jika doc(uid) tidak ada, cari berdasarkan email
+    if (!userDoc.exists && email) {
+        const emailQuery = await adminDb.collection('users').where('email', '==', email).limit(1).get();
+        if (!emailQuery.empty) {
+            userDoc = emailQuery.docs[0];
+        }
+    }
 
     if (!userDoc.exists) {
         return NextResponse.json({ 
@@ -96,10 +109,9 @@ export async function POST(request: NextRequest) {
 
     const userData = userDoc.data();
     
-    // Opsional: Cek status user (jika ada field status)
     if (userData?.status === 'inactive') {
         return NextResponse.json({ 
-            error: 'Akun Anda dinonaktifkan.' 
+            error: 'Akun Anda dinonaktifkan. Silakan hubungi admin.' 
         }, { status: 403 });
     }
 
@@ -124,10 +136,26 @@ export async function POST(request: NextRequest) {
       path: '/',
     });
 
-    return NextResponse.json({ success: true, uid: uid });
+    // Sanitasi data yang dikembalikan ke client (hanya field publik yang aman)
+    const sanitizedUser = {
+      uid: userDoc.id || uid,
+      email: userData?.email || email,
+      displayName: userData?.displayName || userData?.name || 'User',
+      role: role,
+      department: userData?.department || '',
+      position: userData?.position || '',
+    };
 
-  } catch (error) {
+    return NextResponse.json({ 
+      success: true, 
+      uid: sanitizedUser.uid,
+      user: sanitizedUser 
+    });
+
+  } catch (error: any) {
     console.error('Login Native Error:', error);
-    return NextResponse.json({ error: 'Login gagal. Coba lagi.' }, { status: 401 });
+    return NextResponse.json({ 
+      error: 'Autentikasi gagal. Silakan coba beberapa saat lagi atau periksa akun Anda.' 
+    }, { status: 401 });
   }
 }
